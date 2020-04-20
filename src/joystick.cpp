@@ -1,0 +1,1 @@
+#include <nesemu/joystick.h>
