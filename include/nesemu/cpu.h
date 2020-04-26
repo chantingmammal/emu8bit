@@ -167,14 +167,18 @@ private:
 #if DEBUG
   uint8_t readByteInternal(uint16_t address);
 #endif
-  uint8_t     readByte(uint16_t address);
-  void        writeByte(uint16_t address, uint8_t data);
-  void        push(uint8_t data);
-  uint8_t     pop();
-  void        interrupt(uint16_t vector_table);
-  inline void branch(bool condition);
-  uint16_t    getArgAddr(std::underlying_type<AddressingMode>::type mode);
-  uint16_t    getArgAddr(AddressingMode mode);
+  uint8_t  readByte(uint16_t address);                 // 1 cycle
+  void     writeByte(uint16_t address, uint8_t data);  // 1 cycle
+  void     push(uint8_t data);                         // 1 cycle
+  uint8_t  pop();                                      // 2 cycles
+  uint16_t pop16();                                    // 3 cycles
+                                                       //  - Equivalent to pop() + (pop() << 8), but takes 1 fewer cycle
+
+  inline void     tick(int ticks = 1);
+  inline void     interrupt(uint16_t vector_table);  // 5 cycles
+  inline void     branch(bool condition);            // 1 cycle
+  inline uint16_t getArgAddr(std::underlying_type<AddressingMode>::type mode, bool check_page_boundary = false);
+  inline uint16_t getArgAddr(AddressingMode mode, bool check_page_boundary = false);
 
 
   // Hacky clock

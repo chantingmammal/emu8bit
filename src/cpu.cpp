@@ -73,7 +73,7 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::ADC) + asInt(AddressingMode::absolute_y)):
     case (asInt(Instruction::ADC) + asInt(AddressingMode::indirect_x)):
     case (asInt(Instruction::ADC) + asInt(AddressingMode::indirect_y)): {
-      const uint8_t arg    = readByte(getArgAddr(opcode - asInt(Instruction::ADC)));
+      const uint8_t arg    = readByte(getArgAddr(opcode - asInt(Instruction::ADC), true));
       const uint8_t result = A + arg + P.c;
       P.c                  = ((A + arg + P.c) >> 8) & 0x01;
       P.z                  = (result == 0);
@@ -100,15 +100,19 @@ void cpu::CPU::executeInstruction() {
 
     // Arithmetic shift left
     case (asInt(Instruction::ASL) + asInt(AddressingMode::accumulator)): {
+      tick();
       P.c = (A >> 7);
       A <<= 1;
       P.z = (A == 0);
       P.n = (A >> 7);
     } break;
+    case (asInt(Instruction::ASL) + asInt(AddressingMode::absolute_x)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(Instruction::ASL) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::ASL) + asInt(AddressingMode::zero_page_x)):
-    case (asInt(Instruction::ASL) + asInt(AddressingMode::absolute)):
-    case (asInt(Instruction::ASL) + asInt(AddressingMode::absolute_x)): {
+    case (asInt(Instruction::ASL) + asInt(AddressingMode::absolute)): {
+      tick();
       const uint16_t addr = getArgAddr(opcode - asInt(Instruction::ASL));
       uint8_t        arg  = readByte(addr);
 
@@ -172,7 +176,8 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::CMP) + asInt(AddressingMode::absolute_y)):
     case (asInt(Instruction::CMP) + asInt(AddressingMode::indirect_x)):
     case (asInt(Instruction::CMP) + asInt(AddressingMode::indirect_y)): {
-      const uint8_t arg = readByte(getArgAddr(opcode - asInt(Instruction::CMP)));
+      tick();
+      const uint8_t arg = readByte(getArgAddr(opcode - asInt(Instruction::CMP), true));
       P.z               = (A == arg);
       P.c               = (A >= arg);
       P.n               = ((A - arg) >> 7);
@@ -190,6 +195,7 @@ void cpu::CPU::executeInstruction() {
         mode = AddressingMode::absolute;
       }
 
+      tick();
       const uint8_t arg = readByte(getArgAddr(mode));
       P.z               = (X == arg);
       P.c               = (X >= arg);
@@ -208,6 +214,7 @@ void cpu::CPU::executeInstruction() {
         mode = AddressingMode::absolute;
       }
 
+      tick();
       const uint8_t arg = readByte(getArgAddr(mode));
       P.z               = (Y == arg);
       P.c               = (Y >= arg);
@@ -216,10 +223,13 @@ void cpu::CPU::executeInstruction() {
 
 
     // Decrement memory
+    case (asInt(Instruction::DEC) + asInt(AddressingMode::absolute_x)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(Instruction::DEC) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::DEC) + asInt(AddressingMode::zero_page_x)):
-    case (asInt(Instruction::DEC) + asInt(AddressingMode::absolute)):
-    case (asInt(Instruction::DEC) + asInt(AddressingMode::absolute_x)): {
+    case (asInt(Instruction::DEC) + asInt(AddressingMode::absolute)): {
+      tick();
       const uint16_t addr = getArgAddr(opcode - asInt(Instruction::DEC));
       const uint8_t  arg  = readByte(addr) - 1;
       P.z                 = (arg == 0);
@@ -237,7 +247,8 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::EOR) + asInt(AddressingMode::absolute_y)):
     case (asInt(Instruction::EOR) + asInt(AddressingMode::indirect_x)):
     case (asInt(Instruction::EOR) + asInt(AddressingMode::indirect_y)): {
-      A ^= readByte(getArgAddr(opcode - asInt(Instruction::EOR)));
+      tick();
+      A ^= readByte(getArgAddr(opcode - asInt(Instruction::EOR), true));
       P.z = (A == 0);
       P.n = (A >> 7);
     } break;
@@ -245,33 +256,43 @@ void cpu::CPU::executeInstruction() {
 
     // Flag (Processor Status) manipulation
     case (asInt(Instruction::CLC) + asInt(AddressingMode::implied)):
+      tick();
       P.c = 0;
       break;
     case (asInt(Instruction::SEC) + asInt(AddressingMode::implied)):
+      tick();
       P.c = 1;
       break;
     case (asInt(Instruction::CLI) + asInt(AddressingMode::implied)):
+      tick();
       P.i = 0;
       break;
     case (asInt(Instruction::SEI) + asInt(AddressingMode::implied)):
+      tick();
       P.i = 1;
       break;
     case (asInt(Instruction::CLV) + asInt(AddressingMode::implied)):
+      tick();
       P.v = 0;
       break;
     case (asInt(Instruction::CLD) + asInt(AddressingMode::implied)):
+      tick();
       P.d = 0;
       break;
     case (asInt(Instruction::SED) + asInt(AddressingMode::implied)):
+      tick();
       P.d = 1;
       break;
 
 
     // Increment memory
+    case (asInt(Instruction::INC) + asInt(AddressingMode::absolute_x)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(Instruction::INC) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::INC) + asInt(AddressingMode::zero_page_x)):
-    case (asInt(Instruction::INC) + asInt(AddressingMode::absolute)):
-    case (asInt(Instruction::INC) + asInt(AddressingMode::absolute_x)): {
+    case (asInt(Instruction::INC) + asInt(AddressingMode::absolute)): {
+      tick();
       const uint16_t addr = getArgAddr(opcode - asInt(Instruction::INC));
       const uint8_t  arg  = readByte(addr) + 1;
       P.z                 = (arg == 0);
@@ -284,14 +305,18 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::JMP) + asInt(AddressingMode::immediate)):  // Irregular opcode, actually absolute
       PC = getArgAddr(AddressingMode::absolute);
       break;
-    case (asInt(Instruction::JMP) + asInt(AddressingMode::indirect)):
-      PC = getArgAddr(AddressingMode::indirect);
-      break;
+    case (asInt(Instruction::JMP) + asInt(AddressingMode::indirect)): {  // Like indirect, but with page wrap bug
+      uint16_t addr = readByte(PC++);
+      addr |= (readByte(PC++) << 8);
+      const uint16_t page = addr & 0xFF00;
+      PC                  = readByte(addr) | (readByte(((addr + 1) & 0x00FF) | page) << 8);
+    } break;
 
 
     // Jump to service routine
     case (asInt(Instruction::JSR) + asInt(AddressingMode::absolute)): {
       const uint16_t address = getArgAddr(AddressingMode::absolute);
+      tick();
       push((PC - 1) >> 8);
       push(PC - 1);
       PC = address;
@@ -307,7 +332,7 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::LDA) + asInt(AddressingMode::absolute_y)):
     case (asInt(Instruction::LDA) + asInt(AddressingMode::indirect_x)):
     case (asInt(Instruction::LDA) + asInt(AddressingMode::indirect_y)): {
-      A   = readByte(getArgAddr(opcode - asInt(Instruction::LDA)));
+      A   = readByte(getArgAddr(opcode - asInt(Instruction::LDA), true));
       P.z = (A == 0);
       P.n = (A >> 7);
     } break;
@@ -330,7 +355,7 @@ void cpu::CPU::executeInstruction() {
         mode = AddressingMode::absolute_y;
       }
 
-      X   = readByte(getArgAddr(mode));
+      X   = readByte(getArgAddr(mode, true));
       P.z = (X == 0);
       P.n = (X >> 7);
     } break;
@@ -353,7 +378,7 @@ void cpu::CPU::executeInstruction() {
         mode = AddressingMode::absolute_x;
       }
 
-      Y   = readByte(getArgAddr(mode));
+      Y   = readByte(getArgAddr(mode, true));
       P.z = (Y == 0);
       P.n = (Y >> 7);
     } break;
@@ -361,15 +386,19 @@ void cpu::CPU::executeInstruction() {
 
     // Logical shift right
     case (asInt(Instruction::LSR) + asInt(AddressingMode::accumulator)): {
+      tick();
       P.c = (A & 0x01);
       A >>= 1;
       P.z = (A == 0);
       P.n = (A >> 7);  // Always 0
     } break;
+    case (asInt(Instruction::LSR) + asInt(AddressingMode::absolute_x)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(Instruction::LSR) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::LSR) + asInt(AddressingMode::zero_page_x)):
-    case (asInt(Instruction::LSR) + asInt(AddressingMode::absolute)):
-    case (asInt(Instruction::LSR) + asInt(AddressingMode::absolute_x)): {
+    case (asInt(Instruction::LSR) + asInt(AddressingMode::absolute)): {
+      tick();
       const uint16_t addr = getArgAddr(opcode - asInt(Instruction::LSR));
       uint8_t        arg  = readByte(addr);
 
@@ -383,7 +412,7 @@ void cpu::CPU::executeInstruction() {
 
     // No operation
     case (asInt(Instruction::NOP) + asInt(AddressingMode::implied)):
-      tick_();
+      tick();
       break;
 
 
@@ -396,7 +425,7 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::ORA) + asInt(AddressingMode::absolute_y)):
     case (asInt(Instruction::ORA) + asInt(AddressingMode::indirect_x)):
     case (asInt(Instruction::ORA) + asInt(AddressingMode::indirect_y)): {
-      A |= readByte(getArgAddr(opcode - asInt(Instruction::ORA)));
+      A |= readByte(getArgAddr(opcode - asInt(Instruction::ORA), true));
       P.z = (A == 0);
       P.n = (A >> 7);
     } break;
@@ -404,41 +433,49 @@ void cpu::CPU::executeInstruction() {
 
     // Register manipulation
     case (asInt(Instruction::TAX) + asInt(AddressingMode::implied)): {
+      tick();
       X   = A;
       P.z = (X == 0);
       P.n = (X >> 7);
     } break;
     case (asInt(Instruction::TXA) + asInt(AddressingMode::implied)): {
+      tick();
       A   = X;
       P.z = (A == 0);
       P.n = (A >> 7);
     } break;
     case (asInt(Instruction::DEX) + asInt(AddressingMode::implied)): {
+      tick();
       X--;
       P.z = (X == 0);
       P.n = (X >> 7);
     } break;
     case (asInt(Instruction::INX) + asInt(AddressingMode::implied)): {
+      tick();
       X++;
       P.z = (X == 0);
       P.n = (X >> 7);
     } break;
     case (asInt(Instruction::TAY) + asInt(AddressingMode::implied)): {
+      tick();
       Y   = A;
       P.z = (Y == 0);
       P.n = (Y >> 7);
     } break;
     case (asInt(Instruction::TYA) + asInt(AddressingMode::implied)): {
+      tick();
       A   = Y;
       P.z = (A == 0);
       P.n = (A >> 7);
     } break;
     case (asInt(Instruction::DEY) + asInt(AddressingMode::implied)): {
+      tick();
       Y--;
       P.z = (Y == 0);
       P.n = (Y >> 7);
     } break;
     case (asInt(Instruction::INY) + asInt(AddressingMode::implied)): {
+      tick();
       Y++;
       P.z = (Y == 0);
       P.n = (Y >> 7);
@@ -447,16 +484,20 @@ void cpu::CPU::executeInstruction() {
 
     // Rotate left
     case (asInt(Instruction::ROL) + asInt(AddressingMode::accumulator)): {
+      tick();
       const bool old_carry = (A >> 7);
       A                    = (A << 1) | P.c;
       P.c                  = old_carry;
       P.z                  = (A == 0);
       P.n                  = (A >> 7);
     } break;
+    case (asInt(Instruction::ROL) + asInt(AddressingMode::absolute_x)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(Instruction::ROL) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::ROL) + asInt(AddressingMode::zero_page_x)):
-    case (asInt(Instruction::ROL) + asInt(AddressingMode::absolute)):
-    case (asInt(Instruction::ROL) + asInt(AddressingMode::absolute_x)): {
+    case (asInt(Instruction::ROL) + asInt(AddressingMode::absolute)): {
+      tick();
       const uint16_t addr      = getArgAddr(opcode - asInt(Instruction::ROL));
       uint8_t        arg       = readByte(addr);
       const bool     old_carry = (arg >> 7);
@@ -470,16 +511,20 @@ void cpu::CPU::executeInstruction() {
 
     // Rotate right
     case (asInt(Instruction::ROR) + asInt(AddressingMode::accumulator)): {
+      tick();
       const bool old_carry = (A & 0x01);
       A                    = (A >> 1) | (P.c << 7);
       P.c                  = old_carry;
       P.z                  = (A == 0);
       P.n                  = (A >> 7);
     } break;
+    case (asInt(Instruction::ROR) + asInt(AddressingMode::absolute_x)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(Instruction::ROR) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::ROR) + asInt(AddressingMode::zero_page_x)):
-    case (asInt(Instruction::ROR) + asInt(AddressingMode::absolute)):
-    case (asInt(Instruction::ROR) + asInt(AddressingMode::absolute_x)): {
+    case (asInt(Instruction::ROR) + asInt(AddressingMode::absolute)): {
+      tick();
       const uint16_t addr      = getArgAddr(opcode - asInt(Instruction::ROR));
       uint8_t        arg       = readByte(addr);
       const bool     old_carry = (arg & 0x01);
@@ -494,13 +539,14 @@ void cpu::CPU::executeInstruction() {
     // Return from interrupt
     case (asInt(Instruction::RTI) + asInt(AddressingMode::implied)): {
       P.raw = pop();
-      PC    = pop() + (pop() << 8);
+      PC    = pop16();
     } break;
 
 
     // Return from subroutine
     case (asInt(Instruction::RTS) + asInt(AddressingMode::implied)): {
-      PC = pop() + (pop() << 8) + 1;
+      tick(2);
+      PC = pop16() + 1;
     } break;
 
 
@@ -513,7 +559,7 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::SBC) + asInt(AddressingMode::absolute_y)):
     case (asInt(Instruction::SBC) + asInt(AddressingMode::indirect_x)):
     case (asInt(Instruction::SBC) + asInt(AddressingMode::indirect_y)): {
-      const uint8_t  arg      = readByte(getArgAddr(opcode - asInt(Instruction::SBC)));
+      const uint8_t  arg      = readByte(getArgAddr(opcode - asInt(Instruction::SBC), true));
       const uint16_t res_long = A + (~arg + 1) + (~P.c + 1);
       const uint8_t  result   = res_long;
       P.c                     = !((res_long >> 8) & 0x01);
@@ -525,34 +571,42 @@ void cpu::CPU::executeInstruction() {
 
 
     // Store accumulator
+    case (asInt(Instruction::STA) + asInt(AddressingMode::absolute_x)):
+    case (asInt(Instruction::STA) + asInt(AddressingMode::absolute_y)):
+    case (asInt(Instruction::STA) + asInt(AddressingMode::indirect_y)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(Instruction::STA) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::STA) + asInt(AddressingMode::zero_page_x)):
     case (asInt(Instruction::STA) + asInt(AddressingMode::absolute)):
-    case (asInt(Instruction::STA) + asInt(AddressingMode::absolute_x)):
-    case (asInt(Instruction::STA) + asInt(AddressingMode::absolute_y)):
-    case (asInt(Instruction::STA) + asInt(AddressingMode::indirect_x)):
-    case (asInt(Instruction::STA) + asInt(AddressingMode::indirect_y)): {
+    case (asInt(Instruction::STA) + asInt(AddressingMode::indirect_x)): {
       writeByte(getArgAddr(opcode - asInt(Instruction::STA)), A);
     } break;
 
 
     // Stack manipulation
     case (asInt(Instruction::TXS) + asInt(AddressingMode::implied)):
+      tick();
       SP = X;
       break;
     case (asInt(Instruction::TSX) + asInt(AddressingMode::implied)):
+      tick();
       X = SP;
       break;
     case (asInt(Instruction::PHA) + asInt(AddressingMode::implied)):
+      tick(2);
       push(A);
       break;
     case (asInt(Instruction::PLA) + asInt(AddressingMode::implied)):
+      tick(3);
       A = pop();
       break;
     case (asInt(Instruction::PHP) + asInt(AddressingMode::implied)):
+      tick(2);
       push(P.raw);
       break;
     case (asInt(Instruction::PLP) + asInt(AddressingMode::implied)):
+      tick(3);
       P.raw = pop();
       break;
 
@@ -561,6 +615,7 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::STX) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::STX) + asInt(AddressingMode::zero_page_y)):
     case (asInt(Instruction::STX) + asInt(AddressingMode::absolute)): {
+      tick();
       writeByte(getArgAddr(opcode - asInt(Instruction::STX)), X);
     } break;
 
@@ -569,6 +624,7 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::STY) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::STY) + asInt(AddressingMode::zero_page_x)):
     case (asInt(Instruction::STY) + asInt(AddressingMode::absolute)): {
+      tick();
       writeByte(getArgAddr(opcode - asInt(Instruction::STY)), Y);
     } break;
 
@@ -613,7 +669,7 @@ uint8_t cpu::CPU::readByte(uint16_t address) {
 
 uint8_t cpu::CPU::readByteInternal(uint16_t address) {
 #endif
-  tick_();
+  tick();
   address &= 0xFFFF;
 
   if (address < 0x2000)  // Stack and RAM
@@ -654,7 +710,7 @@ void cpu::CPU::writeByte(uint16_t address, uint8_t data) {
 #if DEBUG
   std::cout << "Write " << unsigned(data) << " to $(" << address << ")\n";
 #endif
-  tick_();
+  tick();
   address &= 0xFFFF;
 
   if (address < 0x2000) {  // Stack and RAM
@@ -726,6 +782,7 @@ void cpu::CPU::push(uint8_t data) {
 }
 
 uint8_t cpu::CPU::pop() {
+  tick();  // Increment SP
 #if DEBUG
   uint8_t data = readByte(0x0100 + (++SP));
   std::cout << "Pop  " << unsigned(data) << " @ " << 0x0100 + SP << std::endl;
@@ -735,10 +792,24 @@ uint8_t cpu::CPU::pop() {
 #endif
 }
 
+uint16_t cpu::CPU::pop16() {
+  tick();  // Increment SP by 2
+  uint16_t val = readByte(0x0100 + (++SP));
+  val |= readByte(0x0100 + (++SP)) << 8;
+  return val;
+}
+
+void cpu::CPU::tick(int ticks) {
+  for (; ticks > 0; ticks--) {
+    tick_();
+  }
+}
+
 void cpu::CPU::interrupt(uint16_t vector_table) {
 #if DEBUG
   std::cout << "Interrupt, jumping to $(" << vector_table << ")\n";
 #endif
+  tick();  // TODO: Confirm number of ticks for NMI
   push(PC >> 8);
   push(PC);
   push(P.raw);
@@ -750,16 +821,22 @@ void cpu::CPU::interrupt(uint16_t vector_table) {
 void cpu::CPU::branch(bool condition) {
   const int8_t offset = utils::deComplement(readByte(getArgAddr(AddressingMode::relative)));
   if (condition) {
+    tick();
+    const uint8_t src_page = PC / 8;
     PC += offset;
-    tick_();
+
+    // Extra tick if page boundary crossed
+    if (src_page != PC / 8) {
+      tick();
+    }
   }
 }
 
-uint16_t cpu::CPU::getArgAddr(std::underlying_type<AddressingMode>::type mode) {
-  return getArgAddr(utils::asEnum<AddressingMode>(mode));
+uint16_t cpu::CPU::getArgAddr(std::underlying_type<AddressingMode>::type mode, bool check_page_boundary) {
+  return getArgAddr(utils::asEnum<AddressingMode>(mode), check_page_boundary);
 }
 
-uint16_t cpu::CPU::getArgAddr(AddressingMode mode) {
+uint16_t cpu::CPU::getArgAddr(AddressingMode mode, bool check_page_boundary) {
   switch (mode) {
     case (AddressingMode::immediate):  // Or relative
       return PC++;
@@ -768,33 +845,58 @@ uint16_t cpu::CPU::getArgAddr(AddressingMode mode) {
       return readByte(PC++);
 
     case (AddressingMode::zero_page_x):
+      tick();
       return (readByte(PC++) + X) & 0xFF;
 
     case (AddressingMode::zero_page_y):
+      tick();
       return (readByte(PC++) + Y) & 0xFF;
 
-    case (AddressingMode::absolute):
-      return readByte(PC++) + (readByte(PC++) << 8);
+    case (AddressingMode::absolute): {
+      const uint16_t addr = readByte(PC++);
+      return addr | (readByte(PC++) << 8);
+    }
 
-    case (AddressingMode::absolute_x):
-      return readByte(PC++) + (readByte(PC++) << 8) + X;
+    case (AddressingMode::absolute_x): {
+      const uint16_t addr = readByte(PC++);
 
-    case (AddressingMode::absolute_y):
-      return readByte(PC++) + (readByte(PC++) << 8) + Y;
+      // If low byte + X carries, take an extra tick to correct the high byte
+      if (check_page_boundary && (addr / 8 != (addr + X) / 8)) {
+        tick();
+      }
+      return (addr | (readByte(PC++) << 8)) + X;
+    }
+
+    case (AddressingMode::absolute_y): {
+      const uint16_t addr = readByte(PC++);
+
+      // If low byte + Y carries, take an extra tick to correct the high byte
+      if (check_page_boundary && (addr / 8 != (addr + Y) / 8)) {
+        tick();
+      }
+      return (addr | (readByte(PC++) << 8)) + Y;
+    }
 
     case (AddressingMode::indirect): {
-      const uint16_t addr = readByte(PC++) + (readByte(PC++) << 8);
-      return readByte(addr) + (readByte(addr + 1) << 8);
+      uint16_t addr = readByte(PC++);
+      addr |= (readByte(PC++) << 8);
+      return readByte(addr) | (readByte(addr + 1) << 8);
     }
 
     case (AddressingMode::indirect_x): {
+      tick();
       const uint8_t addr = readByte(PC++) + X;
-      return readByte(addr) + (readByte((addr + 1) & 0xFF) << 8);
+      return readByte(addr) | (readByte((addr + 1) & 0xFF) << 8);
     }
 
     case (AddressingMode::indirect_y): {
       const uint8_t addr = readByte(PC++);
-      return readByte(addr) + (readByte((addr + 1) & 0xFF) << 8) + Y;
+
+      // If low byte + Y carries, take an extra tick to correct the high byte
+      if (check_page_boundary && (addr / 8 != (addr + Y) / 8)) {
+        tick();
+      }
+      return (readByte(addr) | (readByte((addr + 1) & 0xFF) << 8)) + Y;
     }
 
     default:
