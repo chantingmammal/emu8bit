@@ -4,7 +4,7 @@
 #include <iostream>
 
 
-// =*=*=*=* CPU Setup =*=*=*=*
+// =*=*=*=*= CPU Setup =*=*=*=*=
 
 void cpu::CPU::loadCart(uint8_t* prg_rom, uint8_t prg_banks, uint8_t* expansion_ram) {
   prg_rom_       = prg_rom;
@@ -28,7 +28,8 @@ void cpu::CPU::setClockTickPtr(std::function<void(void)> func) {
   tick_ = func;
 }
 
-// =*=*=*=* CPU Execution =*=*=*=*
+
+// =*=*=*=*= CPU Execution =*=*=*=*=
 
 void cpu::CPU::executeInstruction() {
   using utils::asInt;
@@ -46,11 +47,20 @@ void cpu::CPU::executeInstruction() {
     return;
   }
 
+#if DEBUG
+  static uint16_t next_op = PC;
+  std::cout << next_op << std::endl;
+  if (next_op <= PC) {
+    std::cin >> std::hex >> std::noskipws >> next_op;
+  }
+#endif
+
   // Fetch next instruction from PC
   const uint8_t opcode = readByte(PC++);
 
-  // std::cout << "Opcode: " << std::hex << unsigned(opcode) << " from addr " << std::hex << unsigned(PC - 1) <<
-  // std::endl;
+#if DEBUG
+  std::cout << "Opcode: " << std::hex << unsigned(opcode) << " from addr " << std::hex << unsigned(PC - 1) << std::endl;
+#endif
 
   switch (opcode) {
 
@@ -569,6 +579,14 @@ void cpu::CPU::executeInstruction() {
       exit(1);
       break;
   }
+
+#if DEBUG
+  if (std::cin.fail()) {
+    std::cin.clear();
+    std::cin.ignore();
+    next_op = PC;
+  }
+#endif
 }
 
 void cpu::CPU::NMI() {
@@ -584,9 +602,17 @@ void cpu::CPU::IRQ(bool active) {
 }
 
 
-// =*=*=*=* CPU Internal Operations =*=*=*=*
+// =*=*=*=*= CPU Internal Operations =*=*=*=*=
 
 uint8_t cpu::CPU::readByte(uint16_t address) {
+#if DEBUG
+  const uint8_t data = readByteInternal(address);
+  std::cout << "Read " << unsigned(data) << " from $(" << address << ")\n";
+  return data;
+}
+
+uint8_t cpu::CPU::readByteInternal(uint16_t address) {
+#endif
   tick_();
   address &= 0xFFFF;
 
@@ -625,71 +651,94 @@ uint8_t cpu::CPU::readByte(uint16_t address) {
 }
 
 void cpu::CPU::writeByte(uint16_t address, uint8_t data) {
+#if DEBUG
+  std::cout << "Write " << unsigned(data) << " to $(" << address << ")\n";
+#endif
   tick_();
   address &= 0xFFFF;
 
-  if (address < 0x2000)  // Stack and RAM
+  if (address < 0x2000) {  // Stack and RAM
     ram_[address & 0x07FF] = data;
-
-  else if (address < 0x4000)  // PPU Registers
-    ppu_write_register_((address & 0x0007) | 0x2000, data);
-
-  else if (address < 0x4014)  // Sound Registers
-    ;                         // TODO
-
-  else if (address == 0x4014) {  // PPU DMA Access
-    if (data * 0x100 < 0x2000)
-      ppu_sprite_dma_(ram_ + (data * 0x100));
-    else if (data * 0x100 < 0x6000)
-      ;  // Cannot DMA from MMIO
-    else if (data * 0x100 < 0x8000)
-      if (expansion_ram_)
-        ppu_sprite_dma_(expansion_ram_ + (data * 0x100) - 0x6000);
-      else
-        ;  // No cartridge RAM
-    else if (data < 0x10000)
-      ppu_sprite_dma_(prg_rom_ + (data * 0x100) - 0x8000);
   }
 
-  else if (address == 0x4015)  // Sound Channel Switch
-    ;                          // TODO
+  else if (address < 0x4000) {  // PPU Registers
+    ppu_write_register_((address & 0x0007) | 0x2000, data);
+  }
 
-  else if (address == 0x4016)  // Joystick 1
-    ;                          // TODO
+  else if (address < 0x4014) {  // Sound Registers
+    ;                           // TODO
+  }
 
-  else if (address == 0x4017)  // Joystick 2
-    ;                          // TODO
+  else if (address == 0x4014) {  // PPU DMA Access
+    if (data * 0x100 < 0x2000) {
+      ppu_sprite_dma_(ram_ + (data * 0x100));  // Internal RAM
+    } else if (data * 0x100 < 0x6000) {
+      ;  // Cannot DMA from MMIO
+    } else if (data * 0x100 < 0x8000) {
+      if (expansion_ram_) {
+        ppu_sprite_dma_(expansion_ram_ + (data * 0x100) - 0x6000);
+      } else {
+        ;  // No cartridge RAM
+      }
+    } else {
+      ppu_sprite_dma_(prg_rom_ + (data * 0x100) - 0x8000);  // Cartridge ROM
+    }
+  }
 
-  else if (address == 0x4020)  // Unused
+  else if (address == 0x4015) {  // Sound Channel Switch
+    ;                            // TODO
+  }
+
+  else if (address == 0x4016) {  // Joystick 1
+    ;                            // TODO
+  }
+
+  else if (address == 0x4017) {  // Joystick 2
+    ;                            // TODO
+  }
+
+  else if (address == 0x4020) {  // Unused
     ;
+  }
 
-  else if (address < 0x6000)  // Expansion Modules, ie. Famicom Disk System
+  else if (address < 0x6000) {  // Expansion Modules, ie. Famicom Disk System
     ;
+  }
 
-  else if (address < 0x8000)  // Cartridge RAM
-    if (expansion_ram_)
+  else if (address < 0x8000) {  // Cartridge RAM
+    if (expansion_ram_) {
       expansion_ram_[address - 0x6000] = data;
-    else
+    } else {
       ;  // No cartridge RAM
+    }
+  }
 
-  else  // Cartridge ROM
+  else {  // Cartridge ROM
     prg_rom_[(address - 0x8000) & (prg_banks_ == 2 ? 0x7FFF : 0x3FFF)] = data;
+  }
 }
 
 void cpu::CPU::push(uint8_t data) {
-  // std::cout << "Push " << unsigned(data) << " @ " << 0x0100 + SP << std::endl;
+#if DEBUG
+  std::cout << "Push " << unsigned(data) << " @ " << 0x0100 + SP << std::endl;
+#endif
   writeByte(0x0100 + SP--, data);
 }
 
 uint8_t cpu::CPU::pop() {
-  // SP++;
-  // uint8_t data = readByte(0x0100 + SP);
-  // std::cout << "Pop  " << unsigned(data) << " @ " << 0x0100 + SP << std::endl;
-  // return data;
+#if DEBUG
+  uint8_t data = readByte(0x0100 + (++SP));
+  std::cout << "Pop  " << unsigned(data) << " @ " << 0x0100 + SP << std::endl;
+  return data;
+#else
   return readByte(0x0100 + (++SP));
+#endif
 }
 
 void cpu::CPU::interrupt(uint16_t vector_table) {
+#if DEBUG
+  std::cout << "Interrupt, jumping to $(" << vector_table << ")\n";
+#endif
   push(PC >> 8);
   push(PC);
   push(P.raw);
@@ -712,7 +761,7 @@ uint16_t cpu::CPU::getArgAddr(std::underlying_type<AddressingMode>::type mode) {
 
 uint16_t cpu::CPU::getArgAddr(AddressingMode mode) {
   switch (mode) {
-    case (AddressingMode::immediate):  // Or relative,
+    case (AddressingMode::immediate):  // Or relative
       return PC++;
 
     case (AddressingMode::zero_page):
@@ -747,5 +796,9 @@ uint16_t cpu::CPU::getArgAddr(AddressingMode mode) {
       const uint8_t addr = readByte(PC++);
       return readByte(addr) + (readByte((addr + 1) & 0xFF) << 8) + Y;
     }
+
+    default:
+      std::cerr << "Unknown addressing mode" << std::endl;
+      exit(1);
   };
 }

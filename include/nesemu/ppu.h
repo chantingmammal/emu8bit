@@ -20,6 +20,7 @@ public:
   void setUpdateScreenPtr(std::function<void(void)> func);
   void setTriggerVBlankPtr(std::function<void(void)> func);
 
+
   // Execution
   void    tick();
   uint8_t readRegister(uint16_t cpu_address);
@@ -77,7 +78,10 @@ private:
   std::function<void(void)> update_screen_;
 
 
-  // Internal operations
+// Internal operations
+#if DEBUG
+  uint8_t readByteInternal(uint16_t address);
+#endif
   uint8_t readByte(uint16_t address);
   void    writeByte(uint16_t address, uint8_t data);
 };

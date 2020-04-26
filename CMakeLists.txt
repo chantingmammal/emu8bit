@@ -6,6 +6,11 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE Debug)
 
+option(DEBUG "Enable DEBUG mode" OFF)
+if (DEBUG)
+  add_definitions(-DDEBUG=1)
+endif()
+
 
 # Load SDL2
 find_package(SDL2 REQUIRED)
@@ -29,7 +34,7 @@ add_executable(${PROJECT_NAME}
   src/window.cpp
 )
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
-
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
 
 #############
 ## Install ##

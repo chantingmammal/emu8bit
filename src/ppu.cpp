@@ -4,7 +4,7 @@
 #include <iostream>
 
 
-// =*=*=*=* PPU Setup =*=*=*=*
+// =*=*=*=*= PPU Setup =*=*=*=*=
 
 void ppu::PPU::loadCart(uint8_t* chr_mem, bool is_ram, Mirroring mirror) {
   chr_mem_        = chr_mem;
@@ -25,7 +25,7 @@ void ppu::PPU::setTriggerVBlankPtr(std::function<void(void)> func) {
 }
 
 
-// =*=*=*=* PPU Execution =*=*=*=*
+// =*=*=*=*= PPU Execution =*=*=*=*=
 
 void ppu::PPU::tick() {
   uint16_t scanline_length = 341;
@@ -153,14 +153,23 @@ void ppu::PPU::spriteDMAWrite(uint8_t* data) {
 }
 
 
-// =*=*=*=* PPU Internal Operations =*=*=*=*
+// =*=*=*=*= PPU Internal Operations =*=*=*=*=
 
 uint8_t ppu::PPU::readByte(uint16_t address) {
+#if DEBUG
+  const uint8_t data = readByteInternal(address);
+  std::cout << "Read PPU" << unsigned(data) << " from $(" << address << ")\n";
+  return data;
+}
+
+uint8_t ppu::PPU::readByteInternal(uint16_t address) {
+#endif
   address &= 0x3FFF;
 
   // Cartridge VRAM/VROM
-  if (address < 0x2000)
+  if (address < 0x2000) {
     return chr_mem_[address];
+  }
 
   // Nametables
   else if (address < 0x3000) {
@@ -176,11 +185,15 @@ uint8_t ppu::PPU::readByte(uint16_t address) {
   }
 
   // Palettes
-  else
+  else {
     return ram_[(address - 0x2000)];
+  }
 }
 
 void ppu::PPU::writeByte(uint16_t address, uint8_t data) {
+#if DEBUG
+  std::cout << std::hex << "Write PPU ($" << unsigned(address) << ")=" << unsigned(data) << "\n";
+#endif
   address &= 0x3FFF;
 
   // Cartridge VRAM/VROM
@@ -207,6 +220,7 @@ void ppu::PPU::writeByte(uint16_t address, uint8_t data) {
   }
 
   // Palettes
-  else
+  else {
     ram_[(address - 0x2000)] = data;
+  }
 }

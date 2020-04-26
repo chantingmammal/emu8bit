@@ -40,6 +40,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  std::cout << std::hex;
+
   rom::Rom rom;
   if (rom::parseFromFile(filename, &rom))
     return 1;
