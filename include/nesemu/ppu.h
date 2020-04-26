@@ -28,39 +28,36 @@ public:
 
 
 private:
-  template <unsigned bit_pos, unsigned n_bits = 1, typename T = uint8_t>
-  using RegBit = typename utils::RegBit<bit_pos, n_bits, T>;
-
   // Registers
-  union {                                    // PPU Control Register 1, mapped to CPU 0x2000 (RW)
-    uint8_t      raw;                        //
-    RegBit<0, 2> nametable_address;          //  - 0=0x2000, 1=0x2400, 2=0x2800, 3=0x2C00
-    RegBit<2>    vertical_write;             //  - 0=PPU memory address increments by 1, 1=increments by 32
-    RegBit<3>    sprite_pattern_table_addr;  //  - 0=0x0000, 1=0x1000
-    RegBit<4>    screen_pattern_table_addr;  //  - 0=0x0000, 1=0x1000
-    RegBit<5>    sprite_size;                //  - 0=8x8, 1=0x8x16
-    RegBit<6>    ppu_master_slave_mode;      //  - Unused
-    RegBit<7>    vblank_enable;              //  - Generate interrupts on VBlank
-  } ctrl_reg_1_ = {0};                       //
-  union {                                    // PPU Control Register 2, mapped to CPU 0x2001 (RW)
-    uint8_t raw;                             //
-                                             //  - Unknown
-    RegBit<1>    image_mask;                 //  - Show left 8 columns of the screen
-    RegBit<2>    sprite_mask;                //  - Show sprites in left 8 columns
-    RegBit<3>    screen_enable;              //  - 0=Blank screen, 1=Show picture
-    RegBit<4>    sprites_enable;             //  - 0=Hide sprites, 1=Show sprites
-    RegBit<5, 3> background_color;           //  - 0=Black, 1=Blue, 2=Green, 4=Red. Do not use other numbers
-  } ctrl_reg_2_ = {0};                       //
-  union {                                    // PPU Status Register, mapped to CPU 0x2002 (R)
-    uint8_t raw;                             //
-                                             //  - Unknown
-    RegBit<6> hit;                           //  - Sprite refresh has hit sprite #0. Resets when screen refresh starts.
-    RegBit<7> vblank;                        //  - PPU is in VBlank state. Resets when VBlank ends or CPU reads 0x2002
-  } status_reg_                 = {0};       //
-  uint8_t  sprite_mem_addr_     = {0};       // Sprite Memory Address,           mapped to CPU 0x2003 (W)
-  uint8_t  vert_scroll_offset_  = {0};       // Vertical Screen Scroll Offset,   mapped to CPU 0x2005 (W)
-  uint8_t  horiz_scroll_offset_ = {0};       // Horizontal Screen Scroll Offset, mapped to CPU 0x2005 (W)
-  uint16_t ppu_mem_addr_        = {0};       // PPU Memory Address,              mapped to CPU 0x2006 (W)
+  union {                                           // PPU Control Register 1, mapped to CPU 0x2000 (RW)
+    uint8_t             raw;                        //
+    utils::RegBit<0, 2> nametable_address;          //  - 0=0x2000, 1=0x2400, 2=0x2800, 3=0x2C00
+    utils::RegBit<2>    vertical_write;             //  - 0=PPU memory address increments by 1, 1=increments by 32
+    utils::RegBit<3>    sprite_pattern_table_addr;  //  - 0=0x0000, 1=0x1000
+    utils::RegBit<4>    screen_pattern_table_addr;  //  - 0=0x0000, 1=0x1000
+    utils::RegBit<5>    sprite_size;                //  - 0=8x8, 1=0x8x16
+    utils::RegBit<6>    ppu_master_slave_mode;      //  - Unused
+    utils::RegBit<7>    vblank_enable;              //  - Generate interrupts on VBlank
+  } ctrl_reg_1_ = {0};                              //
+  union {                                           // PPU Control Register 2, mapped to CPU 0x2001 (RW)
+    uint8_t raw;                                    //
+                                                    //  - Unknown
+    utils::RegBit<1>    image_mask;                 //  - Show left 8 columns of the screen
+    utils::RegBit<2>    sprite_mask;                //  - Show sprites in left 8 columns
+    utils::RegBit<3>    screen_enable;              //  - 0=Blank screen, 1=Show picture
+    utils::RegBit<4>    sprites_enable;             //  - 0=Hide sprites, 1=Show sprites
+    utils::RegBit<5, 3> background_color;           //  - 0=Black, 1=Blue, 2=Green, 4=Red. Do not use other numbers
+  } ctrl_reg_2_ = {0};                              //
+  union {                                           // PPU Status Register, mapped to CPU 0x2002 (R)
+    uint8_t raw;                                    //
+                                                    //  - Unknown
+    utils::RegBit<6> hit;               //  - Sprite refresh has hit sprite #0. Resets when screen refresh starts.
+    utils::RegBit<7> vblank;            //  - PPU is in VBlank state. Resets when VBlank ends or CPU reads 0x2002
+  } status_reg_                 = {0};  //
+  uint8_t  sprite_mem_addr_     = {0};  // Sprite Memory Address,           mapped to CPU 0x2003 (W)
+  uint8_t  vert_scroll_offset_  = {0};  // Vertical Screen Scroll Offset,   mapped to CPU 0x2005 (W)
+  uint8_t  horiz_scroll_offset_ = {0};  // Horizontal Screen Scroll Offset, mapped to CPU 0x2005 (W)
+  uint16_t ppu_mem_addr_        = {0};  // PPU Memory Address,              mapped to CPU 0x2006 (W)
 
 
   // Memory

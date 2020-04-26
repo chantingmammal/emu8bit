@@ -125,27 +125,23 @@ public:
 
 
 private:
-  template <unsigned bit_pos, unsigned n_bits = 1, typename T = uint8_t>
-  using RegBit = typename utils::RegBit<bit_pos, n_bits, T>;
-
-
   // Registers
-  uint16_t PC = {0};  // Program counter
-  uint8_t  SP = {0};  // Stack pointer, as an offset from 0x0100. Top down (Empty=0xFF).
-  uint8_t  A  = {0};  // Accumulator Register
-  uint8_t  X  = {0};  // Index Register X
-  uint8_t  Y  = {0};  // Index Register Y
-  union {             // Processor Status Register
-    uint8_t   raw;    //
-    RegBit<0> c;      //  - Carry
-    RegBit<1> z;      //  - Zero
-    RegBit<2> i;      //  - Interrupt Disable
-    RegBit<3> d;      //  - Decimal Mode (Ignored by the 2A03)
-    RegBit<4> b;      //  - Break
-                      //  - Reserved
-    RegBit<6> v;      //  - Overflow
-    RegBit<7> n;      //  - Negative
-  } P = {0};          //
+  uint16_t PC = {0};       // Program counter
+  uint8_t  SP = {0};       // Stack pointer, as an offset from 0x0100. Top down (Empty=0xFF).
+  uint8_t  A  = {0};       // Accumulator Register
+  uint8_t  X  = {0};       // Index Register X
+  uint8_t  Y  = {0};       // Index Register Y
+  union {                  // Processor Status Register
+    uint8_t          raw;  //
+    utils::RegBit<0> c;    //  - Carry
+    utils::RegBit<1> z;    //  - Zero
+    utils::RegBit<2> i;    //  - Interrupt Disable
+    utils::RegBit<3> d;    //  - Decimal Mode (Ignored by the 2A03)
+    utils::RegBit<4> b;    //  - Break
+                           //  - Reserved
+    utils::RegBit<6> v;    //  - Overflow
+    utils::RegBit<7> n;    //  - Negative
+  } P = {0};               //
 
 
   // Interrupt Requests

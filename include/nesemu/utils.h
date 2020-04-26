@@ -12,14 +12,35 @@ namespace utils {
 // Bitfield utilities
 template <unsigned bit_pos, unsigned n_bits = 1, typename T = uint8_t>
 struct RegBit {
-  T data;
-  static constexpr T mask = ((0x1 << n_bits) - 0x1) << bit_pos;
+  T                  data;
+  static constexpr T mask = ((1 << n_bits) - 1) << bit_pos;
 
-  template <typename T2> RegBit &operator=(T2 val) {
-    data = (data & ~mask | ((val << bit_pos) & mask));
+  operator T() const { return (data & mask) >> bit_pos; }
+
+  RegBit& operator=(const RegBit& val) {
+    *this = val.data;
     return *this;
   }
-  operator T() const { return (data & mask) >> bit_pos; }
+
+  RegBit& operator=(T val) {
+    data = (data & ~mask) | ((val << bit_pos) & mask);
+    return *this;
+  }
+
+  RegBit& operator+=(T val) {
+    *this = (*this + val);
+    return *this;
+  }
+
+  RegBit& operator|=(T val) {
+    data |= ((val << bit_pos) & mask);
+    return *this;
+  }
+
+  RegBit& operator&=(T val) {
+    data &= ((val << bit_pos) & mask);
+    return *this;
+  }
 };
 
 
@@ -48,7 +69,7 @@ inline std::string uint8_to_hex_string(const uint8_t* arr, const size_t size) {
 
   ss << std::hex << std::setfill('0');
 
-  for (int i = 0; i < size; i++) {
+  for (unsigned i = 0; i < size; i++) {
     ss << "0x" << std::hex << std::setw(2) << static_cast<int>(arr[i]);
     if (i < size - 1) {
       ss << " ";
