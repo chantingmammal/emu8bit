@@ -4,7 +4,7 @@
 #include <functional>
 
 
-// =*=*=*=* Console Setup =*=*=*=*
+// =*=*=*=*= Console Setup =*=*=*=*=
 
 console::Console::Console() {
   using namespace std::placeholders;
@@ -36,7 +36,8 @@ void console::Console::setUpdateScreenPtr(std::function<void(void)> func) {
   ppu_.setUpdateScreenPtr(func);
 }
 
-// =*=*=*=* Console Execution =*=*=*=*
+
+// =*=*=*=*= Console Execution =*=*=*=*=
 
 void console::Console::start() {
   cpu_.reset(true);
@@ -56,6 +57,6 @@ void console::Console::update() {
   cpu_.executeInstruction();
 }
 
-void console::Console::handleEvent(const SDL_Event& event) {
+void console::Console::handleEvent(const SDL_Event& /*event*/) {
   // TODO: Joysticks
 }

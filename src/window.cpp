@@ -21,7 +21,7 @@ int window::Window::init() {
                              WINDOW_WIDTH,             // Width, in pixels
                              WINDOW_HEIGHT,            // Height, in pixels
                              SDL_WINDOW_SHOWN);        // Flags
-  screen_ = SDL_GetWindowSurface(window_);
+  screen_ = SDL_GetWindowSurface(window_);             // TODO: Use separate surface to ensure correct pixel format
 
   return 0;
 }

@@ -43,7 +43,7 @@ struct Header {
 struct Rom {
   Header header;
   uint8_t (*expansion)[0x2000];
-  uint8_t(*trainer);
+  uint8_t* trainer;
   uint8_t (*prg)[16 * 1024];
   uint8_t (*chr)[8 * 1024];
 };
