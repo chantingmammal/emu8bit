@@ -9,6 +9,8 @@ namespace joystick {
 
 class Joystick {
 public:
+  Joystick(uint8_t port);
+
   void    write(uint8_t data);
   uint8_t read();
 

@@ -29,8 +29,8 @@ public:
 private:
   cpu::CPU           cpu_;
   ppu::PPU           ppu_;
-  joystick::Joystick joy_1_;
-  joystick::Joystick joy_2_;
+  joystick::Joystick joy_1_ = {1};
+  joystick::Joystick joy_2_ = {2};
 };
 
 }  // namespace console

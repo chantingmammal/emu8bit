@@ -3,6 +3,13 @@
 #include <SDL2/SDL_keyboard.h>
 
 
+joystick::Joystick::Joystick(uint8_t port) {
+  // Disconnect joystick 2
+  if (port == 2) {
+    register_.connected = 1;
+  }
+}
+
 void joystick::Joystick::write(uint8_t data) {
   static bool prev_strobe = false;
 
