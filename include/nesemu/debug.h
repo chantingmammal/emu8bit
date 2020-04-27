@@ -54,7 +54,7 @@ inline void dump_patterns(uint8_t* data) {
       const uint8_t high = data[tile * 16 + row + 8];
       for (int col = 7; col >= 0; col--) {
 
-        const uint8_t a = ((low >> col) & 1) | ((high >> (col - 1)) & 1);
+        const uint8_t a = ((low >> col) & 1) | (((high >> col) << 1) & 2);
         switch (a) {
           case 0:
             std::cout << ".";
@@ -92,7 +92,7 @@ inline void print_bg(uint8_t* nt, uint8_t* pt) {
         const uint8_t  low  = pt[p * 16 + fine_y];
         const uint8_t  high = pt[p * 16 + fine_y + 8];
         for (int fine_x = 7; fine_x >= 0; fine_x--) {
-          std::cout << (((low >> fine_x) & 1) | ((high >> (fine_x - 1)) & 2));
+          std::cout << (((low >> fine_x) & 1) | (((high >> fine_x) << 1) & 2));
         }
         std::cout << " ";
       }
