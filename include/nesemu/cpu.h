@@ -89,7 +89,7 @@ enum class AddressingMode : int8_t {
   relative    = 0x00,
   zero_page   = -0x04,
   zero_page_x = 0x0C,
-  zero_page_y = 0x0D,  // Dummy
+  zero_page_y = 0x0D,  // Incorrect val, should be 0x0C
   absolute    = 0x04,
   absolute_x  = 0x14,
   absolute_y  = 0x10,
@@ -126,25 +126,24 @@ public:
   void reset(bool active);
   void IRQ(bool active);
 
-
 private:
   // Registers
-  uint16_t PC = {0};       // Program counter
-  uint8_t  SP = {0};       // Stack pointer, as an offset from 0x0100. Top down (Empty=0xFF).
-  uint8_t  A  = {0};       // Accumulator Register
-  uint8_t  X  = {0};       // Index Register X
-  uint8_t  Y  = {0};       // Index Register Y
-  union {                  // Processor Status Register
-    uint8_t          raw;  //
-    utils::RegBit<0> c;    //  - Carry
-    utils::RegBit<1> z;    //  - Zero
-    utils::RegBit<2> i;    //  - Interrupt Disable
-    utils::RegBit<3> d;    //  - Decimal Mode (Ignored by the 2A03)
-    utils::RegBit<4> b;    //  - Break
-                           //  - Reserved
-    utils::RegBit<6> v;    //  - Overflow
-    utils::RegBit<7> n;    //  - Negative
-  } P = {0};               //
+  uint16_t PC = {0};          // Program counter
+  uint8_t  SP = {0};          // Stack pointer, as an offset from 0x0100. Top down (Empty=0xFF).
+  uint8_t  A  = {0};          // Accumulator Register
+  uint8_t  X  = {0};          // Index Register X
+  uint8_t  Y  = {0};          // Index Register Y
+  union {                     // Processor Status Register
+    uint8_t             raw;  //
+    utils::RegBit<0>    c;    //  - Carry
+    utils::RegBit<1>    z;    //  - Zero
+    utils::RegBit<2>    i;    //  - Interrupt Disable
+    utils::RegBit<3>    d;    //  - Decimal Mode (Ignored by the 2A03)
+    utils::RegBit<4, 2> b;    //  - B flag, used in push/pop
+                              //  - Reserved
+    utils::RegBit<6> v;       //  - Overflow
+    utils::RegBit<7> n;       //  - Negative
+  } P = {0};                  //
 
 
   // Interrupt Requests

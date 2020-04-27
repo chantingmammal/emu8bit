@@ -176,6 +176,7 @@ void cpu::CPU::executeInstruction() {
     // Break
     case (asInt(Instruction::BRK) + asInt(AddressingMode::implied)):
       IRQ(true);
+      P.b = 0b11;
       break;
 
 
@@ -550,7 +551,7 @@ void cpu::CPU::executeInstruction() {
 
     // Return from interrupt
     case (asInt(Instruction::RTI) + asInt(AddressingMode::implied)): {
-      P.raw = pop();
+      P.raw = pop() & 0xCF;
       PC    = pop16();
     } break;
 
@@ -572,11 +573,11 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::SBC) + asInt(AddressingMode::indirect_x)):
     case (asInt(Instruction::SBC) + asInt(AddressingMode::indirect_y)): {
       const uint8_t  arg      = readByte(getArgAddr(opcode - asInt(Instruction::SBC), true));
-      const uint16_t res_long = A + (~arg + 1) + (~P.c + 1);
+      const uint16_t res_long = A + ~arg + P.c;
       const uint8_t  result   = res_long;
       P.c                     = !((res_long >> 8) & 0x01);
       P.z                     = (result == 0);
-      P.v                     = (A >> 7 == arg >> 7) && (A >> 7 != result >> 7);
+      P.v                     = (A >> 7 != arg >> 7) && (A >> 7 != result >> 7);
       P.n                     = (result >> 7);
       A                       = result;
     } break;
@@ -603,7 +604,9 @@ void cpu::CPU::executeInstruction() {
       break;
     case (asInt(Instruction::TSX) + asInt(AddressingMode::implied)):
       tick();
-      X = SP;
+      X   = SP;
+      P.z = (X == 0);
+      P.n = (X >> 7);
       break;
     case (asInt(Instruction::PHA) + asInt(AddressingMode::implied)):
       tick(2);
@@ -611,24 +614,33 @@ void cpu::CPU::executeInstruction() {
       break;
     case (asInt(Instruction::PLA) + asInt(AddressingMode::implied)):
       tick(3);
-      A = pop();
+      A   = pop();
+      P.z = (A == 0);
+      P.n = (A >> 7);
       break;
     case (asInt(Instruction::PHP) + asInt(AddressingMode::implied)):
       tick(2);
+      P.b = 0b11;
       push(P.raw);
       break;
     case (asInt(Instruction::PLP) + asInt(AddressingMode::implied)):
       tick(3);
-      P.raw = pop();
+      P.raw = pop() & 0xCF;
       break;
 
 
     // Store X register
     case (asInt(Instruction::STX) + asInt(AddressingMode::zero_page)):
-    case (asInt(Instruction::STX) + asInt(AddressingMode::zero_page_y)):
+    case (asInt(Instruction::STX) + asInt(AddressingMode::zero_page_x)):  // Should be zero_page_y
     case (asInt(Instruction::STX) + asInt(AddressingMode::absolute)): {
       tick();
-      writeByte(getArgAddr(opcode - asInt(Instruction::STX)), X);
+      uint16_t addr;
+      if (opcode == asInt(Instruction::STX) + asInt(AddressingMode::zero_page_x)) {
+        addr = getArgAddr(AddressingMode::zero_page_y);
+      } else {
+        addr = getArgAddr(opcode - asInt(Instruction::STX));
+      }
+      writeByte(addr, X);
     } break;
 
 
@@ -659,6 +671,8 @@ void cpu::CPU::executeInstruction() {
 
 void cpu::CPU::NMI() {
   irq_nmi_ = true;
+  P.b      = 0b10;
+  P.i      = false;  // TODO: Check timing
 }
 
 void cpu::CPU::reset(bool active) {
@@ -667,6 +681,8 @@ void cpu::CPU::reset(bool active) {
 
 void cpu::CPU::IRQ(bool active) {
   irq_irq_ = active;
+  P.b      = 0b10;
+  P.i      = false;  // TODO: Check timing
 }
 
 
@@ -845,11 +861,11 @@ void cpu::CPU::branch(bool condition) {
   const int8_t offset = utils::deComplement(readByte(getArgAddr(AddressingMode::relative)));
   if (condition) {
     tick();
-    const uint8_t src_page = PC / 8;
+    const uint8_t src_page = PC >> 8;
     PC += offset;
 
     // Extra tick if page boundary crossed
-    if (src_page != PC / 8) {
+    if (src_page != (PC >> 8)) {
       tick();
     }
   }
@@ -884,7 +900,7 @@ uint16_t cpu::CPU::getArgAddr(AddressingMode mode, bool check_page_boundary) {
       const uint16_t addr = readByte(PC++);
 
       // If low byte + X carries, take an extra tick to correct the high byte
-      if (check_page_boundary && (addr / 8 != (addr + X) / 8)) {
+      if (check_page_boundary && ((addr >> 8) != ((addr + X) >> 8))) {
         tick();
       }
       return (addr | (readByte(PC++) << 8)) + X;
@@ -894,7 +910,7 @@ uint16_t cpu::CPU::getArgAddr(AddressingMode mode, bool check_page_boundary) {
       const uint16_t addr = readByte(PC++);
 
       // If low byte + Y carries, take an extra tick to correct the high byte
-      if (check_page_boundary && (addr / 8 != (addr + Y) / 8)) {
+      if (check_page_boundary && ((addr >> 8) != ((addr + Y) >> 8))) {
         tick();
       }
       return (addr | (readByte(PC++) << 8)) + Y;
@@ -916,7 +932,7 @@ uint16_t cpu::CPU::getArgAddr(AddressingMode mode, bool check_page_boundary) {
       const uint8_t addr = readByte(PC++);
 
       // If low byte + Y carries, take an extra tick to correct the high byte
-      if (check_page_boundary && (addr / 8 != (addr + Y) / 8)) {
+      if (check_page_boundary && ((addr >> 8) != ((addr + Y) >> 8))) {
         tick();
       }
       return (readByte(addr) | (readByte((addr + 1) & 0xFF) << 8)) + Y;
