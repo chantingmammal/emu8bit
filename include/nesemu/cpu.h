@@ -114,6 +114,9 @@ public:
   void setPPUReadRegisterPtr(std::function<uint8_t(uint16_t)> func);
   void setPPUWriteRegisterPtr(std::function<void(uint16_t, uint8_t)> func);
   void setPPUSpriteDMAPtr(std::function<void(uint8_t*)> func);
+  void setJoyPollPtr(std::function<void(uint8_t)> func);
+  void setJoy1ReadPtr(std::function<uint8_t(void)> func);
+  void setJoy2ReadPtr(std::function<uint8_t(void)> func);
   void setClockTickPtr(std::function<void(void)> func);
 
 
@@ -161,6 +164,9 @@ private:
   std::function<uint8_t(uint16_t)>       ppu_read_register_;
   std::function<void(uint16_t, uint8_t)> ppu_write_register_;
   std::function<void(uint8_t*)>          ppu_sprite_dma_;
+  std::function<void(uint8_t)>           joystick_poll_;
+  std::function<uint8_t(void)>           joystick_1_read_;
+  std::function<uint8_t(void)>           joystick_2_read_;
 
 
 // Internal operations

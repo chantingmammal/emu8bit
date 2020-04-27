@@ -12,6 +12,9 @@ console::Console::Console() {
   cpu_.setPPUReadRegisterPtr(std::bind(&ppu::PPU::readRegister, &ppu_, _1));
   cpu_.setPPUWriteRegisterPtr(std::bind(&ppu::PPU::writeRegister, &ppu_, _1, _2));
   cpu_.setPPUSpriteDMAPtr(std::bind(&ppu::PPU::spriteDMAWrite, &ppu_, _1));
+  cpu_.setJoyPollPtr(std::bind(&console::Console::updateJoysticks, this, _1));
+  cpu_.setJoy1ReadPtr(std::bind(&joystick::Joystick::read, &joy_1_));
+  cpu_.setJoy2ReadPtr(std::bind(&joystick::Joystick::read, &joy_2_));
   cpu_.setClockTickPtr(std::bind(&console::Console::clockTick, this));
 
   ppu_.setTriggerVBlankPtr(std::bind(&cpu::CPU::NMI, &cpu_));
@@ -59,4 +62,9 @@ void console::Console::update() {
 
 void console::Console::handleEvent(const SDL_Event& /*event*/) {
   // TODO: Joysticks
+}
+
+void console::Console::updateJoysticks(uint8_t data) {
+  joy_1_.write(data);
+  joy_2_.write(data);
 }

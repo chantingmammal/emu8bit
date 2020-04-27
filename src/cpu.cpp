@@ -24,6 +24,18 @@ void cpu::CPU::setPPUSpriteDMAPtr(std::function<void(uint8_t*)> func) {
   ppu_sprite_dma_ = func;
 }
 
+void cpu::CPU::setJoyPollPtr(std::function<void(uint8_t)> func) {
+  joystick_poll_ = func;
+}
+
+void cpu::CPU::setJoy1ReadPtr(std::function<uint8_t(void)> func) {
+  joystick_1_read_ = func;
+}
+
+void cpu::CPU::setJoy2ReadPtr(std::function<uint8_t(void)> func) {
+  joystick_2_read_ = func;
+}
+
 void cpu::CPU::setClockTickPtr(std::function<void(void)> func) {
   tick_ = func;
 }
@@ -672,38 +684,49 @@ uint8_t cpu::CPU::readByteInternal(uint16_t address) {
   tick();
   address &= 0xFFFF;
 
-  if (address < 0x2000)  // Stack and RAM
+  if (address < 0x2000) {  // Stack and RAM
     return ram_[address & 0x07FF];
+  }
 
-  else if (address < 0x4000)  // PPU Registers
+  else if (address < 0x4000) {  // PPU Registers
     return ppu_read_register_((address & 0x0007) | 0x2000);
+  }
 
-  else if (address < 0x4014)  // Sound Registers
-    return 0;                 // TODO
+  else if (address < 0x4014) {  // Sound Registers
+    return 0;                   // TODO
+  }
 
-  else if (address == 0x4014)  // PPU DMA Access
-    return 0;                  // Cannot read DMA register
+  else if (address == 0x4014) {  // PPU DMA Access
+    return 0;                    // Cannot read DMA register
+  }
 
-  else if (address == 0x4015)  // Sound Channel Switch
-    return 0;                  // Cannot read sound channel register
+  else if (address == 0x4015) {  // Sound Channel Switch
+    return 0;                    // Cannot read sound channel register
+  }
 
-  else if (address == 0x4016)  // Joystick 1
-    return 0;                  // TODO
+  else if (address == 0x4016) {  // Joystick 1
+    return joystick_1_read_();
+  }
 
-  else if (address == 0x4017)  // Joystick 2
-    return 0;                  // TODO
+  else if (address == 0x4017) {  // Joystick 2
+    return joystick_2_read_();
+  }
 
-  else if (address == 0x4020)  // Unused
+  else if (address == 0x4020) {  // Unused
     return 0;
+  }
 
-  else if (address < 0x6000)  // Expansion Modules, ie. Famicom Disk System
+  else if (address < 0x6000) {  // Expansion Modules, ie. Famicom Disk System
     return 0;
+  }
 
-  else if (address < 0x8000 && expansion_ram_)  // Cartridge RAM
+  else if (address < 0x8000 && expansion_ram_) {  // Cartridge RAM
     return expansion_ram_[address - 0x6000];
+  }
 
-  else  // Cartridge ROM
+  else {  // Cartridge ROM
     return prg_rom_[(address - 0x8000) & (prg_banks_ == 2 ? 0x7FFF : 0x3FFF)];
+  }
 }
 
 void cpu::CPU::writeByte(uint16_t address, uint8_t data) {
@@ -745,11 +768,11 @@ void cpu::CPU::writeByte(uint16_t address, uint8_t data) {
     ;                            // TODO
   }
 
-  else if (address == 0x4016) {  // Joystick 1
-    ;                            // TODO
+  else if (address == 0x4016) {  // Joystick Strobe
+    joystick_poll_(data);
   }
 
-  else if (address == 0x4017) {  // Joystick 2
+  else if (address == 0x4017) {  // APU frame counter
     ;                            // TODO
   }
 

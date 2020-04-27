@@ -24,6 +24,7 @@ public:
   void clockTick();
   void update();
   void handleEvent(const SDL_Event& event);
+  void updateJoysticks(uint8_t data);
 
 private:
   cpu::CPU           cpu_;
