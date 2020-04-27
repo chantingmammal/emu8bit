@@ -4,7 +4,7 @@ project(nesemu)
 # Set C++ version
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 option(DEBUG "Enable DEBUG mode" OFF)
 if (DEBUG)
@@ -35,6 +35,9 @@ add_executable(${PROJECT_NAME}
 )
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
+target_compile_options(${PROJECT_NAME} PRIVATE "$<$<CONFIG:DEBUG>:-g>")
+target_compile_options(${PROJECT_NAME} PRIVATE "$<$<CONFIG:RELEASE>:-O3>")
+
 
 #############
 ## Install ##
