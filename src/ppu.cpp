@@ -65,6 +65,7 @@ void ppu::PPU::tick() {
   // =*=*=*=*= Pre-render scanline =*=*=*=*=
   else {
     if (cycle_ == 1) {
+      status_reg_.hit    = false;
       status_reg_.vblank = false;
     }
 
@@ -110,8 +111,7 @@ uint8_t ppu::PPU::readRegister(uint16_t cpu_address) {
       return 0;
 
     case (0x2004):  // Sprite Memory Data
-      sprite_mem_addr_++;
-      return spr_ram_[sprite_mem_addr_];
+      return primary_oam_.byte[oam_addr_];
 
     case (0x2005):  // Screen Scroll Offsets (Write-only)
       return 0;
@@ -120,8 +120,17 @@ uint8_t ppu::PPU::readRegister(uint16_t cpu_address) {
       return 0;
 
     case (0x2007): {  // PPU Memory Data
-      const uint8_t value = readByte(v_.raw);
-      if ((scanline_ == 261 || scanline_ < 256) && ctrl_reg_2_.render_enable) {
+      static uint8_t read_buffer;
+      uint8_t        value;
+      if (v_.raw < 0x3F00) {
+        value       = read_buffer;
+        read_buffer = readByte(v_.raw);
+      } else {
+        value       = readByte(v_.raw);
+        read_buffer = value;
+      }
+
+      if ((scanline_ == 261 || scanline_ < 240) && ctrl_reg_2_.render_enable) {
         incrementCoarseX();
         incrementFineY();
       } else {
@@ -150,12 +159,12 @@ void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
       break;
 
     case (0x2003):  // Sprite Memory Address
-      sprite_mem_addr_ = data;
+      oam_addr_ = data;
       break;
 
     case (0x2004):  // Sprite Memory Data
-      sprite_mem_addr_++;
-      spr_ram_[sprite_mem_addr_] = data;
+      primary_oam_.byte[oam_addr_] = data;
+      oam_addr_++;
       break;
 
     case (0x2005):  // Screen Scroll Offsets
@@ -181,7 +190,7 @@ void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
 
     case (0x2007):  // PPU Memory Data
       writeByte(v_.raw, data);
-      if ((scanline_ == 261 || scanline_ < 256) && ctrl_reg_2_.render_enable) {
+      if ((scanline_ == 261 || scanline_ < 240) && ctrl_reg_2_.render_enable) {
         incrementCoarseX();
         incrementFineY();
       } else {
@@ -195,7 +204,7 @@ void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
 }
 
 void ppu::PPU::spriteDMAWrite(uint8_t* data) {
-  memcpy(spr_ram_, data, 256);
+  memcpy(primary_oam_.byte, data, 256);
 }
 
 
@@ -296,21 +305,36 @@ void ppu::PPU::writeByte(uint16_t address, uint8_t data) {
 
 void ppu::PPU::renderPixel() {
 
-  // Debugging dumps:
-  // dump_nt(ram_);
-  // dump_patterns(chr_mem_ + (ctrl_reg_1_.screen_pattern_table_addr << 12));
-  // print_bg(ram_, chr_mem_ + (ctrl_reg_1_.screen_pattern_table_addr << 12));
-  // dump(ram_ + 0x1F00, 16);
-
-
   // TODO: Image mask and sprite mask
 
   uint32_t* pixel = pixels_ + (scanline_ * 256) + cycle_;
 
-  uint8_t bg_pixel = ((pattern_sr_a_ >> (15 - fine_x_scroll_)) & 0x01)
-                     | ((pattern_sr_b_ >> (14 - fine_x_scroll_)) & 0x02);
-  const uint8_t sprite_pixel    = 0;
-  const uint8_t sprite_priority = 0;
+  const uint8_t bg_pixel = ((pattern_sr_a_ >> (15 - fine_x_scroll_)) & 0x01)
+                           | (((pattern_sr_b_ >> (15 - fine_x_scroll_)) << 1) & 0x02);
+  const uint8_t bg_palette = ((palette_sr_a_ >> (7 - fine_x_scroll_)) & 0x01)
+                             | (((palette_sr_b_ >> (7 - fine_x_scroll_)) << 1) & 0x02);
+
+  uint8_t sprite_pixel    = 0;
+  uint8_t sprite_palette  = 0;
+  uint8_t sprite_priority = 0;
+  for (unsigned i = 0; i < 8; i++) {
+    if (sprite_x_position_[i] == 0 && sprite_pixel == 0) {
+      if (sprite_palette_latch_[i].flip_horiz) {
+        sprite_pixel = (sprite_pattern_sr_a_[i] & 0x01) | ((sprite_pattern_sr_b_[i] << 1) & 0x02);
+        sprite_pattern_sr_a_[i] >>= 1;
+        sprite_pattern_sr_b_[i] >>= 1;
+      } else {
+        sprite_pixel = ((sprite_pattern_sr_a_[i] >> 7) & 0x01) | ((sprite_pattern_sr_b_[i] >> 6) & 0x02);
+        sprite_pattern_sr_a_[i] <<= 1;
+        sprite_pattern_sr_b_[i] <<= 1;
+      }
+
+      sprite_palette  = sprite_palette_latch_[i].palette;
+      sprite_priority = sprite_palette_latch_[i].priority;
+    } else {
+      sprite_x_position_[i]--;
+    }
+  }
 
   uint8_t palette_addr;
   // 43210
@@ -324,11 +348,9 @@ void ppu::PPU::renderPixel() {
   if (bg_pixel == 0 && sprite_pixel == 0) {
     palette_addr = 0;
   } else if (sprite_pixel == 0 || sprite_priority == 1) {
-    const uint8_t bg_palette = ((palette_sr_a_ >> (7 - fine_x_scroll_)) & 0x01)
-                               | ((palette_sr_b_ >> (6 - fine_x_scroll_)) & 0x02);
     palette_addr = bg_pixel | (bg_palette << 2);
   } else {
-    palette_addr = 0;  // TODO
+    palette_addr = sprite_pixel | (sprite_palette << 2) | 0x10;
   }
 
 
@@ -348,22 +370,53 @@ void ppu::PPU::renderPixel() {
 
 void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
 
-  // Cycles 1-256: Fetch background tiles
-  if (0 < cycle_ && cycle_ < 257) {
+  // Cycle 0: Idle
+  if (cycle_ < 1) {
+  }
+
+  // Cycles 1-64: Background: Fetch tiles
+  //              Sprite:     Clear secondary OAM
+  else if (cycle_ < 65) {
     if ((cycle_ % 8) == 0) {
       fetchNextBGTile();
+    }
+
+    primary_oam_counter_            = 0;
+    secondary_oam_counter_          = 0;
+    secondary_oam_.byte[cycle_ - 1] = 0xFF;  // TODO
+  }
+
+
+  // Cycles 65-256: Background: Fetch tiles
+  //                Sprite:     Sprite evaluation
+  else if (cycle_ < 257) {
+    if ((cycle_ % 8) == 0) {
+      fetchNextBGTile();
+    }
+
+    if ((cycle_ % 2) == 0) {
+      if (primary_oam_counter_ < 64 && secondary_oam_counter_ < 8
+          && primary_oam_.sprite[primary_oam_counter_].y_position <= scanline_
+          && (primary_oam_.sprite[primary_oam_counter_].y_position + 8) > scanline_) {
+        secondary_oam_.sprite[secondary_oam_counter_++] = primary_oam_.sprite[primary_oam_counter_];
+      }
+      primary_oam_counter_++;
+      // TODO: Incomplete
     }
   }
 
   // Cycles 257-320: Fetch sprites for the next scanline
   else if (cycle_ < 321) {
-    if (cycle_ == 257 && ctrl_reg_2_.render_enable) {
-      v_.coarse_x_scroll  = t_.coarse_x_scroll;
-      v_.nametable_select = (t_.nametable_select & 0x01) | (v_.nametable_select & 0x02);
+    if (cycle_ == 257) {
+      if (ctrl_reg_2_.render_enable) {
+        v_.coarse_x_scroll  = t_.coarse_x_scroll;
+        v_.nametable_select = (t_.nametable_select & 0x01) | (v_.nametable_select & 0x02);
+      }
+      secondary_oam_counter_ = 0;
     }
 
-    if (fetch_sprites) {
-      // TODO
+    if (fetch_sprites && (cycle_ % 8) == 0) {
+      fetchNextSprite();
     }
   }
 
@@ -427,6 +480,26 @@ void ppu::PPU::fetchNextBGTile() {
   if (cycle_ == 256) {
     incrementFineY();
   }
+}
+
+void ppu::PPU::fetchNextSprite() {
+  const Sprite& sprite = secondary_oam_.sprite[secondary_oam_counter_];
+  uint16_t      pattern_addr;
+
+  if (ctrl_reg_1_.sprite_size == 0) {                             // Small (8x8) sprites
+    pattern_addr = sprite.small_tile_index << 4                   // Base tile address
+                   | ctrl_reg_1_.sprite_pattern_table_addr << 12  // Pattern table
+                   | (scanline_ - sprite.y_position);             // Y slice
+
+  } else {             // Large (8x16) sprites
+    pattern_addr = 0;  // TODO
+  }
+
+  sprite_pattern_sr_a_[secondary_oam_counter_]      = readByte(pattern_addr);
+  sprite_pattern_sr_b_[secondary_oam_counter_]      = readByte(pattern_addr | 8);
+  sprite_palette_latch_[secondary_oam_counter_].raw = sprite.attributes.raw;
+  sprite_x_position_[secondary_oam_counter_]        = sprite.x_position;
+  secondary_oam_counter_++;
 }
 
 void ppu::PPU::incrementCoarseX() {

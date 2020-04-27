@@ -41,7 +41,7 @@ struct RegBit {
     data &= ((val << bit_pos) & mask);
     return *this;
   }
-};
+} __attribute__((__packed__));
 
 
 // Enum utilities
