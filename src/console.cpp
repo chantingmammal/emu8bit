@@ -60,8 +60,11 @@ void console::Console::update() {
   cpu_.executeInstruction();
 }
 
-void console::Console::handleEvent(const SDL_Event& /*event*/) {
-  // TODO: Joysticks
+void console::Console::handleEvent(const SDL_Event& event) {
+  if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_r)
+    cpu_.reset(true);
+  if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_r)
+    cpu_.reset(false);
 }
 
 void console::Console::updateJoysticks(uint8_t data) {
