@@ -17,15 +17,20 @@ void printUsage() {
 int main(int argc, char* argv[]) {
   int         opt = 0;
   std::string filename;
+  int         scale = 1;
 
   static struct option long_options[] = {{"file", required_argument, nullptr, 'f'},
+                                         {"scale", required_argument, nullptr, 's'},
                                          {"help", no_argument, nullptr, 'h'},
                                          {0, 0, 0, 0}};
 
-  while ((opt = getopt_long(argc, argv, "f:h", long_options, nullptr)) != -1) {
+  while ((opt = getopt_long(argc, argv, "f:s:h", long_options, nullptr)) != -1) {
     switch (opt) {
       case 'f':  // -f or --file
         filename = std::string(optarg);
+        break;
+      case 's':  // -s or --scale
+        scale = std::atoi(optarg);
         break;
       case 'h':  // -h or --help
       case '?':  // Unrecognized option
@@ -47,7 +52,7 @@ int main(int argc, char* argv[]) {
     return 1;
 
   window::Window window;
-  if (window.init())
+  if (window.init(scale))
     return 1;
 
   console::Console console;
