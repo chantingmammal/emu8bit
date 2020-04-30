@@ -71,7 +71,6 @@ private:
 
 
   // Background registers
-  Sprite              s;
   PPUReg              t_               = {0};
   PPUReg              v_               = {0};
   utils::RegBit<0, 3> fine_x_scroll_   = {0};    // X offset of the scanline within a tile
@@ -92,13 +91,14 @@ private:
   union {
     uint8_t byte[0x40];
     Sprite  sprite[0x08];
-  } secondary_oam_                          = {0};  // 64 byte/8 sprite ram, for current scanline
-  uint8_t          primary_oam_counter_     = {0};  // Position within primary OAM (0-64)
-  uint8_t          secondary_oam_counter_   = {0};  // Position within secondary OAM (0-8)
-  uint8_t          sprite_pattern_sr_a_[8]  = {0};  // Lower byte of pattern, controls bit 0 of the color
-  uint8_t          sprite_pattern_sr_b_[8]  = {0};  // Upper byte of pattern, controls bit 1 of the color
-  SpriteAttributes sprite_palette_latch_[8] = {0};  //
-  uint8_t          sprite_x_position_[8]    = {0};  //
+  } secondary_oam_                          = {0};      // 64 byte/8 sprite ram, for current scanline
+  uint8_t          primary_oam_counter_     = {0};      // Position within primary OAM (0-64)
+  uint8_t          secondary_oam_counter_   = {0};      // Position within secondary OAM (0-8)
+  bool             has_sprite_zero          = {false};  // Whether the secondary OAM contains sprite 0
+  uint8_t          sprite_pattern_sr_a_[8]  = {0};      // Lower byte of pattern, controls bit 0 of the color
+  uint8_t          sprite_pattern_sr_b_[8]  = {0};      // Upper byte of pattern, controls bit 1 of the color
+  SpriteAttributes sprite_palette_latch_[8] = {0};      //
+  uint8_t          sprite_x_position_[8]    = {0};      //
 
 
   // Memory-mapped IO Registers

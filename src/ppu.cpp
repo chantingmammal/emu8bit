@@ -329,6 +329,14 @@ void ppu::PPU::renderPixel() {
         sprite_pattern_sr_b_[i] <<= 1;
       }
 
+      // Sprite zero hit
+      if (i == 0 && has_sprite_zero                                   // Sprite is #0
+          && ctrl_reg_2_.screen_enable && ctrl_reg_2_.sprites_enable  // Both BG and sprites are being rendered
+          && ((ctrl_reg_2_.image_mask && ctrl_reg_2_.sprite_mask) || (cycle_ > 7))  // Left-side clipping
+          && bg_pixel != 0 && sprite_pixel != 0) {  // Both BG and sprite are non-transparent
+        status_reg_.hit = true;
+      }
+
       sprite_palette  = sprite_palette_latch_[i].palette;
       sprite_priority = sprite_palette_latch_[i].priority;
     } else {
@@ -383,6 +391,7 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
 
     primary_oam_counter_            = 0;
     secondary_oam_counter_          = 0;
+    has_sprite_zero                 = false;
     secondary_oam_.byte[cycle_ - 1] = 0xFF;  // TODO
   }
 
@@ -399,6 +408,9 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
           && primary_oam_.sprite[primary_oam_counter_].y_position <= scanline_
           && (primary_oam_.sprite[primary_oam_counter_].y_position + 8) > scanline_) {
         secondary_oam_.sprite[secondary_oam_counter_++] = primary_oam_.sprite[primary_oam_counter_];
+        if (primary_oam_counter_ == 0) {
+          has_sprite_zero = true;
+        }
       }
       primary_oam_counter_++;
       // TODO: Incomplete
