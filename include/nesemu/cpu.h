@@ -7,6 +7,20 @@
 #include <type_traits>
 
 
+// Forward declarations
+namespace apu {
+class APU;
+}
+
+namespace ppu {
+class PPU;
+}
+
+namespace joystick {
+class Joystick;
+}
+
+
 // Ricoh RP2A03 (based on MOS6502)
 // Little endian
 namespace cpu {
@@ -110,14 +124,8 @@ enum class AddressingMode : int8_t {
 class CPU {
 public:
   // Setup
+  void connectChips(apu::APU* apu, ppu::PPU* ppu, joystick::Joystick* joy1, joystick::Joystick* joy2);
   void loadCart(uint8_t* prg_rom, uint8_t prg_banks, uint8_t* expansion_ram);
-  void setPPUReadRegisterPtr(std::function<uint8_t(uint16_t)> func);
-  void setPPUWriteRegisterPtr(std::function<void(uint16_t, uint8_t)> func);
-  void setPPUSpriteDMAPtr(std::function<void(uint8_t*)> func);
-  void setJoyPollPtr(std::function<void(uint8_t)> func);
-  void setJoy1ReadPtr(std::function<uint8_t(void)> func);
-  void setJoy2ReadPtr(std::function<uint8_t(void)> func);
-  void setClockTickPtr(std::function<void(void)> func);
 
 
   // Execution
@@ -127,6 +135,13 @@ public:
   void IRQ(bool active);
 
 private:
+  // Other chips
+  apu::APU*           apu_  = {nullptr};
+  ppu::PPU*           ppu_  = {nullptr};
+  joystick::Joystick* joy1_ = {nullptr};
+  joystick::Joystick* joy2_ = {nullptr};
+
+
   // Registers
   uint16_t PC = {0};          // Program counter
   uint8_t  SP = {0};          // Stack pointer, as an offset from 0x0100. Top down (Empty=0xFF).
@@ -159,15 +174,6 @@ private:
   uint8_t* expansion_ram_ = {nullptr};  // Optional cartridge RAM,     at address 0x7000-0x7FFF
 
 
-  // Memory-mapped IO (0x2000-0x4000, mirrored, and 0x4000-0x4020)
-  std::function<uint8_t(uint16_t)>       ppu_read_register_;
-  std::function<void(uint16_t, uint8_t)> ppu_write_register_;
-  std::function<void(uint8_t*)>          ppu_sprite_dma_;
-  std::function<void(uint8_t)>           joystick_poll_;
-  std::function<uint8_t(void)>           joystick_1_read_;
-  std::function<uint8_t(void)>           joystick_2_read_;
-
-
 // Internal operations
 #if DEBUG
   uint8_t readByteInternal(uint16_t address);
@@ -184,10 +190,6 @@ private:
   inline void     branch(bool condition);            // 1 cycle
   inline uint16_t getArgAddr(std::underlying_type<AddressingMode>::type mode, bool check_page_boundary = false);
   inline uint16_t getArgAddr(AddressingMode mode, bool check_page_boundary = false);
-
-
-  // Hacky clock
-  std::function<void(void)> tick_;
 };
 
 }  // namespace cpu

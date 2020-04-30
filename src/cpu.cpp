@@ -1,4 +1,8 @@
 #include <nesemu/cpu.h>
+
+#include <nesemu/apu.h>
+#include <nesemu/joystick.h>
+#include <nesemu/ppu.h>
 #include <nesemu/utils.h>
 
 #include <iostream>
@@ -6,38 +10,17 @@
 
 // =*=*=*=*= CPU Setup =*=*=*=*=
 
+void cpu::CPU::connectChips(apu::APU* apu, ppu::PPU* ppu, joystick::Joystick* joy1, joystick::Joystick* joy2) {
+  apu_  = apu;
+  ppu_  = ppu;
+  joy1_ = joy1;
+  joy2_ = joy2;
+}
+
 void cpu::CPU::loadCart(uint8_t* prg_rom, uint8_t prg_banks, uint8_t* expansion_ram) {
   prg_rom_       = prg_rom;
   prg_banks_     = prg_banks;
   expansion_ram_ = expansion_ram;
-}
-
-void cpu::CPU::setPPUReadRegisterPtr(std::function<uint8_t(uint16_t)> func) {
-  ppu_read_register_ = func;
-}
-
-void cpu::CPU::setPPUWriteRegisterPtr(std::function<void(uint16_t, uint8_t)> func) {
-  ppu_write_register_ = func;
-}
-
-void cpu::CPU::setPPUSpriteDMAPtr(std::function<void(uint8_t*)> func) {
-  ppu_sprite_dma_ = func;
-}
-
-void cpu::CPU::setJoyPollPtr(std::function<void(uint8_t)> func) {
-  joystick_poll_ = func;
-}
-
-void cpu::CPU::setJoy1ReadPtr(std::function<uint8_t(void)> func) {
-  joystick_1_read_ = func;
-}
-
-void cpu::CPU::setJoy2ReadPtr(std::function<uint8_t(void)> func) {
-  joystick_2_read_ = func;
-}
-
-void cpu::CPU::setClockTickPtr(std::function<void(void)> func) {
-  tick_ = func;
 }
 
 
@@ -705,7 +688,7 @@ uint8_t cpu::CPU::readByteInternal(uint16_t address) {
   }
 
   else if (address < 0x4000) {  // PPU Registers
-    return ppu_read_register_((address & 0x0007) | 0x2000);
+    return ppu_->readRegister((address & 0x0007) | 0x2000);
   }
 
   else if (address < 0x4014) {  // Sound Registers
@@ -721,11 +704,11 @@ uint8_t cpu::CPU::readByteInternal(uint16_t address) {
   }
 
   else if (address == 0x4016) {  // Joystick 1
-    return joystick_1_read_();
+    return joy1_->read();
   }
 
   else if (address == 0x4017) {  // Joystick 2
-    return joystick_2_read_();
+    return joy2_->read();
   }
 
   else if (address == 0x4020) {  // Unused
@@ -757,7 +740,7 @@ void cpu::CPU::writeByte(uint16_t address, uint8_t data) {
   }
 
   else if (address < 0x4000) {  // PPU Registers
-    ppu_write_register_((address & 0x0007) | 0x2000, data);
+    ppu_->writeRegister((address & 0x0007) | 0x2000, data);
   }
 
   else if (address < 0x4014) {  // Sound Registers
@@ -766,17 +749,17 @@ void cpu::CPU::writeByte(uint16_t address, uint8_t data) {
 
   else if (address == 0x4014) {  // PPU DMA Access
     if (data * 0x100 < 0x2000) {
-      ppu_sprite_dma_(ram_ + (data * 0x100));  // Internal RAM
+      ppu_->spriteDMAWrite(ram_ + (data * 0x100));  // Internal RAM
     } else if (data * 0x100 < 0x6000) {
       ;  // Cannot DMA from MMIO
     } else if (data * 0x100 < 0x8000) {
       if (expansion_ram_) {
-        ppu_sprite_dma_(expansion_ram_ + (data * 0x100) - 0x6000);
+        ppu_->spriteDMAWrite(expansion_ram_ + (data * 0x100) - 0x6000);
       } else {
         ;  // No cartridge RAM
       }
     } else {
-      ppu_sprite_dma_(prg_rom_ + (data * 0x100) - 0x8000);  // Cartridge ROM
+      ppu_->spriteDMAWrite(prg_rom_ + (data * 0x100) - 0x8000);  // Cartridge ROM
     }
   }
 
@@ -785,7 +768,8 @@ void cpu::CPU::writeByte(uint16_t address, uint8_t data) {
   }
 
   else if (address == 0x4016) {  // Joystick Strobe
-    joystick_poll_(data);
+    joy1_->write(data);
+    joy2_->write(data);
   }
 
   else if (address == 0x4017) {  // APU frame counter
@@ -840,7 +824,9 @@ uint16_t cpu::CPU::pop16() {
 
 void cpu::CPU::tick(int ticks) {
   for (; ticks > 0; ticks--) {
-    tick_();
+    ppu_->tick();
+    ppu_->tick();
+    ppu_->tick();
   }
 }
 

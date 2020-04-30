@@ -7,17 +7,8 @@
 // =*=*=*=*= Console Setup =*=*=*=*=
 
 console::Console::Console() {
-  using namespace std::placeholders;
-
-  cpu_.setPPUReadRegisterPtr(std::bind(&ppu::PPU::readRegister, &ppu_, _1));
-  cpu_.setPPUWriteRegisterPtr(std::bind(&ppu::PPU::writeRegister, &ppu_, _1, _2));
-  cpu_.setPPUSpriteDMAPtr(std::bind(&ppu::PPU::spriteDMAWrite, &ppu_, _1));
-  cpu_.setJoyPollPtr(std::bind(&console::Console::updateJoysticks, this, _1));
-  cpu_.setJoy1ReadPtr(std::bind(&joystick::Joystick::read, &joy_1_));
-  cpu_.setJoy2ReadPtr(std::bind(&joystick::Joystick::read, &joy_2_));
-  cpu_.setClockTickPtr(std::bind(&console::Console::clockTick, this));
-
-  ppu_.setTriggerVBlankPtr(std::bind(&cpu::CPU::NMI, &cpu_));
+  cpu_.connectChips(nullptr, &ppu_, &joy_1_, &joy_2_);
+  ppu_.connectChips(&cpu_);
 }
 
 void console::Console::loadCart(rom::Rom* rom) {
@@ -48,14 +39,6 @@ void console::Console::start() {
   cpu_.reset(false);
 }
 
-void console::Console::clockTick() {
-  ppu_.tick();
-  ppu_.tick();
-  ppu_.tick();
-
-  // cpu_.tick();
-}
-
 void console::Console::update() {
   cpu_.executeInstruction();
 }
@@ -65,9 +48,4 @@ void console::Console::handleEvent(const SDL_Event& event) {
     cpu_.reset(true);
   if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_r)
     cpu_.reset(false);
-}
-
-void console::Console::updateJoysticks(uint8_t data) {
-  joy_1_.write(data);
-  joy_2_.write(data);
 }

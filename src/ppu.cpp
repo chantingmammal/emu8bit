@@ -1,5 +1,7 @@
-#include <nesemu/debug.h>
 #include <nesemu/ppu.h>
+
+#include <nesemu/cpu.h>
+#include <nesemu/debug.h>
 #include <nesemu/temp_mapping.h>
 
 #include <cstring>  // For memcpy
@@ -7,6 +9,10 @@
 
 
 // =*=*=*=*= PPU Setup =*=*=*=*=
+
+void ppu::PPU::connectChips(cpu::CPU* cpu) {
+  cpu_ = cpu;
+}
 
 void ppu::PPU::loadCart(uint8_t* chr_mem, bool is_ram, Mirroring mirror) {
   chr_mem_        = chr_mem;
@@ -20,10 +26,6 @@ void ppu::PPU::setPixelPtr(void* pixels) {
 
 void ppu::PPU::setUpdateScreenPtr(std::function<void(void)> func) {
   update_screen_ = func;
-}
-
-void ppu::PPU::setTriggerVBlankPtr(std::function<void(void)> func) {
-  trigger_vblank_ = func;
 }
 
 
@@ -56,7 +58,7 @@ void ppu::PPU::tick() {
     if (scanline_ == 241 && cycle_ == 1) {
       status_reg_.vblank = true;
       if (ctrl_reg_1_.vblank_enable) {
-        trigger_vblank_();
+        cpu_->NMI();
       }
     }
   }

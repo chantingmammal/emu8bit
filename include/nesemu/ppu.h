@@ -7,6 +7,12 @@
 #include <functional>
 
 
+// Forward declarations
+namespace cpu {
+class CPU;
+}
+
+
 // Ricoh RP2A03 (based on MOS6502)
 // Little endian
 namespace ppu {
@@ -16,10 +22,10 @@ enum class Mirroring { none, vertical, horizontal };
 class PPU {
 public:
   // Setup
+  void connectChips(cpu::CPU* cpu);
   void loadCart(uint8_t* chr_mem, bool is_ram, Mirroring mirror);
   void setPixelPtr(void* pixels);
   void setUpdateScreenPtr(std::function<void(void)> func);
-  void setTriggerVBlankPtr(std::function<void(void)> func);
 
 
   // Execution
@@ -30,6 +36,9 @@ public:
 
 
 private:
+  // Other chips
+  cpu::CPU* cpu_ = {nullptr};
+
   // Registers
   union PPUReg {
     utils::RegBit<0, 15, uint16_t> raw;
@@ -144,7 +153,6 @@ private:
   uint16_t                  scanline_     = {0};        // 0 to 262
   uint16_t                  cycle_        = {1};        // 0 to 341
   bool                      frame_is_odd_ = true;
-  std::function<void(void)> trigger_vblank_;
   std::function<void(void)> update_screen_;
 
 
