@@ -3,36 +3,28 @@
 #include <SDL2/SDL_keyboard.h>
 
 
-joystick::Joystick::Joystick(uint8_t port) {
-  // Disconnect joystick 2
-  if (port == 2) {
-    register_.connected = 1;
-  }
-}
-
 void joystick::Joystick::write(uint8_t data) {
-  static bool prev_strobe = false;
 
-  if (prev_strobe && !(data & 0x01)) {
+  if (prev_strobe_ && !(data & 0x01)) {
     strobe_pos_ = 0;
 
-    // TODO: Handle stick 1 vs stick 2
+    // TODO: Controller 2 mapping
     const uint8_t* state = SDL_GetKeyboardState(nullptr);
-    state_.a             = state[SDL_SCANCODE_Z];
-    state_.b             = state[SDL_SCANCODE_X];
-    state_.select        = state[SDL_SCANCODE_SPACE];
-    state_.start         = state[SDL_SCANCODE_RETURN];
-    state_.up            = state[SDL_SCANCODE_UP];
-    state_.down          = state[SDL_SCANCODE_DOWN];
-    state_.left          = state[SDL_SCANCODE_LEFT];
-    state_.right         = state[SDL_SCANCODE_RIGHT];
+    state_.a             = (port_ == 1) ? state[SDL_SCANCODE_Z] : false;
+    state_.b             = (port_ == 1) ? state[SDL_SCANCODE_X] : false;
+    state_.select        = (port_ == 1) ? state[SDL_SCANCODE_SPACE] : false;
+    state_.start         = (port_ == 1) ? state[SDL_SCANCODE_RETURN] : false;
+    state_.up            = (port_ == 1) ? state[SDL_SCANCODE_UP] : false;
+    state_.down          = (port_ == 1) ? state[SDL_SCANCODE_DOWN] : false;
+    state_.left          = (port_ == 1) ? state[SDL_SCANCODE_LEFT] : false;
+    state_.right         = (port_ == 1) ? state[SDL_SCANCODE_RIGHT] : false;
   }
 
-  prev_strobe = (data & 0x01);
+  prev_strobe_ = (data & 0x01);
 }
 
 uint8_t joystick::Joystick::read() {
-  register_.data = (state_.raw >> strobe_pos_);
+  register_.standard = (strobe_pos_ < 8) ? (state_.raw >> strobe_pos_) : 1;
   strobe_pos_++;
   return register_.raw;
 }
