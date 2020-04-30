@@ -318,29 +318,38 @@ void ppu::PPU::renderPixel() {
   uint8_t sprite_palette  = 0;
   uint8_t sprite_priority = 0;
   for (unsigned i = 0; i < 8; i++) {
-    if (sprite_x_position_[i] == 0 && sprite_pixel == 0) {
+    if (sprite_x_position_[i] != 0) {
+      sprite_x_position_[i]--;
+    } else {
+      bool pixel_found = sprite_pixel != 0;
+
       if (sprite_palette_latch_[i].flip_horiz) {
-        sprite_pixel = (sprite_pattern_sr_a_[i] & 0x01) | ((sprite_pattern_sr_b_[i] << 1) & 0x02);
+        if (!pixel_found) {
+          sprite_pixel = (sprite_pattern_sr_a_[i] & 0x01) | ((sprite_pattern_sr_b_[i] << 1) & 0x02);
+        }
         sprite_pattern_sr_a_[i] >>= 1;
         sprite_pattern_sr_b_[i] >>= 1;
       } else {
-        sprite_pixel = ((sprite_pattern_sr_a_[i] >> 7) & 0x01) | ((sprite_pattern_sr_b_[i] >> 6) & 0x02);
+        if (!pixel_found) {
+          sprite_pixel = ((sprite_pattern_sr_a_[i] >> 7) & 0x01) | ((sprite_pattern_sr_b_[i] >> 6) & 0x02);
+        }
         sprite_pattern_sr_a_[i] <<= 1;
         sprite_pattern_sr_b_[i] <<= 1;
       }
 
       // Sprite zero hit
       if (i == 0 && has_sprite_zero                                   // Sprite is #0
+          && !status_reg_.hit                                         // Hasn't already hit
           && ctrl_reg_2_.screen_enable && ctrl_reg_2_.sprites_enable  // Both BG and sprites are being rendered
           && ((ctrl_reg_2_.image_mask && ctrl_reg_2_.sprite_mask) || (cycle_ > 7))  // Left-side clipping
           && bg_pixel != 0 && sprite_pixel != 0) {  // Both BG and sprite are non-transparent
         status_reg_.hit = true;
       }
 
-      sprite_palette  = sprite_palette_latch_[i].palette;
-      sprite_priority = sprite_palette_latch_[i].priority;
-    } else {
-      sprite_x_position_[i]--;
+      if (!pixel_found) {
+        sprite_palette  = sprite_palette_latch_[i].palette;
+        sprite_priority = sprite_palette_latch_[i].priority;
+      }
     }
   }
 
@@ -404,16 +413,19 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
     }
 
     if ((cycle_ % 2) == 0) {
-      if (primary_oam_counter_ < 64 && secondary_oam_counter_ < 8
-          && primary_oam_.sprite[primary_oam_counter_].y_position <= scanline_
-          && (primary_oam_.sprite[primary_oam_counter_].y_position + 8) > scanline_) {
-        secondary_oam_.sprite[secondary_oam_counter_++] = primary_oam_.sprite[primary_oam_counter_];
-        if (primary_oam_counter_ == 0) {
-          has_sprite_zero = true;
+      if (primary_oam_counter_ < 64 && secondary_oam_counter_ < 8) {
+        Sprite& sprite    = secondary_oam_.sprite[secondary_oam_counter_];
+        sprite.y_position = primary_oam_.sprite[primary_oam_counter_].y_position;
+
+        if (sprite.y_position <= scanline_ && (sprite.y_position + 8) > scanline_) {
+          secondary_oam_.sprite[secondary_oam_counter_++] = primary_oam_.sprite[primary_oam_counter_];
+          if (primary_oam_counter_ == 0) {
+            has_sprite_zero = true;
+          }
         }
+        primary_oam_counter_++;
+        // TODO: Incomplete
       }
-      primary_oam_counter_++;
-      // TODO: Incomplete
     }
   }
 
@@ -424,6 +436,7 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
         v_.coarse_x_scroll  = t_.coarse_x_scroll;
         v_.nametable_select = (t_.nametable_select & 0x01) | (v_.nametable_select & 0x02);
       }
+      num_sprites_found_     = secondary_oam_counter_;
       secondary_oam_counter_ = 0;
     }
 
@@ -495,22 +508,30 @@ void ppu::PPU::fetchNextBGTile() {
 }
 
 void ppu::PPU::fetchNextSprite() {
-  const Sprite& sprite = secondary_oam_.sprite[secondary_oam_counter_];
-  uint16_t      pattern_addr;
+  if (secondary_oam_counter_ < num_sprites_found_) {
 
-  if (ctrl_reg_1_.sprite_size == 0) {                             // Small (8x8) sprites
-    pattern_addr = sprite.small_tile_index << 4                   // Base tile address
-                   | ctrl_reg_1_.sprite_pattern_table_addr << 12  // Pattern table
-                   | (scanline_ - sprite.y_position);             // Y slice
+    const Sprite& sprite = secondary_oam_.sprite[secondary_oam_counter_];
+    uint16_t      pattern_addr;
 
-  } else {             // Large (8x16) sprites
-    pattern_addr = 0;  // TODO
+    if (ctrl_reg_1_.sprite_size == 0) {                             // Small (8x8) sprites
+      pattern_addr = sprite.small_tile_index << 4                   // Base tile address
+                     | ctrl_reg_1_.sprite_pattern_table_addr << 12  // Pattern table
+                     | (scanline_ - sprite.y_position);             // Y slice
+
+    } else {             // Large (8x16) sprites
+      pattern_addr = 0;  // TODO
+    }
+
+    sprite_pattern_sr_a_[secondary_oam_counter_]      = readByte(pattern_addr);
+    sprite_pattern_sr_b_[secondary_oam_counter_]      = readByte(pattern_addr | 8);
+    sprite_palette_latch_[secondary_oam_counter_].raw = sprite.attributes.raw;
+    sprite_x_position_[secondary_oam_counter_]        = sprite.x_position;
+  } else {
+    sprite_pattern_sr_a_[secondary_oam_counter_]      = 0;
+    sprite_pattern_sr_b_[secondary_oam_counter_]      = 0;
+    sprite_palette_latch_[secondary_oam_counter_].raw = 0;
+    sprite_x_position_[secondary_oam_counter_]        = 0;
   }
-
-  sprite_pattern_sr_a_[secondary_oam_counter_]      = readByte(pattern_addr);
-  sprite_pattern_sr_b_[secondary_oam_counter_]      = readByte(pattern_addr | 8);
-  sprite_palette_latch_[secondary_oam_counter_].raw = sprite.attributes.raw;
-  sprite_x_position_[secondary_oam_counter_]        = sprite.x_position;
   secondary_oam_counter_++;
 }
 
