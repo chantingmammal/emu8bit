@@ -67,8 +67,9 @@ void ppu::PPU::tick() {
   // =*=*=*=*= Pre-render scanline =*=*=*=*=
   else {
     if (cycle_ == 1) {
-      status_reg_.hit    = false;
-      status_reg_.vblank = false;
+      did_hit_sprite_zero = false;
+      status_reg_.hit     = false;
+      status_reg_.vblank  = false;
     }
 
     // On odd frames, shorted pre_render scanline by 1
@@ -340,12 +341,15 @@ void ppu::PPU::renderPixel() {
       }
 
       // Sprite zero hit
-      if (i == 0 && has_sprite_zero                                   // Sprite is #0
-          && !status_reg_.hit                                         // Hasn't already hit
-          && ctrl_reg_2_.screen_enable && ctrl_reg_2_.sprites_enable  // Both BG and sprites are being rendered
+      if (i == 0 && has_sprite_zero                                                 // Sprite is #0
+          && ctrl_reg_2_.screen_enable                                              // Background is being rendered
+          && ctrl_reg_2_.sprites_enable                                             // Sprites are being rendered
           && ((ctrl_reg_2_.image_mask && ctrl_reg_2_.sprite_mask) || (cycle_ > 7))  // Left-side clipping
-          && bg_pixel != 0 && sprite_pixel != 0) {  // Both BG and sprite are non-transparent
-        status_reg_.hit = true;
+          && cycle_ != 255                                                          // Not right-most pixel
+          && bg_pixel != 0 && sprite_pixel != 0                                     // Both BG and sprite are opaque
+          && !did_hit_sprite_zero) {                                                // Hasn't already hit this frame
+        did_hit_sprite_zero = true;
+        status_reg_.hit     = true;
       }
 
       if (!pixel_found) {
