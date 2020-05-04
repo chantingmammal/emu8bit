@@ -3,7 +3,6 @@
 #include <nesemu/utils.h>
 
 #include <cstdint>
-#include <functional>
 #include <type_traits>
 
 

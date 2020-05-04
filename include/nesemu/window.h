@@ -1,7 +1,5 @@
 #pragma once
 
-#include <functional>
-
 #include <SDL2/SDL.h>
 
 
@@ -14,12 +12,11 @@ constexpr int WINDOW_HEIGHT = 240;
 class Window {
 public:
   ~Window();
-  int                       init(int scale);
-  void*                     getScreenPixelPtr();
-  std::function<void(void)> getUpdateScreenPtr();
+  int              init(int scale);
+  uint32_t* getScreenPixelPtr() const;
+  void      updateScreen();
 
 private:
-  inline void  updateScreen();
   SDL_Window*  window_      = {nullptr};
   SDL_Surface* window_surf_ = {nullptr};
   SDL_Surface* screen_      = {nullptr};

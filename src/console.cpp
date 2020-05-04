@@ -1,7 +1,6 @@
 #include <nesemu/console.h>
 
 #include <cstdint>
-#include <functional>
 
 
 // =*=*=*=*= Console Setup =*=*=*=*=
@@ -22,12 +21,9 @@ void console::Console::loadCart(rom::Rom* rom) {
   ppu_.loadCart(rom->chr[0], (rom->header.chr_rom_size == 0), mirror);
 }
 
-void console::Console::setScreenPixelPtr(void* pixels) {
-  ppu_.setPixelPtr(pixels);
-}
-
-void console::Console::setUpdateScreenPtr(std::function<void(void)> func) {
-  ppu_.setUpdateScreenPtr(func);
+void console::Console::setWindow(window::Window* window) {
+  window_ = window;
+  ppu_.setWindow(window_);
 }
 
 

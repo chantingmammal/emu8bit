@@ -4,6 +4,7 @@
 #include <nesemu/joystick.h>
 #include <nesemu/ppu.h>
 #include <nesemu/rom.h>
+#include <nesemu/window.h>
 
 #include <SDL2/SDL_events.h>
 
@@ -16,8 +17,7 @@ public:
 
   // Setup
   void loadCart(rom::Rom* rom);
-  void setScreenPixelPtr(void* pixels);
-  void setUpdateScreenPtr(std::function<void(void)> func);
+  void setWindow(window::Window* window);
 
   // Execution
   void start();
@@ -25,6 +25,8 @@ public:
   void handleEvent(const SDL_Event& event);
 
 private:
+  window::Window* window_ = {nullptr};
+
   cpu::CPU           cpu_;
   ppu::PPU           ppu_;
   joystick::Joystick joy_1_ = {1};

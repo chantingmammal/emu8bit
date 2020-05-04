@@ -56,8 +56,7 @@ int main(int argc, char* argv[]) {
     return 1;
 
   console::Console console;
-  console.setScreenPixelPtr(window.getScreenPixelPtr());
-  console.setUpdateScreenPtr(window.getUpdateScreenPtr());
+  console.setWindow(&window);
   console.loadCart(&rom);
   console.start();
 

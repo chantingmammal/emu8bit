@@ -29,12 +29,8 @@ int window::Window::init(int scale) {
   return 0;
 }
 
-void* window::Window::getScreenPixelPtr() {
-  return screen_->pixels;
-}
-
-std::function<void(void)> window::Window::getUpdateScreenPtr() {
-  return std::bind(&window::Window::updateScreen, this);
+uint32_t* window::Window::getScreenPixelPtr() const {
+  return static_cast<uint32_t*>(screen_->pixels);
 }
 
 

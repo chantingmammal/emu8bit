@@ -20,12 +20,8 @@ void ppu::PPU::loadCart(uint8_t* chr_mem, bool is_ram, Mirroring mirror) {
   mirroring_      = mirror;
 }
 
-void ppu::PPU::setPixelPtr(void* pixels) {
-  pixels_ = static_cast<uint32_t*>(pixels);
-}
-
-void ppu::PPU::setUpdateScreenPtr(std::function<void(void)> func) {
-  update_screen_ = func;
+void ppu::PPU::setWindow(window::Window* window) {
+  window_ = window;
 }
 
 
@@ -48,7 +44,7 @@ void ppu::PPU::tick() {
   // =*=*=*=*=  Post-render scanline (Idle) =*=*=*=*=
   else if (scanline_ < 241) {
     if (cycle_ == 0) {
-      update_screen_();
+      window_->updateScreen();
     }
   }
 
@@ -310,7 +306,7 @@ void ppu::PPU::renderPixel() {
 
   // TODO: Image mask and sprite mask
 
-  uint32_t* pixel = pixels_ + (scanline_ * 256) + cycle_;
+  uint32_t* pixel = window_->getScreenPixelPtr() + (scanline_ * 256) + cycle_;
 
   const uint8_t bg_pixel = ((pattern_sr_a_ >> (15 - fine_x_scroll_)) & 0x01)
                            | (((pattern_sr_b_ >> (15 - fine_x_scroll_)) << 1) & 0x02);

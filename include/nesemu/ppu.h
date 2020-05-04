@@ -1,10 +1,10 @@
 #pragma once
 
 #include <nesemu/utils.h>
+#include <nesemu/window.h>
 
 #include <cstdint>
 #include <cstring>  //memcpy
-#include <functional>
 
 
 // Forward declarations
@@ -24,8 +24,7 @@ public:
   // Setup
   void connectChips(cpu::CPU* cpu);
   void loadCart(uint8_t* chr_mem, bool is_ram, Mirroring mirror);
-  void setPixelPtr(void* pixels);
-  void setUpdateScreenPtr(std::function<void(void)> func);
+  void setWindow(window::Window* window);
 
 
   // Execution
@@ -37,7 +36,8 @@ public:
 
 private:
   // Other chips
-  cpu::CPU* cpu_ = {nullptr};
+  cpu::CPU*       cpu_    = {nullptr};
+  window::Window* window_ = {nullptr};
 
   // Registers
   union PPUReg {
@@ -150,11 +150,9 @@ private:
 
 
   // Rendering
-  uint32_t*                 pixels_       = {nullptr};  // 8 bits per channel
   uint16_t                  scanline_     = {0};        // 0 to 262
   uint16_t                  cycle_        = {1};        // 0 to 341
   bool                      frame_is_odd_ = true;
-  std::function<void(void)> update_screen_;
 
 
 // Internal operations
