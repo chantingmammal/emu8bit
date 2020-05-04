@@ -366,7 +366,7 @@ void ppu::PPU::renderPixel() {
   // TODO: Screen and sprite enable
   if (bg_pixel == 0 && sprite_pixel == 0) {
     palette_addr = 0;
-  } else if (sprite_pixel == 0 || sprite_priority == 1) {
+  } else if (sprite_pixel == 0 || (bg_pixel != 0 && sprite_priority == 1)) {
     palette_addr = bg_pixel | (bg_palette << 2);
   } else {
     palette_addr = sprite_pixel | (sprite_palette << 2) | 0x10;
