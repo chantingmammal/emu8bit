@@ -515,10 +515,14 @@ void ppu::PPU::fetchNextSprite() {
     const Sprite& sprite = secondary_oam_.sprite[secondary_oam_counter_];
     uint16_t      pattern_addr;
 
-    if (ctrl_reg_1_.sprite_size == 0) {                             // Small (8x8) sprites
+    if (ctrl_reg_1_.sprite_size == 0) {                                  // Small (8x8) sprites
+      const uint8_t y_slice = sprite.attributes.flip_vert                // Horizontal slice of the sprite
+                                  ? 7 - (scanline_ - sprite.y_position)  //   - Vertically flipped
+                                  : scanline_ - sprite.y_position;       //   - Not flipped
+
       pattern_addr = sprite.small_tile_index << 4                   // Base tile address
                      | ctrl_reg_1_.sprite_pattern_table_addr << 12  // Pattern table
-                     | (scanline_ - sprite.y_position);             // Y slice
+                     | y_slice;                                     // Horizontal slice
 
     } else {             // Large (8x16) sprites
       pattern_addr = 0;  // TODO
