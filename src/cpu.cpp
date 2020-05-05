@@ -827,6 +827,7 @@ void cpu::CPU::tick(int ticks) {
     ppu_->tick();
     ppu_->tick();
     ppu_->tick();
+    timer_.sleep();
   }
 }
 

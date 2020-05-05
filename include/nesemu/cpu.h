@@ -1,5 +1,6 @@
 #pragma once
 
+#include <nesemu/steady_timer.h>
 #include <nesemu/utils.h>
 
 #include <cstdint>
@@ -122,6 +123,8 @@ enum class AddressingMode : int8_t {
 
 class CPU {
 public:
+  CPU() { timer_.start(); }
+
   // Setup
   void connectChips(apu::APU* apu, ppu::PPU* ppu, joystick::Joystick* joy1, joystick::Joystick* joy2);
   void loadCart(uint8_t* prg_rom, uint8_t prg_banks, uint8_t* expansion_ram);
@@ -135,10 +138,11 @@ public:
 
 private:
   // Other chips
-  apu::APU*           apu_  = {nullptr};
-  ppu::PPU*           ppu_  = {nullptr};
-  joystick::Joystick* joy1_ = {nullptr};
-  joystick::Joystick* joy2_ = {nullptr};
+  apu::APU*                 apu_  = {nullptr};
+  ppu::PPU*                 ppu_  = {nullptr};
+  joystick::Joystick*       joy1_ = {nullptr};
+  joystick::Joystick*       joy2_ = {nullptr};
+  SteadyTimer<22, 39375000> timer_;  //  ~1.79MHz
 
 
   // Registers

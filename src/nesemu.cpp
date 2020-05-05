@@ -1,5 +1,6 @@
 #include <nesemu/console.h>
 #include <nesemu/rom.h>
+#include <nesemu/steady_timer.h>
 #include <nesemu/window.h>
 
 #include <getopt.h>
@@ -60,14 +61,21 @@ int main(int argc, char* argv[]) {
   console.loadCart(&rom);
   console.start();
 
+  SteadyTimer<1, 30> sdl_timer;
+  sdl_timer.start();
+
   bool      running = true;
   SDL_Event event;
   while (running) {
-    while (SDL_PollEvent(&event)) {
-      if (event.type == SDL_QUIT) {
-        running = false;
-      } else {
-        console.handleEvent(event);
+
+    // Process SDL events at 30Hz
+    if (sdl_timer.ready()) {
+      while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+          running = false;
+        } else {
+          console.handleEvent(event);
+        }
       }
     }
 
