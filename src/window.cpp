@@ -1,5 +1,6 @@
 #include <nesemu/window.h>
 
+#include <cstdio>
 #include <iostream>
 
 
@@ -36,6 +37,17 @@ int window::Window::init(int scale) {
 
 
 void window::Window::updateScreen(const uint32_t* pixels) {
+  std::chrono::duration<double> duration = std::chrono::steady_clock::now() - prev_frame_;
+  prev_frame_                            = std::chrono::steady_clock::now();
+  fps_buffer_.append(duration.count());
+
+  frame_++;
+  if ((frame_ % 10) == 0) {
+    char title[50];
+    snprintf(title, 50, "NES Emu | %.2f FPS", 1.0 / fps_buffer_.avg());
+    SDL_SetWindowTitle(window_, title);
+  }
+
   SDL_UpdateTexture(texture_, nullptr, pixels, WINDOW_WIDTH * sizeof(uint32_t));
   SDL_RenderClear(renderer_);
   SDL_RenderCopy(renderer_, texture_, NULL, NULL);
