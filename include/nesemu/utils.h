@@ -58,9 +58,7 @@ constexpr Enumeration asEnum(const int value) {
 
 // Byte utilities
 constexpr int8_t deComplement(uint8_t value) {
-  if (value & 0xF0)
-    return -uint8_t(~value + 1);
-  return value;
+  return (value & 0xF0) ? -uint8_t(~value + 1) : value;
 }
 
 // TODO: Make more lightweight
