@@ -18,8 +18,8 @@ int rom::parseFromFile(std::string filename, Rom* rom) {
 
   file.read(reinterpret_cast<char*>(&rom->header), 16);
 
-  uint expected_size = 16 + (rom->header.has_trainer ? 512 : 0) + (rom->header.prg_rom_size * 16 * 1024)
-                       + (rom->header.chr_rom_size * 8 * 1024);
+  unsigned expected_size = 16 + (rom->header.has_trainer ? 512 : 0) + (rom->header.prg_rom_size * 16 * 1024)
+                           + (rom->header.chr_rom_size * 8 * 1024);
 
   if (!std::equal(rom->header.name, std::end(rom->header.name), header_name)) {
     std::cerr << "Unable to parse file " << filename << ": Invalid header beginning with '"

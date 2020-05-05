@@ -21,7 +21,7 @@ public:
   void updateScreen(const uint32_t* pixels_);
 
 private:
-  unsigned int frame_ = {0};
+  unsigned frame_ = {0};
 
   Buffer<double, 10>                    fps_buffer_;
   std::chrono::steady_clock::time_point prev_frame_;
