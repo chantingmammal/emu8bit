@@ -150,9 +150,10 @@ private:
 
 
   // Rendering
-  uint16_t                  scanline_     = {0};        // 0 to 262
-  uint16_t                  cycle_        = {1};        // 0 to 341
-  bool                      frame_is_odd_ = true;
+  uint32_t pixels_[256 * 240] = {0};  // Screen buffer
+  uint16_t scanline_          = {0};  // 0 to 262
+  uint16_t cycle_             = {1};  // 0 to 341
+  bool     frame_is_odd_      = true;
 
 
 // Internal operations

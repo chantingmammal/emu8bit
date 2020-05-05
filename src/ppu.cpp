@@ -44,7 +44,7 @@ void ppu::PPU::tick() {
   // =*=*=*=*=  Post-render scanline (Idle) =*=*=*=*=
   else if (scanline_ < 241) {
     if (cycle_ == 0) {
-      window_->updateScreen();
+      window_->updateScreen(pixels_);
     }
   }
 
@@ -306,8 +306,6 @@ void ppu::PPU::renderPixel() {
 
   // TODO: Image mask and sprite mask
 
-  uint32_t* pixel = window_->getScreenPixelPtr() + (scanline_ * 256) + cycle_;
-
   const uint8_t bg_pixel = ((pattern_sr_a_ >> (15 - fine_x_scroll_)) & 0x01)
                            | (((pattern_sr_b_ >> (15 - fine_x_scroll_)) << 1) & 0x02);
   const uint8_t bg_palette = ((palette_sr_a_ >> (7 - fine_x_scroll_)) & 0x01)
@@ -373,8 +371,8 @@ void ppu::PPU::renderPixel() {
   }
 
 
-  // Display the pixel
-  *pixel = decodeColor(readByte(0x3F00 | palette_addr));
+  // Write the pixel to the screen buffer
+  pixels_[(scanline_ * 256) + cycle_] = decodeColor(readByte(0x3F00 | palette_addr));
 
   // Shift SRs left
   pattern_sr_a_ <<= 1;

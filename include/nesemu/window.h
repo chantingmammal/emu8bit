@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <SDL2/SDL.h>
 
 
@@ -12,14 +14,13 @@ constexpr int WINDOW_HEIGHT = 240;
 class Window {
 public:
   ~Window();
-  int              init(int scale);
-  uint32_t* getScreenPixelPtr() const;
-  void      updateScreen();
+  int  init(int scale);
+  void updateScreen(const uint32_t* pixels_);
 
 private:
-  SDL_Window*  window_      = {nullptr};
-  SDL_Surface* window_surf_ = {nullptr};
-  SDL_Surface* screen_      = {nullptr};
+  SDL_Window*   window_   = {nullptr};
+  SDL_Renderer* renderer_ = {nullptr};
+  SDL_Texture*  texture_  = {nullptr};
 };
 
 }  // namespace window
