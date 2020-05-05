@@ -5,13 +5,13 @@
 #include <iostream>
 
 
-inline void dump(uint8_t* data, size_t size) {
+inline void dump(uint8_t* data, std::size_t size) {
   static bool done = false;
   if (done)
     return;
   done = true;
 
-  size_t pos = 0;
+  std::size_t pos = 0;
   while (pos < size) {
     std::cout << std::hex << std::setfill('0') << std::setw(4) << pos << "\t";
 
@@ -30,7 +30,7 @@ inline void dump_nt(uint8_t* data) {
     return;
   done = true;
 
-  size_t pos = 0;
+  std::size_t pos = 0;
 
   for (uint8_t row = 0; row < 30; row++) {
     for (uint8_t col = 0; col < 32; col++) {

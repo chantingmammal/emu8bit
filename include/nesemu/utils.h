@@ -62,7 +62,7 @@ constexpr int8_t deComplement(uint8_t value) {
 }
 
 // TODO: Make more lightweight
-inline std::string uint8_to_hex_string(const uint8_t* arr, const size_t size) {
+inline std::string uint8_to_hex_string(const uint8_t* arr, const std::size_t size) {
   std::stringstream ss;
 
   ss << std::hex << std::setfill('0');
