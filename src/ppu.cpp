@@ -2,6 +2,7 @@
 
 #include <nesemu/cpu.h>
 #include <nesemu/debug.h>
+#include <nesemu/mapper/mapper_base.h>
 #include <nesemu/temp_mapping.h>
 
 #include <cstring>  // For memcpy
@@ -14,7 +15,8 @@ void ppu::PPU::connectChips(cpu::CPU* cpu) {
   cpu_ = cpu;
 }
 
-void ppu::PPU::loadCart(uint8_t* chr_mem, bool is_ram, Mirroring mirror) {
+void ppu::PPU::loadCart(mapper::Mapper* mapper, uint8_t* chr_mem, bool is_ram, Mirroring mirror) {
+  mapper_         = mapper;
   chr_mem_        = chr_mem;
   chr_mem_is_ram_ = is_ram;
   mirroring_      = mirror;
@@ -222,7 +224,7 @@ uint8_t ppu::PPU::readByteInternal(uint16_t address) {
 
   // Cartridge VRAM/VROM
   if (address < 0x2000) {
-    return chr_mem_[address];
+    return chr_mem_[mapper_->decodePPUAddress(address)];
   }
 
   // Nametables
@@ -263,7 +265,7 @@ void ppu::PPU::writeByte(uint16_t address, uint8_t data) {
   // Cartridge VRAM/VROM
   if (address < 0x2000) {
     if (chr_mem_is_ram_)  // Uses VRAM, not VROM
-      chr_mem_[address] = data;
+      chr_mem_[mapper_->decodePPUAddress(address)] = data;
   }
 
   // Nametables

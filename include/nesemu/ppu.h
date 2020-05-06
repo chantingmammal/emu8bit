@@ -12,6 +12,10 @@ namespace cpu {
 class CPU;
 }
 
+namespace mapper {
+class Mapper;
+}
+
 
 // Ricoh RP2A03 (based on MOS6502)
 // Little endian
@@ -23,7 +27,7 @@ class PPU {
 public:
   // Setup
   void connectChips(cpu::CPU* cpu);
-  void loadCart(uint8_t* chr_mem, bool is_ram, Mirroring mirror);
+  void loadCart(mapper::Mapper* mapper, uint8_t* chr_mem, bool is_ram, Mirroring mirror);
   void setWindow(window::Window* window);
 
 
@@ -144,10 +148,11 @@ private:
 
 
   // Memory
-  uint8_t   ram_[0x2000]    = {0};        // 8KiB RAM, at address 0x2000-0x3FFF
-  uint8_t*  chr_mem_        = {nullptr};  // Character VRAM/VROM, at address 0x0000-0x1FFF
-  bool      chr_mem_is_ram_ = {false};    // Whether chr_mem is VRAM or VROM
-  Mirroring mirroring_;                   // Nametable mirroring mode
+  mapper::Mapper* mapper_         = {nullptr};
+  uint8_t         ram_[0x2000]    = {0};        // 8KiB RAM, at address 0x2000-0x3FFF
+  uint8_t*        chr_mem_        = {nullptr};  // Character VRAM/VROM, at address 0x0000-0x1FFF
+  bool            chr_mem_is_ram_ = {false};    // Whether chr_mem is VRAM or VROM
+  Mirroring       mirroring_;                   // Nametable mirroring mode
 
 
   // Rendering

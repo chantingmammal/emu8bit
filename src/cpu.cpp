@@ -2,6 +2,7 @@
 
 #include <nesemu/apu.h>
 #include <nesemu/joystick.h>
+#include <nesemu/mapper/mapper_base.h>
 #include <nesemu/ppu.h>
 #include <nesemu/utils.h>
 
@@ -17,9 +18,9 @@ void cpu::CPU::connectChips(apu::APU* apu, ppu::PPU* ppu, joystick::Joystick* jo
   joy2_ = joy2;
 }
 
-void cpu::CPU::loadCart(uint8_t* prg_rom, uint8_t prg_banks, uint8_t* expansion_ram) {
+void cpu::CPU::loadCart(mapper::Mapper* mapper, uint8_t* prg_rom, uint8_t* expansion_ram) {
+  mapper_        = mapper;
   prg_rom_       = prg_rom;
-  prg_banks_     = prg_banks;
   expansion_ram_ = expansion_ram;
 }
 
@@ -724,7 +725,7 @@ uint8_t cpu::CPU::readByteInternal(uint16_t address) {
   }
 
   else {  // Cartridge ROM
-    return prg_rom_[(address - 0x8000) & (prg_banks_ == 2 ? 0x7FFF : 0x3FFF)];
+    return prg_rom_[mapper_->decodeCPUAddress(address)];
   }
 }
 
@@ -792,8 +793,8 @@ void cpu::CPU::writeByte(uint16_t address, uint8_t data) {
     }
   }
 
-  else {  // Cartridge ROM
-    prg_rom_[(address - 0x8000) & (prg_banks_ == 2 ? 0x7FFF : 0x3FFF)] = data;
+  else {  // Mapper
+    mapper_->write(address, data);
   }
 }
 

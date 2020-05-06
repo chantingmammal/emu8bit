@@ -1,4 +1,5 @@
 #include <nesemu/console.h>
+#include <nesemu/mapper/mappers.h>
 
 #include <cstdint>
 
@@ -10,15 +11,24 @@ console::Console::Console() {
   ppu_.connectChips(&cpu_);
 }
 
+console::Console::~Console() {
+  if (mapper_ != nullptr) {
+    delete mapper_;
+  }
+}
+
 void console::Console::loadCart(rom::Rom* rom) {
-  cpu_.loadCart(rom->prg[0], rom->header.prg_rom_size, (rom->header.has_battery ? rom->expansion[0] : nullptr));
+  const uint16_t mapper_num = rom->header.mapper_upper << 8 | rom->header.mapper_lower;
+  mapper_                   = mapper::mappers[mapper_num](rom->header.prg_rom_size, rom->header.chr_rom_size);
+
+  cpu_.loadCart(mapper_, rom->prg[0], (rom->header.has_battery ? rom->expansion[0] : nullptr));
 
   ppu::Mirroring mirror = ppu::Mirroring::horizontal;
   if (rom->header.ignore_mirroring)
     mirror = ppu::Mirroring::none;
   else if (rom->header.nametable_mirror)
     mirror = ppu::Mirroring::vertical;
-  ppu_.loadCart(rom->chr[0], (rom->header.chr_rom_size == 0), mirror);
+  ppu_.loadCart(mapper_, rom->chr[0], (rom->header.chr_rom_size == 0), mirror);
 }
 
 void console::Console::setWindow(window::Window* window) {

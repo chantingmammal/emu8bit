@@ -20,6 +20,10 @@ namespace joystick {
 class Joystick;
 }
 
+namespace mapper {
+class Mapper;
+}
+
 
 // Ricoh RP2A03 (based on MOS6502)
 // Little endian
@@ -127,7 +131,7 @@ public:
 
   // Setup
   void connectChips(apu::APU* apu, ppu::PPU* ppu, joystick::Joystick* joy1, joystick::Joystick* joy2);
-  void loadCart(uint8_t* prg_rom, uint8_t prg_banks, uint8_t* expansion_ram);
+  void loadCart(mapper::Mapper* mapper, uint8_t* prg_rom, uint8_t* expansion_ram);
 
 
   // Execution
@@ -171,10 +175,10 @@ private:
 
 
   // Memory
-  uint8_t  ram_[0x800]    = {0};        // 2KiB RAM, mirrored 4 times, at address 0x0000-0x1FFF
-  uint8_t* prg_rom_       = {nullptr};  // 16/32KiB program ROM,       at address 0x8000-0xFFFF
-  uint8_t  prg_banks_     = {0};        // Number of prg_rom banks (1 or 2)
-  uint8_t* expansion_ram_ = {nullptr};  // Optional cartridge RAM,     at address 0x7000-0x7FFF
+  mapper::Mapper* mapper_        = {nullptr};
+  uint8_t         ram_[0x800]    = {0};        // 2KiB RAM, mirrored 4 times, at address 0x0000-0x1FFF
+  uint8_t*        prg_rom_       = {nullptr};  // Unmapped program ROM,       at address 0x8000-0xFFFF
+  uint8_t*        expansion_ram_ = {nullptr};  // Optional cartridge RAM,     at address 0x7000-0x7FFF
 
 
 // Internal operations
