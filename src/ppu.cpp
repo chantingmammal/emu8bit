@@ -63,9 +63,9 @@ void ppu::PPU::tick() {
   // =*=*=*=*= Pre-render scanline =*=*=*=*=
   else {
     if (cycle_ == 1) {
-      did_hit_sprite_zero = false;
-      status_reg_.hit     = false;
-      status_reg_.vblank  = false;
+      did_hit_sprite_zero_ = false;
+      status_reg_.hit      = false;
+      status_reg_.vblank   = false;
     }
 
     // On odd frames, shorted pre_render scanline by 1
@@ -335,15 +335,15 @@ void ppu::PPU::renderPixel() {
       }
 
       // Sprite zero hit
-      if (i == 0 && has_sprite_zero                                                 // Sprite is #0
+      if (i == 0 && sr_has_sprite_zero_                                             // Sprite is #0
           && ctrl_reg_2_.screen_enable                                              // Background is being rendered
           && ctrl_reg_2_.sprites_enable                                             // Sprites are being rendered
           && ((ctrl_reg_2_.image_mask && ctrl_reg_2_.sprite_mask) || (cycle_ > 7))  // Left-side clipping
           && cycle_ != 255                                                          // Not right-most pixel
           && bg_pixel != 0 && sprite_pixel != 0                                     // Both BG and sprite are opaque
-          && !did_hit_sprite_zero) {                                                // Hasn't already hit this frame
-        did_hit_sprite_zero = true;
-        status_reg_.hit     = true;
+          && !did_hit_sprite_zero_) {                                               // Hasn't already hit this frame
+        did_hit_sprite_zero_ = true;
+        status_reg_.hit      = true;
       }
 
       if (!pixel_found) {
@@ -389,6 +389,10 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
 
   // Cycle 0: Idle
   if (cycle_ < 1) {
+    primary_oam_counter_   = 0;
+    secondary_oam_counter_ = 0;
+    sr_has_sprite_zero_    = oam_has_sprite_zero_;
+    oam_has_sprite_zero_   = false;
   }
 
   // Cycles 1-64: Background: Fetch tiles
@@ -398,9 +402,6 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
       fetchNextBGTile();
     }
 
-    primary_oam_counter_            = 0;
-    secondary_oam_counter_          = 0;
-    has_sprite_zero                 = false;
     secondary_oam_.byte[cycle_ - 1] = 0xFF;  // TODO
   }
 
@@ -420,7 +421,7 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
         if (sprite.y_position <= scanline_ && (sprite.y_position + 8) > scanline_) {
           secondary_oam_.sprite[secondary_oam_counter_++] = primary_oam_.sprite[primary_oam_counter_];
           if (primary_oam_counter_ == 0) {
-            has_sprite_zero = true;
+            oam_has_sprite_zero_ = true;
           }
         }
         primary_oam_counter_++;
@@ -436,8 +437,7 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
         v_.coarse_x_scroll  = t_.coarse_x_scroll;
         v_.nametable_select = (t_.nametable_select & 0x01) | (v_.nametable_select & 0x02);
       }
-      num_sprites_found_     = secondary_oam_counter_;
-      secondary_oam_counter_ = 0;
+      num_sprites_fetched_ = 0;
     }
 
     if (fetch_sprites && (cycle_ % 8) == 0) {
@@ -508,9 +508,9 @@ void ppu::PPU::fetchNextBGTile() {
 }
 
 void ppu::PPU::fetchNextSprite() {
-  if (secondary_oam_counter_ < num_sprites_found_) {
+  if (num_sprites_fetched_ < secondary_oam_counter_) {
 
-    const Sprite& sprite = secondary_oam_.sprite[secondary_oam_counter_];
+    const Sprite& sprite = secondary_oam_.sprite[num_sprites_fetched_];
     uint16_t      pattern_addr;
 
     if (ctrl_reg_1_.sprite_size == 0) {                                  // Small (8x8) sprites
@@ -526,17 +526,17 @@ void ppu::PPU::fetchNextSprite() {
       pattern_addr = 0;  // TODO
     }
 
-    sprite_pattern_sr_a_[secondary_oam_counter_]      = readByte(pattern_addr);
-    sprite_pattern_sr_b_[secondary_oam_counter_]      = readByte(pattern_addr | 8);
-    sprite_palette_latch_[secondary_oam_counter_].raw = sprite.attributes.raw;
-    sprite_x_position_[secondary_oam_counter_]        = sprite.x_position;
+    sprite_pattern_sr_a_[num_sprites_fetched_]      = readByte(pattern_addr);
+    sprite_pattern_sr_b_[num_sprites_fetched_]      = readByte(pattern_addr | 8);
+    sprite_palette_latch_[num_sprites_fetched_].raw = sprite.attributes.raw;
+    sprite_x_position_[num_sprites_fetched_]        = sprite.x_position;
   } else {
-    sprite_pattern_sr_a_[secondary_oam_counter_]      = 0;
-    sprite_pattern_sr_b_[secondary_oam_counter_]      = 0;
-    sprite_palette_latch_[secondary_oam_counter_].raw = 0;
-    sprite_x_position_[secondary_oam_counter_]        = 0;
+    sprite_pattern_sr_a_[num_sprites_fetched_]      = 0;
+    sprite_pattern_sr_b_[num_sprites_fetched_]      = 0;
+    sprite_palette_latch_[num_sprites_fetched_].raw = 0;
+    sprite_x_position_[num_sprites_fetched_]        = 0;
   }
-  secondary_oam_counter_++;
+  num_sprites_fetched_++;
 }
 
 void ppu::PPU::incrementCoarseX() {

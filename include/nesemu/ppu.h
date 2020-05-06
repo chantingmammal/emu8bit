@@ -103,9 +103,10 @@ private:
   } secondary_oam_                          = {0};      // 64 byte/8 sprite ram, for current scanline
   uint8_t          primary_oam_counter_     = {0};      // Position within primary OAM (0-64)
   uint8_t          secondary_oam_counter_   = {0};      // Position within secondary OAM (0-8)
-  uint8_t          num_sprites_found_       = {0};      // The number of sprites found on the current line
-  bool             has_sprite_zero          = {false};  // Whether the secondary OAM contains sprite 0
-  bool             did_hit_sprite_zero      = {false};  // Whether sprite zero hit has occurred this frame
+  uint8_t          num_sprites_fetched_     = {0};      // The number of sprites fetched so far
+  bool             oam_has_sprite_zero_     = {false};  // Whether the secondary OAM contains sprite 0 (next line)
+  bool             sr_has_sprite_zero_      = {false};  // Whether the sprite registers contains sprite 0 (current line)
+  bool             did_hit_sprite_zero_     = {false};  // Whether sprite zero hit has occurred this frame
   uint8_t          sprite_pattern_sr_a_[8]  = {0};      // Lower byte of pattern, controls bit 0 of the color
   uint8_t          sprite_pattern_sr_b_[8]  = {0};      // Upper byte of pattern, controls bit 1 of the color
   SpriteAttributes sprite_palette_latch_[8] = {0};      //
