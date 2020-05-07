@@ -7,8 +7,11 @@
 // =*=*=*=*= Console Setup =*=*=*=*=
 
 console::Console::Console() {
-  cpu_.connectChips(nullptr, &ppu_, &joy_1_, &joy_2_);
+  bus_.connectChips(nullptr, &cpu_, &ppu_, &joy_1_, &joy_2_);
+  cpu_.connectChips(nullptr, &ppu_);
   ppu_.connectChips(&cpu_);
+
+  cpu_.connectBus(&bus_);
 }
 
 console::Console::~Console() {
@@ -21,7 +24,7 @@ void console::Console::loadCart(rom::Rom* rom) {
   const uint16_t mapper_num = rom->header.mapper_upper << 8 | rom->header.mapper_lower;
   mapper_                   = mapper::mappers[mapper_num](rom->header.prg_rom_size, rom->header.chr_rom_size);
 
-  cpu_.loadCart(mapper_, rom->prg[0], (rom->header.has_battery ? rom->expansion[0] : nullptr));
+  bus_.loadCart(mapper_, rom->prg[0], (rom->header.has_battery ? rom->expansion[0] : nullptr));
 
   ppu::Mirroring mirror = ppu::Mirroring::horizontal;
   if (rom->header.ignore_mirroring)

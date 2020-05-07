@@ -1,6 +1,7 @@
 #pragma once
 
 #include <nesemu/steady_timer.h>
+#include <nesemu/system_bus.h>
 #include <nesemu/utils.h>
 
 #include <cstdint>
@@ -14,14 +15,6 @@ class APU;
 
 namespace ppu {
 class PPU;
-}
-
-namespace joystick {
-class Joystick;
-}
-
-namespace mapper {
-class Mapper;
 }
 
 
@@ -130,8 +123,8 @@ public:
   CPU() { timer_.start(); }
 
   // Setup
-  void connectChips(apu::APU* apu, ppu::PPU* ppu, joystick::Joystick* joy1, joystick::Joystick* joy2);
-  void loadCart(mapper::Mapper* mapper, uint8_t* prg_rom, uint8_t* expansion_ram);
+  void connectBus(system_bus::SystemBus* bus);
+  void connectChips(apu::APU* apu, ppu::PPU* ppu);
 
 
   // Execution
@@ -141,11 +134,12 @@ public:
   void IRQ(bool active);
 
 private:
+  // System bus
+  system_bus::SystemBus* bus_ = {nullptr};
+
   // Other chips
-  apu::APU*                 apu_  = {nullptr};
-  ppu::PPU*                 ppu_  = {nullptr};
-  joystick::Joystick*       joy1_ = {nullptr};
-  joystick::Joystick*       joy2_ = {nullptr};
+  apu::APU*                 apu_ = {nullptr};
+  ppu::PPU*                 ppu_ = {nullptr};
   SteadyTimer<22, 39375000> timer_;  //  ~1.79MHz
 
 
@@ -174,23 +168,14 @@ private:
   bool irq_irq_   = {false};
 
 
-  // Memory
-  mapper::Mapper* mapper_        = {nullptr};
-  uint8_t         ram_[0x800]    = {0};        // 2KiB RAM, mirrored 4 times, at address 0x0000-0x1FFF
-  uint8_t*        prg_rom_       = {nullptr};  // Unmapped program ROM,       at address 0x8000-0xFFFF
-  uint8_t*        expansion_ram_ = {nullptr};  // Optional cartridge RAM,     at address 0x7000-0x7FFF
-
-
-// Internal operations
-#if DEBUG
-  uint8_t readByteInternal(uint16_t address);
-#endif
-  uint8_t  readByte(uint16_t address);                 // 1 cycle
-  void     writeByte(uint16_t address, uint8_t data);  // 1 cycle
-  void     push(uint8_t data);                         // 1 cycle
-  uint8_t  pop();                                      // 2 cycles
-  uint16_t pop16();                                    // 3 cycles
-                                                       //  - Equivalent to pop() + (pop() << 8), but takes 1 fewer cycle
+  // Internal operations
+  inline uint8_t  readByte(uint16_t address);                 // 1 cycle
+  inline void     writeByte(uint16_t address, uint8_t data);  // 1 cycle
+  inline void     push(uint8_t data);                         // 1 cycle
+  inline uint8_t  pop();                                      // 2 cycles
+  inline uint16_t pop16();                                    // 3 cycles
+                                                              // NOTE: pop16() is equivalent to
+                                                              //       `pop() + (pop() << 8)`, but takes 1 fewer cycle
 
   inline void     tick(int ticks = 1);
   inline void     interrupt(uint16_t vector_table);  // 5 cycles

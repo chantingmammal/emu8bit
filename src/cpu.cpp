@@ -1,8 +1,6 @@
 #include <nesemu/cpu.h>
 
 #include <nesemu/apu.h>
-#include <nesemu/joystick.h>
-#include <nesemu/mapper/mapper_base.h>
 #include <nesemu/ppu.h>
 #include <nesemu/utils.h>
 
@@ -11,17 +9,13 @@
 
 // =*=*=*=*= CPU Setup =*=*=*=*=
 
-void cpu::CPU::connectChips(apu::APU* apu, ppu::PPU* ppu, joystick::Joystick* joy1, joystick::Joystick* joy2) {
-  apu_  = apu;
-  ppu_  = ppu;
-  joy1_ = joy1;
-  joy2_ = joy2;
+void cpu::CPU::connectBus(system_bus::SystemBus* bus) {
+  bus_ = bus;
 }
 
-void cpu::CPU::loadCart(mapper::Mapper* mapper, uint8_t* prg_rom, uint8_t* expansion_ram) {
-  mapper_        = mapper;
-  prg_rom_       = prg_rom;
-  expansion_ram_ = expansion_ram;
+void cpu::CPU::connectChips(apu::APU* apu, ppu::PPU* ppu) {
+  apu_ = apu;
+  ppu_ = ppu;
 }
 
 
@@ -673,129 +667,13 @@ void cpu::CPU::IRQ(bool active) {
 // =*=*=*=*= CPU Internal Operations =*=*=*=*=
 
 uint8_t cpu::CPU::readByte(uint16_t address) {
-#if DEBUG
-  const uint8_t data = readByteInternal(address);
-  std::cout << "Read " << unsigned(data) << " from $(" << address << ")\n";
-  return data;
-}
-
-uint8_t cpu::CPU::readByteInternal(uint16_t address) {
-#endif
   tick();
-  address &= 0xFFFF;
-
-  if (address < 0x2000) {  // Stack and RAM
-    return ram_[address & 0x07FF];
-  }
-
-  else if (address < 0x4000) {  // PPU Registers
-    return ppu_->readRegister((address & 0x0007) | 0x2000);
-  }
-
-  else if (address < 0x4014) {  // Sound Registers
-    return 0;                   // TODO
-  }
-
-  else if (address == 0x4014) {  // PPU DMA Access
-    return 0;                    // Cannot read DMA register
-  }
-
-  else if (address == 0x4015) {  // Sound Channel Switch
-    return 0;                    // Cannot read sound channel register
-  }
-
-  else if (address == 0x4016) {  // Joystick 1
-    return joy1_->read();
-  }
-
-  else if (address == 0x4017) {  // Joystick 2
-    return joy2_->read();
-  }
-
-  else if (address == 0x4020) {  // Unused
-    return 0;
-  }
-
-  else if (address < 0x6000) {  // Expansion Modules, ie. Famicom Disk System
-    return 0;
-  }
-
-  else if (address < 0x8000 && expansion_ram_) {  // Cartridge RAM
-    return expansion_ram_[address - 0x6000];
-  }
-
-  else {  // Cartridge ROM
-    return prg_rom_[mapper_->decodeCPUAddress(address)];
-  }
+  return bus_->read(address);
 }
 
 void cpu::CPU::writeByte(uint16_t address, uint8_t data) {
-#if DEBUG
-  std::cout << "Write " << unsigned(data) << " to $(" << address << ")\n";
-#endif
   tick();
-  address &= 0xFFFF;
-
-  if (address < 0x2000) {  // Stack and RAM
-    ram_[address & 0x07FF] = data;
-  }
-
-  else if (address < 0x4000) {  // PPU Registers
-    ppu_->writeRegister((address & 0x0007) | 0x2000, data);
-  }
-
-  else if (address < 0x4014) {  // Sound Registers
-    ;                           // TODO
-  }
-
-  else if (address == 0x4014) {  // PPU DMA Access
-    if (data * 0x100 < 0x2000) {
-      ppu_->spriteDMAWrite(ram_ + (data * 0x100));  // Internal RAM
-    } else if (data * 0x100 < 0x6000) {
-      ;  // Cannot DMA from MMIO
-    } else if (data * 0x100 < 0x8000) {
-      if (expansion_ram_) {
-        ppu_->spriteDMAWrite(expansion_ram_ + (data * 0x100) - 0x6000);
-      } else {
-        ;  // No cartridge RAM
-      }
-    } else {
-      ppu_->spriteDMAWrite(prg_rom_ + (data * 0x100) - 0x8000);  // Cartridge ROM
-    }
-  }
-
-  else if (address == 0x4015) {  // Sound Channel Switch
-    ;                            // TODO
-  }
-
-  else if (address == 0x4016) {  // Joystick Strobe
-    joy1_->write(data);
-    joy2_->write(data);
-  }
-
-  else if (address == 0x4017) {  // APU frame counter
-    ;                            // TODO
-  }
-
-  else if (address == 0x4020) {  // Unused
-    ;
-  }
-
-  else if (address < 0x6000) {  // Expansion Modules, ie. Famicom Disk System
-    ;
-  }
-
-  else if (address < 0x8000) {  // Cartridge RAM
-    if (expansion_ram_) {
-      expansion_ram_[address - 0x6000] = data;
-    } else {
-      ;  // No cartridge RAM
-    }
-  }
-
-  else {  // Mapper
-    mapper_->write(address, data);
-  }
+  bus_->write(address, data);
 }
 
 void cpu::CPU::push(uint8_t data) {

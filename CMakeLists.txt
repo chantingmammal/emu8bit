@@ -31,6 +31,7 @@ add_executable(${PROJECT_NAME}
   src/nesemu.cpp
   src/ppu.cpp
   src/rom.cpp
+  src/system_bus.cpp
   src/window.cpp
 )
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
