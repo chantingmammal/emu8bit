@@ -1,5 +1,8 @@
 #include <nesemu/console.h>
+
 #include <nesemu/mapper/mappers.h>
+#include <nesemu/rom.h>
+#include <nesemu/window.h>
 
 #include <cstdint>
 

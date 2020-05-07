@@ -2,6 +2,7 @@
 
 #include <nesemu/apu.h>
 #include <nesemu/ppu.h>
+#include <nesemu/system_bus.h>
 #include <nesemu/utils.h>
 
 #include <iostream>

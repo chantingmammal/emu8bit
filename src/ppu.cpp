@@ -3,6 +3,7 @@
 #include <nesemu/debug.h>
 #include <nesemu/mapper/mapper_base.h>
 #include <nesemu/temp_mapping.h>
+#include <nesemu/window.h>
 
 #include <cstring>  // For memcpy
 #include <iostream>

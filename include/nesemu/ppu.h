@@ -1,7 +1,6 @@
 #pragma once
 
 #include <nesemu/utils.h>
-#include <nesemu/window.h>
 
 #include <cstdint>
 #include <cstring>  //memcpy
@@ -10,6 +9,10 @@
 // Forward declarations
 namespace mapper {
 class Mapper;
+}
+
+namespace window {
+class Window;
 }
 
 

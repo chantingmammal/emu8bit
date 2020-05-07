@@ -1,4 +1,5 @@
 #include <nesemu/rom.h>
+
 #include <nesemu/utils.h>
 
 #include <fstream>

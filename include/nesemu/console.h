@@ -2,13 +2,24 @@
 
 #include <nesemu/cpu.h>
 #include <nesemu/joystick.h>
-#include <nesemu/mapper/mapper_base.h>
 #include <nesemu/ppu.h>
-#include <nesemu/rom.h>
 #include <nesemu/system_bus.h>
-#include <nesemu/window.h>
 
 #include <SDL2/SDL_events.h>
+
+
+// Forward declarations
+namespace mapper {
+class Mapper;
+}
+
+namespace rom {
+class Rom;
+}
+
+namespace window {
+class Window;
+}
 
 
 namespace console {

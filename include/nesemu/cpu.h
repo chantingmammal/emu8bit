@@ -1,7 +1,6 @@
 #pragma once
 
 #include <nesemu/steady_timer.h>
-#include <nesemu/system_bus.h>
 #include <nesemu/utils.h>
 
 #include <cstdint>
@@ -15,6 +14,10 @@ class APU;
 
 namespace ppu {
 class PPU;
+}
+
+namespace system_bus {
+class SystemBus;
 }
 
 
