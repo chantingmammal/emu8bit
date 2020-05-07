@@ -28,14 +28,20 @@ void cpu::CPU::executeInstruction() {
   if (irq_reset_) {
     interrupt(0xFFFC);
     return;
-  } else if (irq_nmi_) {
-    irq_nmi_ = false;
+  } else if (!prev_nmi_ && bus_->hasNMI()) {
+    prev_nmi_ = true;
+    P.b |= 0b10;
+    P.i = false;  // TODO: Check timing
     interrupt(0xFFFA);
     return;
-  } else if (irq_irq_ && !P.i) {
+  } else if ((irq_brk_ || bus_->hasIRQ()) && !P.i) {
+    P.b |= 0b10;
+    P.i = false;  // TODO: Check timing
     interrupt(0xFFFE);
     return;
   }
+
+  prev_nmi_ = bus_->hasNMI();
 
 #if DEBUG
   static uint16_t next_op = PC;
@@ -153,8 +159,8 @@ void cpu::CPU::executeInstruction() {
 
     // Break
     case (asInt(Instruction::BRK) + asInt(AddressingMode::implied)):
-      IRQ(true);
-      P.b = 0b11;
+      irq_brk_ = true;
+      P.b      = 0b11;
       break;
 
 
@@ -647,20 +653,8 @@ void cpu::CPU::executeInstruction() {
 #endif
 }
 
-void cpu::CPU::NMI() {
-  irq_nmi_ = true;
-  P.b      = 0b10;
-  P.i      = false;  // TODO: Check timing
-}
-
 void cpu::CPU::reset(bool active) {
   irq_reset_ = active;
-}
-
-void cpu::CPU::IRQ(bool active) {
-  irq_irq_ = active;
-  P.b      = 0b10;
-  P.i      = false;  // TODO: Check timing
 }
 
 

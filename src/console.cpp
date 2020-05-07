@@ -9,7 +9,6 @@
 console::Console::Console() {
   bus_.connectChips(nullptr, &cpu_, &ppu_, &joy_1_, &joy_2_);
   cpu_.connectChips(nullptr, &ppu_);
-  ppu_.connectChips(&cpu_);
 
   cpu_.connectBus(&bus_);
 }

@@ -1,6 +1,5 @@
 #include <nesemu/ppu.h>
 
-#include <nesemu/cpu.h>
 #include <nesemu/debug.h>
 #include <nesemu/mapper/mapper_base.h>
 #include <nesemu/temp_mapping.h>
@@ -10,10 +9,6 @@
 
 
 // =*=*=*=*= PPU Setup =*=*=*=*=
-
-void ppu::PPU::connectChips(cpu::CPU* cpu) {
-  cpu_ = cpu;
-}
 
 void ppu::PPU::loadCart(mapper::Mapper* mapper, uint8_t* chr_mem, bool is_ram, Mirroring mirror) {
   mapper_         = mapper;
@@ -28,6 +23,10 @@ void ppu::PPU::setWindow(window::Window* window) {
 
 
 // =*=*=*=*= PPU Execution =*=*=*=*=
+
+bool ppu::PPU::hasNMI() {
+  return status_reg_.vblank && ctrl_reg_1_.vblank_enable;
+}
 
 void ppu::PPU::tick() {
   uint16_t scanline_length = 341;
@@ -55,9 +54,6 @@ void ppu::PPU::tick() {
   else if (scanline_ < 261) {
     if (scanline_ == 241 && cycle_ == 1) {
       status_reg_.vblank = true;
-      if (ctrl_reg_1_.vblank_enable) {
-        cpu_->NMI();
-      }
     }
   }
 

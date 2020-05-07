@@ -24,6 +24,14 @@ void system_bus::SystemBus::loadCart(mapper::Mapper* mapper, uint8_t* prg_rom, u
 }
 
 
+bool system_bus::SystemBus::hasIRQ() const {
+  return false; //apu_->hasIRQ() || mapper_->hasIRQ();
+}
+
+bool system_bus::SystemBus::hasNMI() const {
+  return ppu_->hasNMI();
+}
+
 uint8_t system_bus::SystemBus::read(uint16_t address) const {
 #if DEBUG
   const uint8_t data = readByteInternal(address);

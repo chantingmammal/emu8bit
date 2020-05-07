@@ -8,10 +8,6 @@
 
 
 // Forward declarations
-namespace cpu {
-class CPU;
-}
-
 namespace mapper {
 class Mapper;
 }
@@ -26,21 +22,22 @@ enum class Mirroring { none, vertical, horizontal };
 class PPU {
 public:
   // Setup
-  void connectChips(cpu::CPU* cpu);
   void loadCart(mapper::Mapper* mapper, uint8_t* chr_mem, bool is_ram, Mirroring mirror);
   void setWindow(window::Window* window);
 
 
   // Execution
   void    tick();
+  bool    hasNMI();
   uint8_t readRegister(uint16_t cpu_address);
   void    writeRegister(uint16_t cpu_address, uint8_t data);
   void    spriteDMAWrite(uint8_t* data);  // CPU 0x4014. Load sprite memory with 256 bytes.
 
 
 private:
+  bool has_nmi_ = {false};
+
   // Other chips
-  cpu::CPU*       cpu_    = {nullptr};
   window::Window* window_ = {nullptr};
 
   // Registers

@@ -129,9 +129,7 @@ public:
 
   // Execution
   void executeInstruction();
-  void NMI();
   void reset(bool active);
-  void IRQ(bool active);
 
 private:
   // System bus
@@ -163,9 +161,9 @@ private:
 
 
   // Interrupt Requests
-  bool irq_nmi_   = {false};
-  bool irq_reset_ = {false};
-  bool irq_irq_   = {false};
+  bool prev_nmi_  = {false};  // Edge sensitive
+  bool irq_reset_ = {false};  // Level sensitive
+  bool irq_brk_   = {false};  // Level sensitive
 
 
   // Internal operations
