@@ -5,6 +5,8 @@
 #include <nesemu/mapper/mapper_base.h>
 #include <nesemu/ppu.h>
 
+#include <iostream>
+
 
 void system_bus::SystemBus::connectChips(apu::APU*           apu,
                                          cpu::CPU*           cpu,
@@ -26,7 +28,7 @@ void system_bus::SystemBus::loadCart(mapper::Mapper* mapper, uint8_t* prg_rom, u
 
 
 bool system_bus::SystemBus::hasIRQ() const {
-  return false; //apu_->hasIRQ() || mapper_->hasIRQ();
+  return mapper_->hasIRQ();  // || apu_->hasIRQ();
 }
 
 bool system_bus::SystemBus::hasNMI() const {
@@ -35,7 +37,7 @@ bool system_bus::SystemBus::hasNMI() const {
 
 uint8_t system_bus::SystemBus::read(uint16_t address) const {
 #if DEBUG
-  const uint8_t data = readByteInternal(address);
+  const uint8_t data = readInternal(address);
   std::cout << "Read " << unsigned(data) << " from $(" << address << ")\n";
   return data;
 }

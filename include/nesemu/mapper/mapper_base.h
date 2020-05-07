@@ -15,7 +15,9 @@ public:
 
   virtual uint32_t decodeCPUAddress(uint16_t addr) const { return addr - PRG_ROM_OFFSET; };
   virtual uint32_t decodePPUAddress(uint16_t addr) const { return addr - CHR_ROM_OFFSET; };
+  virtual bool     hasIRQ() const { return false; }
   virtual void     write(uint16_t /*addr*/, uint8_t /*data*/) {};
+
 
 protected:
   uint8_t prg_banks_;  ///< Number of 8KiB PRG ROM banks
