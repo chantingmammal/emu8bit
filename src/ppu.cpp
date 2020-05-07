@@ -417,7 +417,8 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
         Sprite& sprite    = secondary_oam_.sprite[secondary_oam_counter_];
         sprite.y_position = primary_oam_.sprite[primary_oam_counter_].y_position;
 
-        if (sprite.y_position <= scanline_ && (sprite.y_position + 8) > scanline_) {
+        const uint8_t sprite_height = ctrl_reg_1_.large_sprites ? 16 : 8;
+        if (sprite.y_position <= scanline_ && (sprite.y_position + sprite_height) > scanline_) {
           secondary_oam_.sprite[secondary_oam_counter_++] = primary_oam_.sprite[primary_oam_counter_];
           if (primary_oam_counter_ == 0) {
             oam_has_sprite_zero_ = true;
@@ -510,20 +511,30 @@ void ppu::PPU::fetchNextSprite() {
   if (num_sprites_fetched_ < secondary_oam_counter_) {
 
     const Sprite& sprite = secondary_oam_.sprite[num_sprites_fetched_];
-    uint16_t      pattern_addr;
+    uint8_t       tile_index;
+    uint8_t       y_pos;
 
-    if (ctrl_reg_1_.sprite_size == 0) {                                  // Small (8x8) sprites
-      const uint8_t y_slice = sprite.attributes.flip_vert                // Horizontal slice of the sprite
-                                  ? 7 - (scanline_ - sprite.y_position)  //   - Vertically flipped
-                                  : scanline_ - sprite.y_position;       //   - Not flipped
+    // Large (8x16) sprites
+    if (ctrl_reg_1_.large_sprites) {
+      const bool top_tile   = scanline_ - sprite.y_position < 8;
+      const bool first_tile = top_tile != sprite.attributes.flip_vert;
 
-      pattern_addr = sprite.small_tile_index << 4                   // Base tile address
-                     | ctrl_reg_1_.sprite_pattern_table_addr << 12  // Pattern table
-                     | y_slice;                                     // Horizontal slice
-
-    } else {             // Large (8x16) sprites
-      pattern_addr = 0;  // TODO
+      tile_index = sprite.large_tile_index * 2 + (first_tile ? 0 : 1);
+      y_pos      = sprite.y_position + (top_tile ? 0 : 8);
     }
+
+    // Small (8x8) sprites
+    else {
+      tile_index = sprite.small_tile_index;
+      y_pos      = sprite.y_position;
+    }
+
+    const uint8_t y_slice = sprite.attributes.flip_vert                          // Horizontal slice of the sprite
+                                ? 7 - (scanline_ - y_pos)                        //   - Vertically flipped
+                                : scanline_ - y_pos;                             //   - Not flipped
+    const uint16_t pattern_addr = tile_index << 4                                // Base tile address
+                                  | ctrl_reg_1_.sprite_pattern_table_addr << 12  // Pattern table
+                                  | y_slice;                                     // Horizontal slice
 
     sprite_pattern_sr_a_[num_sprites_fetched_]      = readByte(pattern_addr);
     sprite_pattern_sr_b_[num_sprites_fetched_]      = readByte(pattern_addr | 8);
