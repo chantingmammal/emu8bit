@@ -412,7 +412,7 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
       fetchNextBGTile();
     }
 
-    if ((cycle_ % 2) == 0) {
+    if (fetch_sprites && (cycle_ % 2) == 0) {
       if (primary_oam_counter_ < 64 && secondary_oam_counter_ < 8) {
         Sprite& sprite    = secondary_oam_.sprite[secondary_oam_counter_];
         sprite.y_position = primary_oam_.sprite[primary_oam_counter_].y_position;
@@ -438,6 +438,14 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
         v_.nametable_select = (t_.nametable_select & 0x01) | (v_.nametable_select & 0x02);
       }
       num_sprites_fetched_ = 0;
+
+      // Clear old sprites
+      for (unsigned i = 0; i < 8; i++) {
+        sprite_pattern_sr_a_[i]      = 0;
+        sprite_pattern_sr_b_[i]      = 0;
+        sprite_palette_latch_[i].raw = 0;
+        sprite_x_position_[i]        = 0;
+      }
     }
 
     if (fetch_sprites && (cycle_ % 8) == 0) {
@@ -541,10 +549,10 @@ void ppu::PPU::fetchNextSprite() {
     sprite_palette_latch_[num_sprites_fetched_].raw = sprite.attributes.raw;
     sprite_x_position_[num_sprites_fetched_]        = sprite.x_position;
   } else {
-    sprite_pattern_sr_a_[num_sprites_fetched_]      = 0;
-    sprite_pattern_sr_b_[num_sprites_fetched_]      = 0;
-    sprite_palette_latch_[num_sprites_fetched_].raw = 0;
-    sprite_x_position_[num_sprites_fetched_]        = 0;
+    const uint16_t pattern_addr = 0xFF << 4                                       // Base tile address
+                                  | ctrl_reg_1_.sprite_pattern_table_addr << 12;  // Pattern table
+    readByte(pattern_addr);
+    readByte(pattern_addr | 8);
   }
   num_sprites_fetched_++;
 }

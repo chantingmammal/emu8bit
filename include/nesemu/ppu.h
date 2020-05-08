@@ -78,7 +78,7 @@ private:
       utils::RegBit<1, 7> large_tile_index;     // Tile number for top half of sprite within pattern table
                                                 //   (Bottom half uses next tile)
     } __attribute__((__packed__));
-    SpriteAttributes attributes;
+    SpriteAttributes attributes = {0};
     uint8_t          x_position = {0};  // Measured from top left
   } __attribute__((__packed__));
 
@@ -124,7 +124,7 @@ private:
     utils::RegBit<2> vertical_write;              //  - 0=PPU memory address increments by 1, 1=increments by 32
     utils::RegBit<3> sprite_pattern_table_addr;   //  - 0=0x0000, 1=0x1000
     utils::RegBit<4> screen_pattern_table_addr;   //  - 0=0x0000, 1=0x1000
-    utils::RegBit<5> large_sprites;                 //  - 0=8x8, 1=0x8x16
+    utils::RegBit<5> large_sprites;               //  - 0=8x8, 1=0x8x16
     utils::RegBit<6> ppu_master_slave_mode;       //  - Unused
     utils::RegBit<7> vblank_enable;               //  - Generate interrupts on VBlank
   } ctrl_reg_1_ = {0};                            //
