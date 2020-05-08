@@ -59,6 +59,7 @@ uint8_t system_bus::SystemBus::readInternal(uint16_t address) const {
   }
 
   else if (address == 0x4014) {  // PPU DMA Access
+                                 // TODO: Open bus?
     return 0;                    // Cannot read DMA register
   }
 

@@ -130,6 +130,7 @@ private:
 
 
   // Memory-mapped IO Registers
+  uint8_t io_latch_ = {0};
   union {                                         // PPU Control Register 1, mapped to CPU 0x2000 (RW)
     uint8_t raw;                                  //
     /* utils::RegBit<0, 2> nametable_address; */  //  - ** Mapped in temp_ register

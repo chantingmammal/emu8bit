@@ -93,39 +93,45 @@ void ppu::PPU::tick() {
 uint8_t ppu::PPU::readRegister(uint16_t cpu_address) {
   switch (cpu_address) {
     case (utils::asInt(MemoryMappedIO::PPUCTRL)):  // PPU Control Register 1
-      return ctrl_reg_1_.raw | v_.nametable_select;
+      // std::cout << "Read " << unsigned(io_latch_) << " from PPUCTRL" << std::endl;
+      break;
 
     case (utils::asInt(MemoryMappedIO::PPUMASK)):  // PPU Control Register 2
-      return ctrl_reg_2_.raw;
+      // std::cout << "Read " << unsigned(io_latch_) << " from PPUMASK" << std::endl;
+      break;
 
     case (utils::asInt(MemoryMappedIO::PPUSTATUS)): {  // PPU Status Register
-      const uint8_t reg  = status_reg_.raw;
+      io_latch_          = status_reg_.raw;
       status_reg_.vblank = false;
       write_toggle_      = false;
-      return reg;
-    }
+      // std::cout << "Read " << unsigned(io_latch_) << " from PPUSTATUS" << std::endl;
+    } break;
 
     case (utils::asInt(MemoryMappedIO::OAMADDR)):  // Sprite Memory Address (Write-only)
-      return 0;
+      // std::cout << "Read " << unsigned(io_latch_) << " from OAMADDR" << std::endl;
+      break;
 
     case (utils::asInt(MemoryMappedIO::OAMDATA)):  // Sprite Memory Data
-      return primary_oam_.byte[oam_addr_];
+      io_latch_ = primary_oam_.byte[oam_addr_];
+      // std::cout << "Read " << unsigned(io_latch_) << " from primary_oam " << unsigned(oam_addr_) << std::endl;
+      break;
 
     case (utils::asInt(MemoryMappedIO::PPUSCROLL)):  // Screen Scroll Offsets (Write-only)
-      return 0;
+      // std::cout << "Read " << unsigned(io_latch_) << " from PPUSCROLL" << std::endl;
+      break;
 
     case (utils::asInt(MemoryMappedIO::PPUADDR)):  // PPU Memory Address (Write-only)
-      return 0;
+      // std::cout << "Read " << unsigned(io_latch_) << " from PPUADDR" << std::endl;
+      break;
 
     case (utils::asInt(MemoryMappedIO::PPUDATA)): {  // PPU Memory Data
       static uint8_t read_buffer;
-      uint8_t        value;
       if (v_.raw < 0x3F00) {
-        value       = read_buffer;
+        io_latch_   = read_buffer;
         read_buffer = readByte(v_.raw);
       } else {
-        value       = readByte(v_.raw);
-        read_buffer = value;
+        io_latch_   = readByte(v_.raw);
+        read_buffer = io_latch_;
       }
 
       if ((scanline_ == 261 || scanline_ < 240) && ctrl_reg_2_.render_enable) {
@@ -134,33 +140,40 @@ uint8_t ppu::PPU::readRegister(uint16_t cpu_address) {
       } else {
         v_.raw += (ctrl_reg_1_.vertical_write ? 32 : 1);
       }
-      return value;
-    }
 
-    default:  // Unknown register!
-      return 0;
+      // std::cout << "Read " << unsigned(io_latch_) << " from PPUDATA" << std::endl;
+    } break;
   }
+
+  return io_latch_;
 }
 
 void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
+  io_latch_ = data;
+
   switch (cpu_address) {
     case (utils::asInt(MemoryMappedIO::PPUCTRL)):  // PPU Control Register 1
       ctrl_reg_1_.raw     = data;
       t_.nametable_select = data & 0x03;
+      // std::cout << "Set PPUCTRL = " << unsigned(data) << std::endl;
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUMASK)):  // PPU Control Register 2
       ctrl_reg_2_.raw = data;
+      // std::cout << "Set PPUMASK = " << unsigned(data) << std::endl;
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUSTATUS)):  // PPU Status Register (Read-only)
+      // std::cout << "Set PPUSTATUS = " << unsigned(data) << std::endl;
       break;
 
     case (utils::asInt(MemoryMappedIO::OAMADDR)):  // Sprite Memory Address
       oam_addr_ = data;
+      // std::cout << "Set OAMADDR = " << unsigned(oam_addr_) << std::endl;
       break;
 
     case (utils::asInt(MemoryMappedIO::OAMDATA)):  // Sprite Memory Data
+      // std::cout << "Set OAMDATA[" << unsigned(oam_addr_) << "] = " << unsigned(data) << std::endl;
       primary_oam_.byte[oam_addr_] = data;
       oam_addr_++;
       break;
@@ -180,7 +193,9 @@ void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
       if (write_toggle_) {                         // Write lower byte on second write
         t_.lower = data;
         v_.raw   = t_.raw;
+        // std::cout << "Set PPUADDR 2 = " << unsigned(data) << " - " << unsigned(v_.raw) << std::endl;
       } else {  // Write upper byte on first write
+        // std::cout << "Set PPUADDR 1 = " << unsigned(data) << std::endl;
         t_.upper = data & 0x3F;
       }
       write_toggle_ = !write_toggle_;
@@ -194,6 +209,7 @@ void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
       } else {
         v_.raw += (ctrl_reg_1_.vertical_write ? 32 : 1);
       }
+      // std::cout << "Set PPUDATA = " << unsigned(data) << std::endl;
       break;
 
     default:  // Unknown register!
