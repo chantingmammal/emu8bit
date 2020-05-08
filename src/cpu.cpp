@@ -97,7 +97,7 @@ void cpu::CPU::executeInstruction() {
 
     // Arithmetic shift left
     case (asInt(Instruction::ASL) + asInt(AddressingMode::accumulator)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       P.c = (A >> 7);
       A <<= 1;
       P.z = (A == 0);
@@ -160,6 +160,7 @@ void cpu::CPU::executeInstruction() {
 
     // Break
     case (asInt(Instruction::BRK) + asInt(AddressingMode::implied)):
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       irq_brk_ = true;
       P.b      = 0b11;
       break;
@@ -256,31 +257,31 @@ void cpu::CPU::executeInstruction() {
 
     // Flag (Processor Status) manipulation
     case (asInt(Instruction::CLC) + asInt(AddressingMode::implied)):
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       P.c = false;
       break;
     case (asInt(Instruction::SEC) + asInt(AddressingMode::implied)):
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       P.c = true;
       break;
     case (asInt(Instruction::CLI) + asInt(AddressingMode::implied)):
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       P.i = false;
       break;
     case (asInt(Instruction::SEI) + asInt(AddressingMode::implied)):
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       P.i = true;
       break;
     case (asInt(Instruction::CLV) + asInt(AddressingMode::implied)):
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       P.v = false;
       break;
     case (asInt(Instruction::CLD) + asInt(AddressingMode::implied)):
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       P.d = false;
       break;
     case (asInt(Instruction::SED) + asInt(AddressingMode::implied)):
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       P.d = true;
       break;
 
@@ -388,7 +389,7 @@ void cpu::CPU::executeInstruction() {
 
     // Logical shift right
     case (asInt(Instruction::LSR) + asInt(AddressingMode::accumulator)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       P.c = (A & 0x01);
       A >>= 1;
       P.z = (A == 0);
@@ -414,7 +415,7 @@ void cpu::CPU::executeInstruction() {
 
     // No operation
     case (asInt(Instruction::NOP) + asInt(AddressingMode::implied)):
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       break;
 
 
@@ -435,49 +436,49 @@ void cpu::CPU::executeInstruction() {
 
     // Register manipulation
     case (asInt(Instruction::TAX) + asInt(AddressingMode::implied)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       X   = A;
       P.z = (X == 0);
       P.n = (X >> 7);
     } break;
     case (asInt(Instruction::TXA) + asInt(AddressingMode::implied)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       A   = X;
       P.z = (A == 0);
       P.n = (A >> 7);
     } break;
     case (asInt(Instruction::DEX) + asInt(AddressingMode::implied)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       X--;
       P.z = (X == 0);
       P.n = (X >> 7);
     } break;
     case (asInt(Instruction::INX) + asInt(AddressingMode::implied)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       X++;
       P.z = (X == 0);
       P.n = (X >> 7);
     } break;
     case (asInt(Instruction::TAY) + asInt(AddressingMode::implied)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       Y   = A;
       P.z = (Y == 0);
       P.n = (Y >> 7);
     } break;
     case (asInt(Instruction::TYA) + asInt(AddressingMode::implied)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       A   = Y;
       P.z = (A == 0);
       P.n = (A >> 7);
     } break;
     case (asInt(Instruction::DEY) + asInt(AddressingMode::implied)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       Y--;
       P.z = (Y == 0);
       P.n = (Y >> 7);
     } break;
     case (asInt(Instruction::INY) + asInt(AddressingMode::implied)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       Y++;
       P.z = (Y == 0);
       P.n = (Y >> 7);
@@ -486,7 +487,7 @@ void cpu::CPU::executeInstruction() {
 
     // Rotate left
     case (asInt(Instruction::ROL) + asInt(AddressingMode::accumulator)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       const bool old_carry = (A >> 7);
       A                    = (A << 1) | P.c;
       P.c                  = old_carry;
@@ -514,7 +515,7 @@ void cpu::CPU::executeInstruction() {
 
     // Rotate right
     case (asInt(Instruction::ROR) + asInt(AddressingMode::accumulator)): {
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       const bool old_carry = (A & 0x01);
       A                    = (A >> 1) | (P.c << 7);
       P.c                  = old_carry;
@@ -542,6 +543,7 @@ void cpu::CPU::executeInstruction() {
 
     // Return from interrupt
     case (asInt(Instruction::RTI) + asInt(AddressingMode::implied)): {
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       P.raw = pop() & 0xCF;
       PC    = pop16();
     } break;
@@ -549,7 +551,8 @@ void cpu::CPU::executeInstruction() {
 
     // Return from subroutine
     case (asInt(Instruction::RTS) + asInt(AddressingMode::implied)): {
-      tick(2);
+      readByte(PC);  // Dummy read (For one-byte opcodes)
+      tick();
       PC = pop16() + 1;
     } break;
 
