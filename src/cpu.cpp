@@ -648,7 +648,7 @@ void cpu::CPU::executeInstruction() {
     // Illegal instruction
     default:
       std::cout << "Illegal instruction " << unsigned(opcode) << " at address $" << unsigned(PC - 1) << std::endl;
-      exit(1);
+      reset(true);
       break;
   }
 
