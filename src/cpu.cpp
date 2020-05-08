@@ -109,9 +109,9 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::ASL) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::ASL) + asInt(AddressingMode::zero_page_x)):
     case (asInt(Instruction::ASL) + asInt(AddressingMode::absolute)): {
-      tick();
       const uint16_t addr = getArgAddr(opcode - asInt(Instruction::ASL));
       uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
 
       P.c = (arg >> 7);
       arg <<= 1;
@@ -227,11 +227,13 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::DEC) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::DEC) + asInt(AddressingMode::zero_page_x)):
     case (asInt(Instruction::DEC) + asInt(AddressingMode::absolute)): {
-      tick();
       const uint16_t addr = getArgAddr(opcode - asInt(Instruction::DEC));
-      const uint8_t  arg  = readByte(addr) - 1;
-      P.z                 = (arg == 0);
-      P.n                 = (arg >> 7);
+      uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
+
+      arg -= 1;
+      P.z = (arg == 0);
+      P.n = (arg >> 7);
       writeByte(addr, arg);
     } break;
 
@@ -255,31 +257,31 @@ void cpu::CPU::executeInstruction() {
     // Flag (Processor Status) manipulation
     case (asInt(Instruction::CLC) + asInt(AddressingMode::implied)):
       tick();
-      P.c = 0;
+      P.c = false;
       break;
     case (asInt(Instruction::SEC) + asInt(AddressingMode::implied)):
       tick();
-      P.c = 1;
+      P.c = true;
       break;
     case (asInt(Instruction::CLI) + asInt(AddressingMode::implied)):
       tick();
-      P.i = 0;
+      P.i = false;
       break;
     case (asInt(Instruction::SEI) + asInt(AddressingMode::implied)):
       tick();
-      P.i = 1;
+      P.i = true;
       break;
     case (asInt(Instruction::CLV) + asInt(AddressingMode::implied)):
       tick();
-      P.v = 0;
+      P.v = false;
       break;
     case (asInt(Instruction::CLD) + asInt(AddressingMode::implied)):
       tick();
-      P.d = 0;
+      P.d = false;
       break;
     case (asInt(Instruction::SED) + asInt(AddressingMode::implied)):
       tick();
-      P.d = 1;
+      P.d = true;
       break;
 
 
@@ -290,11 +292,13 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::INC) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::INC) + asInt(AddressingMode::zero_page_x)):
     case (asInt(Instruction::INC) + asInt(AddressingMode::absolute)): {
-      tick();
       const uint16_t addr = getArgAddr(opcode - asInt(Instruction::INC));
-      const uint8_t  arg  = readByte(addr) + 1;
-      P.z                 = (arg == 0);
-      P.n                 = (arg >> 7);
+      uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
+
+      arg += 1;
+      P.z = (arg == 0);
+      P.n = (arg >> 7);
       writeByte(addr, arg);
     } break;
 
@@ -396,9 +400,9 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::LSR) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::LSR) + asInt(AddressingMode::zero_page_x)):
     case (asInt(Instruction::LSR) + asInt(AddressingMode::absolute)): {
-      tick();
       const uint16_t addr = getArgAddr(opcode - asInt(Instruction::LSR));
       uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
 
       P.c = (arg & 0x01);
       arg >>= 1;
@@ -495,14 +499,15 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::ROL) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::ROL) + asInt(AddressingMode::zero_page_x)):
     case (asInt(Instruction::ROL) + asInt(AddressingMode::absolute)): {
-      tick();
-      const uint16_t addr      = getArgAddr(opcode - asInt(Instruction::ROL));
-      uint8_t        arg       = readByte(addr);
-      const bool     old_carry = (arg >> 7);
-      arg                      = (arg << 1) | P.c;
-      P.c                      = old_carry;
-      P.z                      = (arg == 0);
-      P.n                      = (arg >> 7);
+      const uint16_t addr = getArgAddr(opcode - asInt(Instruction::ROL));
+      uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
+
+      const bool old_carry = (arg >> 7);
+      arg                  = (arg << 1) | P.c;
+      P.c                  = old_carry;
+      P.z                  = (arg == 0);
+      P.n                  = (arg >> 7);
       writeByte(addr, arg);
     } break;
 
@@ -522,14 +527,15 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::ROR) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::ROR) + asInt(AddressingMode::zero_page_x)):
     case (asInt(Instruction::ROR) + asInt(AddressingMode::absolute)): {
-      tick();
-      const uint16_t addr      = getArgAddr(opcode - asInt(Instruction::ROR));
-      uint8_t        arg       = readByte(addr);
-      const bool     old_carry = (arg & 0x01);
-      arg                      = (arg >> 1) | (P.c << 7);
-      P.c                      = old_carry;
-      P.z                      = (arg == 0);
-      P.n                      = (arg >> 7);
+      const uint16_t addr = getArgAddr(opcode - asInt(Instruction::ROR));
+      uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
+
+      const bool old_carry = (arg & 0x01);
+      arg                  = (arg >> 1) | (P.c << 7);
+      P.c                  = old_carry;
+      P.z                  = (arg == 0);
+      P.n                  = (arg >> 7);
       writeByte(addr, arg);
     } break;
 
@@ -640,7 +646,7 @@ void cpu::CPU::executeInstruction() {
 
     // Illegal instruction
     default:
-      std::cout << "Illegal instruction " << unsigned(opcode) << std::endl;
+      std::cout << "Illegal instruction " << unsigned(opcode) << " at address $" << unsigned(PC - 1) << std::endl;
       exit(1);
       break;
   }
