@@ -32,12 +32,10 @@ void cpu::CPU::executeInstruction() {
   } else if (!prev_nmi_ && bus_->hasNMI()) {
     prev_nmi_ = true;
     P.b |= 0b10;
-    P.i = false;  // TODO: Check timing
     interrupt(0xFFFA);
     return;
-  } else if ((irq_brk_ || bus_->hasIRQ()) && !P.i) {
+  } else if (irq_brk_ || (bus_->hasIRQ() && !P.i)) {
     P.b |= 0b10;
-    P.i = false;  // TODO: Check timing
     interrupt(0xFFFE);
     return;
   }
@@ -723,8 +721,9 @@ void cpu::CPU::interrupt(uint16_t vector_table) {
   push(PC);
   push(P.raw);
 
-  P.i = true;
-  PC  = readByte(vector_table) | (readByte(vector_table + 1) << 8);
+  irq_brk_ = false;
+  P.i      = true;
+  PC       = readByte(vector_table) | (readByte(vector_table + 1) << 8);
 }
 
 void cpu::CPU::branch(bool condition) {
