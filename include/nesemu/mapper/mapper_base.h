@@ -20,7 +20,7 @@ public:
 
 
 protected:
-  uint8_t prg_banks_;  ///< Number of 8KiB PRG ROM banks
+  uint8_t prg_banks_;  ///< Number of 16KiB PRG ROM banks
   uint8_t chr_banks_;  ///< Number of 8KiB CHR ROM/RAM banks
 };
 
