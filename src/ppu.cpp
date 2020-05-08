@@ -92,32 +92,32 @@ void ppu::PPU::tick() {
 
 uint8_t ppu::PPU::readRegister(uint16_t cpu_address) {
   switch (cpu_address) {
-    case (0x2000):  // PPU Control Register 1
+    case (utils::asInt(MemoryMappedIO::PPUCTRL)):  // PPU Control Register 1
       return ctrl_reg_1_.raw | v_.nametable_select;
 
-    case (0x2001):  // PPU Control Register 2
+    case (utils::asInt(MemoryMappedIO::PPUMASK)):  // PPU Control Register 2
       return ctrl_reg_2_.raw;
 
-    case (0x2002): {  // PPU Status Register
+    case (utils::asInt(MemoryMappedIO::PPUSTATUS)): {  // PPU Status Register
       const uint8_t reg  = status_reg_.raw;
       status_reg_.vblank = false;
       write_toggle_      = false;
       return reg;
     }
 
-    case (0x2003):  // Sprite Memory Address (Write-only)
+    case (utils::asInt(MemoryMappedIO::OAMADDR)):  // Sprite Memory Address (Write-only)
       return 0;
 
-    case (0x2004):  // Sprite Memory Data
+    case (utils::asInt(MemoryMappedIO::OAMDATA)):  // Sprite Memory Data
       return primary_oam_.byte[oam_addr_];
 
-    case (0x2005):  // Screen Scroll Offsets (Write-only)
+    case (utils::asInt(MemoryMappedIO::PPUSCROLL)):  // Screen Scroll Offsets (Write-only)
       return 0;
 
-    case (0x2006):  // PPU Memory Address (Write-only)
+    case (utils::asInt(MemoryMappedIO::PPUADDR)):  // PPU Memory Address (Write-only)
       return 0;
 
-    case (0x2007): {  // PPU Memory Data
+    case (utils::asInt(MemoryMappedIO::PPUDATA)): {  // PPU Memory Data
       static uint8_t read_buffer;
       uint8_t        value;
       if (v_.raw < 0x3F00) {
@@ -144,28 +144,28 @@ uint8_t ppu::PPU::readRegister(uint16_t cpu_address) {
 
 void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
   switch (cpu_address) {
-    case (0x2000):  // PPU Control Register 1
+    case (utils::asInt(MemoryMappedIO::PPUCTRL)):  // PPU Control Register 1
       ctrl_reg_1_.raw     = data;
       t_.nametable_select = data & 0x03;
       break;
 
-    case (0x2001):  // PPU Control Register 2
+    case (utils::asInt(MemoryMappedIO::PPUMASK)):  // PPU Control Register 2
       ctrl_reg_2_.raw = data;
       break;
 
-    case (0x2002):  // PPU Status Register (Read-only)
+    case (utils::asInt(MemoryMappedIO::PPUSTATUS)):  // PPU Status Register (Read-only)
       break;
 
-    case (0x2003):  // Sprite Memory Address
+    case (utils::asInt(MemoryMappedIO::OAMADDR)):  // Sprite Memory Address
       oam_addr_ = data;
       break;
 
-    case (0x2004):  // Sprite Memory Data
+    case (utils::asInt(MemoryMappedIO::OAMDATA)):  // Sprite Memory Data
       primary_oam_.byte[oam_addr_] = data;
       oam_addr_++;
       break;
 
-    case (0x2005):  // Screen Scroll Offsets
+    case (utils::asInt(MemoryMappedIO::PPUSCROLL)):  // Screen Scroll Offsets
       if (write_toggle_) {
         t_.fine_y_scroll   = data & 0x07;
         t_.coarse_y_scroll = data >> 3;
@@ -176,8 +176,8 @@ void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
       write_toggle_ = !write_toggle_;
       break;
 
-    case (0x2006):          // PPU Memory Address
-      if (write_toggle_) {  // Write lower byte on second write
+    case (utils::asInt(MemoryMappedIO::PPUADDR)):  // PPU Memory Address
+      if (write_toggle_) {                         // Write lower byte on second write
         t_.lower = data;
         v_.raw   = t_.raw;
       } else {  // Write upper byte on first write
@@ -186,7 +186,7 @@ void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
       write_toggle_ = !write_toggle_;
       break;
 
-    case (0x2007):  // PPU Memory Data
+    case (utils::asInt(MemoryMappedIO::PPUDATA)):  // PPU Memory Data
       writeByte(v_.raw, data);
       if ((scanline_ == 261 || scanline_ < 240) && ctrl_reg_2_.render_enable) {
         incrementCoarseX();
@@ -234,6 +234,8 @@ uint8_t ppu::PPU::readByteInternal(uint16_t address) {
         return ram_[address & ~0x800];
       case Mirroring::horizontal:  // Horizontal mirroring_
         return ram_[address & ~0x400];
+      default:
+        __builtin_unreachable();
     }
   }
 

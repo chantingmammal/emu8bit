@@ -50,6 +50,9 @@ public:
         } else {
           return (0x4000 * (prg_banks_ - 1)) | (addr & 0x3FFF);
         }
+
+      default:
+        __builtin_unreachable();
     }
   };
 
