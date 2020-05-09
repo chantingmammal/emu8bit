@@ -1,12 +1,12 @@
 #include <nesemu/ppu.h>
 
 #include <nesemu/debug.h>
+#include <nesemu/logger.h>
 #include <nesemu/mapper/mapper_base.h>
 #include <nesemu/temp_mapping.h>
 #include <nesemu/window.h>
 
 #include <cstring>  // For memcpy
-#include <iostream>
 
 
 // =*=*=*=*= PPU Setup =*=*=*=*=
@@ -92,36 +92,36 @@ void ppu::PPU::tick() {
 
 uint8_t ppu::PPU::readRegister(uint16_t cpu_address) {
   switch (cpu_address) {
-    case (utils::asInt(MemoryMappedIO::PPUCTRL)):  // PPU Control Register 1
-      // std::cout << "Read " << unsigned(io_latch_) << " from PPUCTRL" << std::endl;
+    case (utils::asInt(MemoryMappedIO::PPUCTRL)):  // PPU Control Register 1 (Write-only)
+      logger::log<logger::Level::DEBUG_PPU>("Read $%02X from PPUCTRL (Open bus)\n", io_latch_);
       break;
 
-    case (utils::asInt(MemoryMappedIO::PPUMASK)):  // PPU Control Register 2
-      // std::cout << "Read " << unsigned(io_latch_) << " from PPUMASK" << std::endl;
+    case (utils::asInt(MemoryMappedIO::PPUMASK)):  // PPU Control Register 2 (Write-only)
+      logger::log<logger::Level::DEBUG_PPU>("Read $%02X from PPUMASK (Open bus)\n", io_latch_);
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUSTATUS)): {  // PPU Status Register
       io_latch_          = status_reg_.raw;
       status_reg_.vblank = false;
       write_toggle_      = false;
-      // std::cout << "Read " << unsigned(io_latch_) << " from PPUSTATUS" << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Read $%02X from PPUSTATUS\n", io_latch_);
     } break;
 
     case (utils::asInt(MemoryMappedIO::OAMADDR)):  // Sprite Memory Address (Write-only)
-      // std::cout << "Read " << unsigned(io_latch_) << " from OAMADDR" << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Read $%02X from OAMADDR (Open bus)\n", io_latch_);
       break;
 
-    case (utils::asInt(MemoryMappedIO::OAMDATA)):  // Sprite Memory Data
+    case (utils::asInt(MemoryMappedIO::OAMDATA)):  // Sprite Memory Data (Write-only)
       io_latch_ = primary_oam_.byte[oam_addr_];
-      // std::cout << "Read " << unsigned(io_latch_) << " from primary_oam " << unsigned(oam_addr_) << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Read $%02X from OAMDATA[$%02X] (Open bus)\n", io_latch_, oam_addr_);
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUSCROLL)):  // Screen Scroll Offsets (Write-only)
-      // std::cout << "Read " << unsigned(io_latch_) << " from PPUSCROLL" << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Read $%02X from PPUSCROLL (Open bus)\n", io_latch_);
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUADDR)):  // PPU Memory Address (Write-only)
-      // std::cout << "Read " << unsigned(io_latch_) << " from PPUADDR" << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Read $%02X from PPUADDR (Open bus)\n", io_latch_);
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUDATA)): {  // PPU Memory Data
@@ -141,7 +141,7 @@ uint8_t ppu::PPU::readRegister(uint16_t cpu_address) {
         v_.raw += (ctrl_reg_1_.vertical_write ? 32 : 1);
       }
 
-      // std::cout << "Read " << unsigned(io_latch_) << " from PPUDATA" << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Read $%02X from PPUDATA\n", io_latch_);
     } break;
   }
 
@@ -155,25 +155,25 @@ void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
     case (utils::asInt(MemoryMappedIO::PPUCTRL)):  // PPU Control Register 1
       ctrl_reg_1_.raw     = data;
       t_.nametable_select = data & 0x03;
-      // std::cout << "Set PPUCTRL = " << unsigned(data) << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Set PPUCTRL = $%02X\n", data);
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUMASK)):  // PPU Control Register 2
       ctrl_reg_2_.raw = data;
-      // std::cout << "Set PPUMASK = " << unsigned(data) << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Set PPUMASK = $%02X\n", data);
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUSTATUS)):  // PPU Status Register (Read-only)
-      // std::cout << "Set PPUSTATUS = " << unsigned(data) << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Set PPUSTATUS = $%02X (Open bus)\n", data);
       break;
 
     case (utils::asInt(MemoryMappedIO::OAMADDR)):  // Sprite Memory Address
       oam_addr_ = data;
-      // std::cout << "Set OAMADDR = " << unsigned(oam_addr_) << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Set OAMADDR = $%02X\n", data);
       break;
 
     case (utils::asInt(MemoryMappedIO::OAMDATA)):  // Sprite Memory Data
-      // std::cout << "Set OAMDATA[" << unsigned(oam_addr_) << "] = " << unsigned(data) << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Set OAMDATA[$%02X] to $%02X\n", oam_addr_, io_latch_);
       primary_oam_.byte[oam_addr_] = data;
       oam_addr_++;
       break;
@@ -187,18 +187,18 @@ void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
         t_.coarse_x_scroll = data >> 3;
       }
       write_toggle_ = !write_toggle_;
+      logger::log<logger::Level::DEBUG_PPU>("Set PPUSCROLL = $%02X\n", data);
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUADDR)):  // PPU Memory Address
       if (write_toggle_) {                         // Write lower byte on second write
         t_.lower = data;
         v_.raw   = t_.raw;
-        // std::cout << "Set PPUADDR 2 = " << unsigned(data) << " - " << unsigned(v_.raw) << std::endl;
       } else {  // Write upper byte on first write
-        // std::cout << "Set PPUADDR 1 = " << unsigned(data) << std::endl;
         t_.upper = data & 0x3F;
       }
       write_toggle_ = !write_toggle_;
+      logger::log<logger::Level::DEBUG_PPU>("Set PPUADDR = $%02X\n", data);
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUDATA)):  // PPU Memory Data
@@ -209,7 +209,7 @@ void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
       } else {
         v_.raw += (ctrl_reg_1_.vertical_write ? 32 : 1);
       }
-      // std::cout << "Set PPUDATA = " << unsigned(data) << std::endl;
+      logger::log<logger::Level::DEBUG_PPU>("Set PPUDATA = $%02X\n", data);
       break;
 
     default:  // Unknown register!
@@ -225,19 +225,12 @@ void ppu::PPU::spriteDMAWrite(uint8_t* data) {
 // =*=*=*=*= PPU Internal Operations =*=*=*=*=
 
 uint8_t ppu::PPU::readByte(uint16_t address) {
-#if DEBUG
-  const uint8_t data = readByteInternal(address);
-  std::cout << "Read PPU" << unsigned(data) << " from $(" << address << ")\n";
-  return data;
-}
-
-uint8_t ppu::PPU::readByteInternal(uint16_t address) {
-#endif
+  uint8_t data;
   address &= 0x3FFF;
 
   // Cartridge VRAM/VROM
   if (address < 0x2000) {
-    return chr_mem_[mapper_->decodePPUAddress(address)];
+    data = chr_mem_[mapper_->decodePPUAddress(address)];
   }
 
   // Nametables
@@ -245,11 +238,14 @@ uint8_t ppu::PPU::readByteInternal(uint16_t address) {
     address = (address & 0x0FFF) | (0x400 * v_.nametable_select);
     switch (mirroring_) {
       case Mirroring::none:  // Four-screen VRAM layout
-        return ram_[address];
+        data = ram_[address];
+        break;
       case Mirroring::vertical:  // Vertical mirroring_
-        return ram_[address & ~0x800];
+        data = ram_[address & ~0x800];
+        break;
       case Mirroring::horizontal:  // Horizontal mirroring_
-        return ram_[address & ~0x400];
+        data = ram_[address & ~0x400];
+        break;
       default:
         __builtin_unreachable();
     }
@@ -267,14 +263,15 @@ uint8_t ppu::PPU::readByteInternal(uint16_t address) {
         address &= ~0x0010;
     }
 
-    return ram_[(address & 0x1F) + 0x1F00] & (ctrl_reg_2_.greyscale ? 0x30 : 0xFF);
+    data = ram_[(address & 0x1F) + 0x1F00] & (ctrl_reg_2_.greyscale ? 0x30 : 0xFF);
   }
+
+  logger::log<logger::Level::DEBUG_PPU>("Read $%02X from PPU $(%04X)\n", data, address);
+  return data;
 }
 
 void ppu::PPU::writeByte(uint16_t address, uint8_t data) {
-#if DEBUG
-  std::cout << std::hex << "Write PPU ($" << unsigned(address) << ")=" << unsigned(data) << "\n";
-#endif
+  logger::log<logger::Level::DEBUG_PPU>("Write $%02X from PPU $(%04X)\n", data, address);
   address &= 0x3FFF;
 
   // Cartridge VRAM/VROM
@@ -286,8 +283,6 @@ void ppu::PPU::writeByte(uint16_t address, uint8_t data) {
   // Nametables
   else if (address < 0x3F00) {
     address = ((address - 0x2000) & 0x0FFF) | (0x400 * v_.nametable_select);
-
-    // std::cout << "Write NT " << address << " = " << unsigned(data) << std::endl;
 
     switch (mirroring_) {
       case Mirroring::none:  // Four-screen VRAM layout
@@ -314,7 +309,6 @@ void ppu::PPU::writeByte(uint16_t address, uint8_t data) {
         address &= ~0x0010;
     }
 
-    // std::cout << "Write palette " << address << " = " << unsigned(data) << std::endl;
     ram_[(address & 0x1F) + 0x1F00] = data;
   }
 }

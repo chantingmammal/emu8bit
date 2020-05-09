@@ -176,9 +176,6 @@ private:
 
 
 // Internal operations
-#if DEBUG
-  uint8_t readByteInternal(uint16_t address);
-#endif
   uint8_t readByte(uint16_t address);
   void    writeByte(uint16_t address, uint8_t data);
   void    renderPixel();
