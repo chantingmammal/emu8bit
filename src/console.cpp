@@ -1,5 +1,6 @@
 #include <nesemu/console.h>
 
+#include <nesemu/logger.h>
 #include <nesemu/mapper/mappers.h>
 #include <nesemu/rom.h>
 #include <nesemu/window.h>
@@ -25,6 +26,7 @@ console::Console::~Console() {
 void console::Console::loadCart(rom::Rom* rom) {
   const uint16_t mapper_num = rom->header.mapper_upper << 8 | rom->header.mapper_lower;
   mapper_                   = mapper::mappers[mapper_num](rom->header.prg_rom_size, rom->header.chr_rom_size);
+  logger::log<logger::DEBUG_MAPPER>("Using mapper #%d\n", mapper_num);
 
   bus_.loadCart(mapper_, rom->prg[0], (rom->header.has_battery ? rom->expansion[0] : nullptr));
 

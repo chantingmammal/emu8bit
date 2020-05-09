@@ -1,5 +1,6 @@
 #pragma once
 
+#include <nesemu/logger.h>
 #include <nesemu/mapper/mapper_base.h>
 
 
@@ -83,6 +84,7 @@ public:
       }
 
       if (irq_counter_ == 0 && irq_enable_) {
+        logger::log<logger::DEBUG_MAPPER>("Mapper-triggered IRQ\n");
         has_irq_ = true;
       }
     }
