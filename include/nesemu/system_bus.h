@@ -42,9 +42,6 @@ public:
   bool    hasNMI() const;
   uint8_t read(uint16_t address) const;
   void    write(uint16_t address, uint8_t data);
-#if DEBUG
-  uint8_t readInternal(uint16_t address) const;
-#endif
 
 
 private:
