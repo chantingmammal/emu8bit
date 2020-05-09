@@ -1,11 +1,24 @@
 #include <nesemu/cpu.h>
 
 #include <nesemu/apu.h>
+#include <nesemu/logger.h>
 #include <nesemu/ppu.h>
 #include <nesemu/system_bus.h>
 #include <nesemu/utils.h>
 
 #include <iostream>
+
+
+// =*=*=*=*= Logging =*=*=*=*=
+
+template <typename... T>
+inline void log(uint16_t addr, uint8_t opcode, const char* format, T... args) {
+  size_t size   = snprintf(nullptr, 0, "$%04X> $%02X %s", addr, opcode, format) + 1;
+  char*  buffer = new char[size];
+  snprintf(buffer, size, "$%04X> $%02X %s", addr, opcode, format);
+  logger::log<logger::DEBUG_CPU>(buffer, args...);
+  delete buffer;
+}
 
 
 // =*=*=*=*= CPU Setup =*=*=*=*=
@@ -51,11 +64,8 @@ void cpu::CPU::executeInstruction() {
 #endif
 
   // Fetch next instruction from PC
-  const uint8_t opcode = readByte(PC++);
-
-#if DEBUG
-  std::cout << "Opcode: " << std::hex << unsigned(opcode) << " from addr " << std::hex << unsigned(PC - 1) << std::endl;
-#endif
+  const uint16_t opcode_addr = PC++;
+  const uint8_t  opcode      = readByte(opcode_addr);
 
   switch (opcode) {
 
@@ -75,6 +85,7 @@ void cpu::CPU::executeInstruction() {
       P.v                  = (A >> 7 == arg >> 7) && (A >> 7 != result >> 7);
       P.n                  = (result >> 7);
       A                    = result;
+      log(opcode_addr, opcode, "ADC:       A <- $%02X\n", A);
     } break;
 
 
@@ -90,6 +101,7 @@ void cpu::CPU::executeInstruction() {
       A &= readByte(getArgAddr(opcode - asInt(Instruction::AND)));
       P.z = (A == 0);
       P.n = (A >> 7);
+      log(opcode_addr, opcode, "AND:       A <- $%02X\n", A);
     } break;
 
 
@@ -100,6 +112,7 @@ void cpu::CPU::executeInstruction() {
       A <<= 1;
       P.z = (A == 0);
       P.n = (A >> 7);
+      log(opcode_addr, opcode, "ASL:       A <- $%02X\n", A);
     } break;
     case (asInt(Instruction::ASL) + asInt(AddressingMode::absolute_x)):
       tick();
@@ -116,6 +129,7 @@ void cpu::CPU::executeInstruction() {
       P.z = (arg == 0);
       P.n = (arg >> 7);
       writeByte(addr, arg);
+      log(opcode_addr, opcode, "ASL:   $%04X <- $%02X\n", addr, arg);
     } break;
 
 
@@ -126,33 +140,42 @@ void cpu::CPU::executeInstruction() {
       P.z               = ((A & arg) == 0);
       P.v               = (arg >> 6) & 0x01;
       P.n               = (arg >> 7);
+      log(opcode_addr, opcode, "BIT:     $%02X\n", arg);
     } break;
 
 
     // Branch
     case (asInt(Instruction::BPL) + asInt(AddressingMode::relative)):
       branch(!P.n);
+      log(opcode_addr, opcode, "BPL\n");
       break;
     case (asInt(Instruction::BMI) + asInt(AddressingMode::relative)):
       branch(P.n);
+      log(opcode_addr, opcode, "BMI\n");
       break;
     case (asInt(Instruction::BVC) + asInt(AddressingMode::relative)):
       branch(!P.v);
+      log(opcode_addr, opcode, "BVC\n");
       break;
     case (asInt(Instruction::BVS) + asInt(AddressingMode::relative)):
       branch(P.v);
+      log(opcode_addr, opcode, "BVS\n");
       break;
     case (asInt(Instruction::BCC) + asInt(AddressingMode::relative)):
       branch(!P.c);
+      log(opcode_addr, opcode, "BCC\n");
       break;
     case (asInt(Instruction::BCS) + asInt(AddressingMode::relative)):
       branch(P.c);
+      log(opcode_addr, opcode, "BCS\n");
       break;
     case (asInt(Instruction::BNE) + asInt(AddressingMode::relative)):
       branch(!P.z);
+      log(opcode_addr, opcode, "BNE\n");
       break;
     case (asInt(Instruction::BEQ) + asInt(AddressingMode::relative)):
       branch(P.z);
+      log(opcode_addr, opcode, "BEQ\n");
       break;
 
 
@@ -161,6 +184,7 @@ void cpu::CPU::executeInstruction() {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       irq_brk_ = true;
       P.b      = 0b11;
+      log(opcode_addr, opcode, "BRK\n");
       break;
 
 
@@ -178,6 +202,7 @@ void cpu::CPU::executeInstruction() {
       P.z               = (A == arg);
       P.c               = (A >= arg);
       P.n               = ((A - arg) >> 7);
+      log(opcode_addr, opcode, "CMP:     $%02X\n", arg);
     } break;
 
 
@@ -197,6 +222,7 @@ void cpu::CPU::executeInstruction() {
       P.z               = (X == arg);
       P.c               = (X >= arg);
       P.n               = ((X - arg) >> 7);
+      log(opcode_addr, opcode, "CPX:     $%02X\n", arg);
     } break;
 
 
@@ -216,6 +242,7 @@ void cpu::CPU::executeInstruction() {
       P.z               = (Y == arg);
       P.c               = (Y >= arg);
       P.n               = ((Y - arg) >> 7);
+      log(opcode_addr, opcode, "CPY:     $%02X\n", arg);
     } break;
 
 
@@ -234,6 +261,7 @@ void cpu::CPU::executeInstruction() {
       P.z = (arg == 0);
       P.n = (arg >> 7);
       writeByte(addr, arg);
+      log(opcode_addr, opcode, "DEC:   $%04X <- $%02X\n", addr, arg);
     } break;
 
 
@@ -250,6 +278,7 @@ void cpu::CPU::executeInstruction() {
       A ^= readByte(getArgAddr(opcode - asInt(Instruction::EOR), true));
       P.z = (A == 0);
       P.n = (A >> 7);
+      log(opcode_addr, opcode, "EOR:       A <- $%02X\n", A);
     } break;
 
 
@@ -257,30 +286,37 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::CLC) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
       P.c = false;
+      log(opcode_addr, opcode, "CLC\n");
       break;
     case (asInt(Instruction::SEC) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
       P.c = true;
+      log(opcode_addr, opcode, "SEC\n");
       break;
     case (asInt(Instruction::CLI) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
       P.i = false;
+      log(opcode_addr, opcode, "CLI\n");
       break;
     case (asInt(Instruction::SEI) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
       P.i = true;
+      log(opcode_addr, opcode, "SEI\n");
       break;
     case (asInt(Instruction::CLV) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
       P.v = false;
+      log(opcode_addr, opcode, "CLV\n");
       break;
     case (asInt(Instruction::CLD) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
       P.d = false;
+      log(opcode_addr, opcode, "CLD\n");
       break;
     case (asInt(Instruction::SED) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
       P.d = true;
+      log(opcode_addr, opcode, "SED\n");
       break;
 
 
@@ -299,18 +335,21 @@ void cpu::CPU::executeInstruction() {
       P.z = (arg == 0);
       P.n = (arg >> 7);
       writeByte(addr, arg);
+      log(opcode_addr, opcode, "INC:   $%04X <- $%02X\n", addr, arg);
     } break;
 
 
     // Jump
     case (asInt(Instruction::JMP) + asInt(AddressingMode::immediate)):  // Irregular opcode, actually absolute
       PC = getArgAddr(AddressingMode::absolute);
+      log(opcode_addr, opcode, "JMP:   $%04X\n", PC);
       break;
     case (asInt(Instruction::JMP) + asInt(AddressingMode::indirect)): {  // Like indirect, but with page wrap bug
       uint16_t addr = readByte(PC++);
       addr |= (readByte(PC++) << 8);
       const uint16_t page = addr & 0xFF00;
       PC                  = readByte(addr) | (readByte(((addr + 1) & 0x00FF) | page) << 8);
+      log(opcode_addr, opcode, "JMP:   $%04X\n", PC);
     } break;
 
 
@@ -321,6 +360,7 @@ void cpu::CPU::executeInstruction() {
       push((PC - 1) >> 8);
       push(PC - 1);
       PC = address;
+      log(opcode_addr, opcode, "JSR:   $%04X\n", PC);
     } break;
 
 
@@ -336,6 +376,7 @@ void cpu::CPU::executeInstruction() {
       A   = readByte(getArgAddr(opcode - asInt(Instruction::LDA), true));
       P.z = (A == 0);
       P.n = (A >> 7);
+      log(opcode_addr, opcode, "LDA:       A <- $%02X\n", A);
     } break;
 
 
@@ -359,6 +400,7 @@ void cpu::CPU::executeInstruction() {
       X   = readByte(getArgAddr(mode, true));
       P.z = (X == 0);
       P.n = (X >> 7);
+      log(opcode_addr, opcode, "LDX:       X <- $%02X\n", X);
     } break;
 
 
@@ -382,6 +424,7 @@ void cpu::CPU::executeInstruction() {
       Y   = readByte(getArgAddr(mode, true));
       P.z = (Y == 0);
       P.n = (Y >> 7);
+      log(opcode_addr, opcode, "LDY:       Y <- $%02X\n", Y);
     } break;
 
 
@@ -392,6 +435,7 @@ void cpu::CPU::executeInstruction() {
       A >>= 1;
       P.z = (A == 0);
       P.n = (A >> 7);  // Always 0
+      log(opcode_addr, opcode, "LSR:       A <- $%02X\n", A);
     } break;
     case (asInt(Instruction::LSR) + asInt(AddressingMode::absolute_x)):
       tick();
@@ -408,12 +452,14 @@ void cpu::CPU::executeInstruction() {
       P.z = (arg == 0);
       P.n = (arg >> 7);  // Always 0
       writeByte(addr, arg);
+      log(opcode_addr, opcode, "LSR:   $%04X <- $%02X\n", addr, arg);
     } break;
 
 
     // No operation
     case (asInt(Instruction::NOP) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
+      log(opcode_addr, opcode, "NOP\n");
       break;
 
 
@@ -429,6 +475,7 @@ void cpu::CPU::executeInstruction() {
       A |= readByte(getArgAddr(opcode - asInt(Instruction::ORA), true));
       P.z = (A == 0);
       P.n = (A >> 7);
+      log(opcode_addr, opcode, "ORA:       A <- $%02X\n", A);
     } break;
 
 
@@ -438,48 +485,56 @@ void cpu::CPU::executeInstruction() {
       X   = A;
       P.z = (X == 0);
       P.n = (X >> 7);
+      log(opcode_addr, opcode, "TAX:       X <- $%02X\n", X);
     } break;
     case (asInt(Instruction::TXA) + asInt(AddressingMode::implied)): {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       A   = X;
       P.z = (A == 0);
       P.n = (A >> 7);
+      log(opcode_addr, opcode, "TXA:       A <- $%02X\n", A);
     } break;
     case (asInt(Instruction::DEX) + asInt(AddressingMode::implied)): {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       X--;
       P.z = (X == 0);
       P.n = (X >> 7);
+      log(opcode_addr, opcode, "DEX:       X <- $%02X\n", X);
     } break;
     case (asInt(Instruction::INX) + asInt(AddressingMode::implied)): {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       X++;
       P.z = (X == 0);
       P.n = (X >> 7);
+      log(opcode_addr, opcode, "INX:       X <- $%02X\n", X);
     } break;
     case (asInt(Instruction::TAY) + asInt(AddressingMode::implied)): {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       Y   = A;
       P.z = (Y == 0);
       P.n = (Y >> 7);
+      log(opcode_addr, opcode, "TAY:       Y <- $%02X\n", Y);
     } break;
     case (asInt(Instruction::TYA) + asInt(AddressingMode::implied)): {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       A   = Y;
       P.z = (A == 0);
       P.n = (A >> 7);
+      log(opcode_addr, opcode, "TAY:       A <- $%02X\n", A);
     } break;
     case (asInt(Instruction::DEY) + asInt(AddressingMode::implied)): {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       Y--;
       P.z = (Y == 0);
       P.n = (Y >> 7);
+      log(opcode_addr, opcode, "DEY:       Y <- $%02X\n", Y);
     } break;
     case (asInt(Instruction::INY) + asInt(AddressingMode::implied)): {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       Y++;
       P.z = (Y == 0);
       P.n = (Y >> 7);
+      log(opcode_addr, opcode, "INY:       Y <- $%02X\n", Y);
     } break;
 
 
@@ -491,6 +546,7 @@ void cpu::CPU::executeInstruction() {
       P.c                  = old_carry;
       P.z                  = (A == 0);
       P.n                  = (A >> 7);
+      log(opcode_addr, opcode, "ROL:       A <- $%02X\n", A);
     } break;
     case (asInt(Instruction::ROL) + asInt(AddressingMode::absolute_x)):
       tick();
@@ -508,6 +564,7 @@ void cpu::CPU::executeInstruction() {
       P.z                  = (arg == 0);
       P.n                  = (arg >> 7);
       writeByte(addr, arg);
+      log(opcode_addr, opcode, "ROL:   $%04X <- $%02X\n", addr, arg);
     } break;
 
 
@@ -519,6 +576,7 @@ void cpu::CPU::executeInstruction() {
       P.c                  = old_carry;
       P.z                  = (A == 0);
       P.n                  = (A >> 7);
+      log(opcode_addr, opcode, "ROR:       A <- $%02X\n", A);
     } break;
     case (asInt(Instruction::ROR) + asInt(AddressingMode::absolute_x)):
       tick();
@@ -536,6 +594,7 @@ void cpu::CPU::executeInstruction() {
       P.z                  = (arg == 0);
       P.n                  = (arg >> 7);
       writeByte(addr, arg);
+      log(opcode_addr, opcode, "ROR:   $%04X <- $%02X\n", addr, arg);
     } break;
 
 
@@ -544,6 +603,7 @@ void cpu::CPU::executeInstruction() {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       P.raw = pop() & 0xCF;
       PC    = pop16();
+      log(opcode_addr, opcode, "RTI:   $%04X\n", PC);
     } break;
 
 
@@ -552,6 +612,7 @@ void cpu::CPU::executeInstruction() {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       tick();
       PC = pop16() + 1;
+      log(opcode_addr, opcode, "RTS:   $%04X\n", PC);
     } break;
 
 
@@ -572,6 +633,7 @@ void cpu::CPU::executeInstruction() {
       P.v                     = (A >> 7 != arg >> 7) && (A >> 7 != result >> 7);
       P.n                     = (result >> 7);
       A                       = result;
+      log(opcode_addr, opcode, "SBC:       A <- $%02X\n", A);
     } break;
 
 
@@ -585,7 +647,9 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::STA) + asInt(AddressingMode::zero_page_x)):
     case (asInt(Instruction::STA) + asInt(AddressingMode::absolute)):
     case (asInt(Instruction::STA) + asInt(AddressingMode::indirect_x)): {
-      writeByte(getArgAddr(opcode - asInt(Instruction::STA)), A);
+      const uint16_t addr = getArgAddr(opcode - asInt(Instruction::STA));
+      writeByte(addr, A);
+      log(opcode_addr, opcode, "STA:   $%04X <- $%02X\n", addr, A);
     } break;
 
 
@@ -593,31 +657,37 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::TXS) + asInt(AddressingMode::implied)):
       tick();
       SP = X;
+      log(opcode_addr, opcode, "TXS:      SP <- $%02X\n", SP);
       break;
     case (asInt(Instruction::TSX) + asInt(AddressingMode::implied)):
       tick();
       X   = SP;
       P.z = (X == 0);
       P.n = (X >> 7);
+      log(opcode_addr, opcode, "TSX:       X <- $%02X\n", X);
       break;
     case (asInt(Instruction::PHA) + asInt(AddressingMode::implied)):
       tick(2);
       push(A);
+      log(opcode_addr, opcode, "PHA:      SP <- $%02X\n", A);
       break;
     case (asInt(Instruction::PLA) + asInt(AddressingMode::implied)):
       tick(3);
       A   = pop();
       P.z = (A == 0);
       P.n = (A >> 7);
+      log(opcode_addr, opcode, "PLA:       A <- $%02X\n", A);
       break;
     case (asInt(Instruction::PHP) + asInt(AddressingMode::implied)):
       tick(2);
       P.b = 0b11;
       push(P.raw);
+      log(opcode_addr, opcode, "PHP:      SP <- $%02X\n", P.raw);
       break;
     case (asInt(Instruction::PLP) + asInt(AddressingMode::implied)):
       tick(3);
       P.raw = pop() & 0xCF;
+      log(opcode_addr, opcode, "PHP:       P <- $%02X\n", P.raw);
       break;
 
 
@@ -633,6 +703,7 @@ void cpu::CPU::executeInstruction() {
         addr = getArgAddr(opcode - asInt(Instruction::STX));
       }
       writeByte(addr, X);
+      log(opcode_addr, opcode, "STX:   $%04X <- $%02X\n", addr, X);
     } break;
 
 
@@ -641,7 +712,9 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::STY) + asInt(AddressingMode::zero_page_x)):
     case (asInt(Instruction::STY) + asInt(AddressingMode::absolute)): {
       tick();
-      writeByte(getArgAddr(opcode - asInt(Instruction::STY)), Y);
+      const uint16_t addr = getArgAddr(opcode - asInt(Instruction::STY));
+      writeByte(addr, Y);
+      log(opcode_addr, opcode, "STX:   $%04X <- $%02X\n", addr, Y);
     } break;
 
 
@@ -679,21 +752,12 @@ void cpu::CPU::writeByte(uint16_t address, uint8_t data) {
 }
 
 void cpu::CPU::push(uint8_t data) {
-#if DEBUG
-  std::cout << "Push " << unsigned(data) << " @ " << 0x0100 + SP << std::endl;
-#endif
   writeByte(0x0100 + SP--, data);
 }
 
 uint8_t cpu::CPU::pop() {
   tick();  // Increment SP
-#if DEBUG
-  uint8_t data = readByte(0x0100 + (++SP));
-  std::cout << "Pop  " << unsigned(data) << " @ " << 0x0100 + SP << std::endl;
-  return data;
-#else
   return readByte(0x0100 + (++SP));
-#endif
 }
 
 uint16_t cpu::CPU::pop16() {
@@ -713,9 +777,6 @@ void cpu::CPU::tick(int ticks) {
 }
 
 void cpu::CPU::interrupt(uint16_t vector_table) {
-#if DEBUG
-  std::cout << "Interrupt, jumping to $(" << vector_table << ")\n";
-#endif
   tick();  // TODO: Confirm number of ticks for NMI
   push(PC >> 8);
   push(PC);
@@ -724,6 +785,7 @@ void cpu::CPU::interrupt(uint16_t vector_table) {
   irq_brk_ = false;
   P.i      = true;
   PC       = readByte(vector_table) | (readByte(vector_table + 1) << 8);
+  logger::log<logger::DEBUG_CPU>("Interrupt, jumping to $%04X\n", vector_table);
 }
 
 void cpu::CPU::branch(bool condition) {
