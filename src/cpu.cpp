@@ -655,37 +655,41 @@ void cpu::CPU::executeInstruction() {
 
     // Stack manipulation
     case (asInt(Instruction::TXS) + asInt(AddressingMode::implied)):
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       SP = X;
       log(opcode_addr, opcode, "TXS:      SP <- $%02X\n", SP);
       break;
     case (asInt(Instruction::TSX) + asInt(AddressingMode::implied)):
-      tick();
+      readByte(PC);  // Dummy read (For one-byte opcodes)
       X   = SP;
       P.z = (X == 0);
       P.n = (X >> 7);
       log(opcode_addr, opcode, "TSX:       X <- $%02X\n", X);
       break;
     case (asInt(Instruction::PHA) + asInt(AddressingMode::implied)):
-      tick(2);
+      readByte(PC);  // Dummy read (For one-byte opcodes)
+      tick();
       push(A);
       log(opcode_addr, opcode, "PHA:      SP <- $%02X\n", A);
       break;
     case (asInt(Instruction::PLA) + asInt(AddressingMode::implied)):
-      tick(3);
+      readByte(PC);  // Dummy read (For one-byte opcodes)
+      tick(2);
       A   = pop();
       P.z = (A == 0);
       P.n = (A >> 7);
       log(opcode_addr, opcode, "PLA:       A <- $%02X\n", A);
       break;
     case (asInt(Instruction::PHP) + asInt(AddressingMode::implied)):
-      tick(2);
+      readByte(PC);  // Dummy read (For one-byte opcodes)
+      tick();
       P.b = 0b11;
       push(P.raw);
       log(opcode_addr, opcode, "PHP:      SP <- $%02X\n", P.raw);
       break;
     case (asInt(Instruction::PLP) + asInt(AddressingMode::implied)):
-      tick(3);
+      readByte(PC);  // Dummy read (For one-byte opcodes)
+      tick(2);
       P.raw = pop() & 0xCF;
       log(opcode_addr, opcode, "PHP:       P <- $%02X\n", P.raw);
       break;
