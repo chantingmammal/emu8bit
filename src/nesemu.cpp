@@ -1,4 +1,5 @@
 #include <nesemu/console.h>
+#include <nesemu/logger.h>
 #include <nesemu/rom.h>
 #include <nesemu/steady_timer.h>
 #include <nesemu/window.h>
@@ -22,16 +23,40 @@ int main(int argc, char* argv[]) {
 
   static struct option long_options[] = {{"file", required_argument, nullptr, 'f'},
                                          {"scale", required_argument, nullptr, 's'},
+                                         {"debug", required_argument, nullptr, 'd'},
+                                         {"cpu", required_argument, nullptr, 'c'},
+                                         {"ppu", required_argument, nullptr, 'p'},
+                                         {"apu", required_argument, nullptr, 'a'},
+                                         {"bus", required_argument, nullptr, 'b'},
+                                         {"mapper", required_argument, nullptr, 'm'},
                                          {"help", no_argument, nullptr, 'h'},
                                          {0, 0, 0, 0}};
 
-  while ((opt = getopt_long(argc, argv, "f:s:h", long_options, nullptr)) != -1) {
+  while ((opt = getopt_long(argc, argv, "f:s:dcpabmh", long_options, nullptr)) != -1) {
     switch (opt) {
       case 'f':  // -f or --file
         filename = std::string(optarg);
         break;
       case 's':  // -s or --scale
         scale = std::atoi(optarg);
+        break;
+      case 'd':  // -d or --debug
+        logger::level = logger::Level::DEBUG_ALL;
+        break;
+      case 'c':  // -c or --cpu
+        logger::level = static_cast<logger::Level>(logger::level | logger::Level::DEBUG_CPU);
+        break;
+      case 'p':  // -p or --ppu
+        logger::level = static_cast<logger::Level>(logger::level | logger::Level::DEBUG_PPU);
+        break;
+      case 'a':  // -a or --apu
+        logger::level = static_cast<logger::Level>(logger::level | logger::Level::DEBUG_ALL);
+        break;
+      case 'b':  // -b or --bus
+        logger::level = static_cast<logger::Level>(logger::level | logger::Level::DEBUG_BUS);
+        break;
+      case 'm':  // -m or --mapper
+        logger::level = static_cast<logger::Level>(logger::level | logger::Level::DEBUG_MAPPER);
         break;
       case 'h':  // -h or --help
       case '?':  // Unrecognized option

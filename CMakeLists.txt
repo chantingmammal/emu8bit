@@ -28,6 +28,7 @@ add_executable(${PROJECT_NAME}
   src/console.cpp
   src/cpu.cpp
   src/joystick.cpp
+  src/logger.cpp
   src/nesemu.cpp
   src/ppu.cpp
   src/rom.cpp
