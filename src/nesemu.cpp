@@ -41,22 +41,22 @@ int main(int argc, char* argv[]) {
         scale = std::atoi(optarg);
         break;
       case 'd':  // -d or --debug
-        logger::level = logger::Level::DEBUG_ALL;
+        logger::level = logger::DEBUG_ALL;
         break;
       case 'c':  // -c or --cpu
-        logger::level = static_cast<logger::Level>(logger::level | logger::Level::DEBUG_CPU);
+        logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_CPU);
         break;
       case 'p':  // -p or --ppu
-        logger::level = static_cast<logger::Level>(logger::level | logger::Level::DEBUG_PPU);
+        logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_PPU);
         break;
       case 'a':  // -a or --apu
-        logger::level = static_cast<logger::Level>(logger::level | logger::Level::DEBUG_ALL);
+        logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_ALL);
         break;
       case 'b':  // -b or --bus
-        logger::level = static_cast<logger::Level>(logger::level | logger::Level::DEBUG_BUS);
+        logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_BUS);
         break;
       case 'm':  // -m or --mapper
-        logger::level = static_cast<logger::Level>(logger::level | logger::Level::DEBUG_MAPPER);
+        logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_MAPPER);
         break;
       case 'h':  // -h or --help
       case '?':  // Unrecognized option

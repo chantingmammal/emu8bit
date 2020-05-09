@@ -87,13 +87,13 @@ uint8_t system_bus::SystemBus::read(uint16_t address) const {
     data = prg_rom_[mapper_->decodeCPUAddress(address)];
   }
 
-  logger::log<logger::Level::DEBUG_BUS>("Read $%02X from $(%04X)\n", data, address);
+  logger::log<logger::DEBUG_BUS>("Read $%02X from $(%04X)\n", data, address);
   return data;
 }
 
 
 void system_bus::SystemBus::write(uint16_t address, uint8_t data) {
-  logger::log<logger::Level::DEBUG_BUS>("Write $%02X to $(%04X)\n", data, address);
+  logger::log<logger::DEBUG_BUS>("Write $%02X to $(%04X)\n", data, address);
   address &= 0xFFFF;
 
   if (address < 0x2000) {  // Stack and RAM
