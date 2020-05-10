@@ -14,25 +14,34 @@ window::Window::~Window() {
 
 int window::Window::init(int scale) {
 
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-
+  if (SDL_Init(SDL_INIT_VIDEO)) {
     logger::log<logger::ERROR>("Video initialization failed: %s\n", SDL_GetError());
     return 1;
   }
 
-  window_ = SDL_CreateWindow("NES Emu",                // Window title
-                             SDL_WINDOWPOS_UNDEFINED,  // Initial x position
-                             SDL_WINDOWPOS_UNDEFINED,  // Initial y position
-                             WINDOW_WIDTH * scale,     // Width, in pixels
-                             WINDOW_HEIGHT * scale,    // Height, in pixels
-                             SDL_WINDOW_SHOWN);        // Flags
+  if (!(window_ = SDL_CreateWindow("NES Emu",                // Window title
+                                   SDL_WINDOWPOS_UNDEFINED,  // Initial x position
+                                   SDL_WINDOWPOS_UNDEFINED,  // Initial y position
+                                   WINDOW_WIDTH * scale,     // Width, in pixels
+                                   WINDOW_HEIGHT * scale,    // Height, in pixels
+                                   SDL_WINDOW_SHOWN))) {     // Flags
+    logger::log<logger::ERROR>("Window initialization failed: %s\n", SDL_GetError());
+    return 1;
+  }
 
-  renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_PRESENTVSYNC);
-  texture_  = SDL_CreateTexture(renderer_,
-                               SDL_PIXELFORMAT_ARGB8888,
-                               SDL_TEXTUREACCESS_STREAMING,
-                               WINDOW_WIDTH,
-                               WINDOW_HEIGHT);
+  if (!(renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_PRESENTVSYNC))) {
+    logger::log<logger::ERROR>("Renderer initialization failed: %s\n", SDL_GetError());
+    return 1;
+  }
+
+  if (!(texture_ = SDL_CreateTexture(renderer_,
+                                     SDL_PIXELFORMAT_ARGB8888,
+                                     SDL_TEXTUREACCESS_STREAMING,
+                                     WINDOW_WIDTH,
+                                     WINDOW_HEIGHT))) {
+    logger::log<logger::ERROR>("Texture initialization failed: %s\n", SDL_GetError());
+    return 1;
+  }
 
   return 0;
 }
