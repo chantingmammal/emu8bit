@@ -2,7 +2,7 @@
 
 #include <nesemu/logger.h>
 
-#include <cstdio> // snprintf
+#include <cstdio>  // snprintf
 
 
 window::Window::~Window() {
@@ -45,9 +45,11 @@ void window::Window::updateScreen(const uint32_t* pixels) {
 
   frame_++;
   if ((frame_ % 10) == 0) {
-    char title[50];
-    snprintf(title, 50, "NES Emu | %.2f FPS", 1.0 / fps_buffer_.avg());
-    SDL_SetWindowTitle(window_, title);
+    size_t size   = snprintf(nullptr, 0, "NES Emu | %.2f FPS", 1.0 / fps_buffer_.avg()) + 1;
+    char*  buffer = new char[size];
+    snprintf(buffer, size, "NES Emu | %.2f FPS", 1.0 / fps_buffer_.avg());
+    SDL_SetWindowTitle(window_, buffer);
+    delete buffer;
   }
 
   SDL_UpdateTexture(texture_, nullptr, pixels, WINDOW_WIDTH * sizeof(uint32_t));
