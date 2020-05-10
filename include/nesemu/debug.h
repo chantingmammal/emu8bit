@@ -11,6 +11,8 @@ inline void dump(uint8_t* data, std::size_t size) {
     return;
   done = true;
 
+  std::cout << std::hex;
+
   std::size_t pos = 0;
   while (pos < size) {
     std::cout << std::hex << std::setfill('0') << std::setw(4) << pos << "\t";
@@ -29,6 +31,8 @@ inline void dump_nt(uint8_t* data) {
   if (done)
     return;
   done = true;
+
+  std::cout << std::hex;
 
   std::size_t pos = 0;
 
@@ -83,6 +87,8 @@ inline void print_bg(uint8_t* nt, uint8_t* pt) {
   if (done)
     return;
   done = true;
+
+  std::cout << std::hex;
 
   for (unsigned coarse_y = 0; coarse_y < 30; coarse_y++) {
     for (unsigned fine_y = 0; fine_y < 8; fine_y++) {
