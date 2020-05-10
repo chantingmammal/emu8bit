@@ -7,12 +7,14 @@ namespace logger {
 
 enum Level {
   NONE         = 0x00,
-  DEBUG_CPU    = 0x01,
-  DEBUG_PPU    = 0x02,
-  DEBUG_APU    = 0x04,
-  DEBUG_BUS    = 0x08,
-  DEBUG_MAPPER = 0x10,
-  DEBUG_ALL    = DEBUG_CPU | DEBUG_PPU | DEBUG_APU | DEBUG_BUS | DEBUG_MAPPER,
+  ERROR        = 0x01,
+  WARNING      = 0x02,
+  INFO         = 0x04,
+  DEBUG_CPU    = 0x08,
+  DEBUG_PPU    = 0x10,
+  DEBUG_APU    = 0x20,
+  DEBUG_BUS    = 0x40,
+  DEBUG_MAPPER = 0x80,
 };
 
 extern Level level;

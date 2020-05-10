@@ -57,7 +57,7 @@ void cpu::CPU::executeInstruction() {
 
 #if DEBUG
   static uint16_t next_op = PC;
-  std::cout << next_op << std::endl;
+  printf("Next op address: $%04X", next_op);
   if (next_op <= PC) {
     std::cin >> std::hex >> std::noskipws >> next_op;
   }
@@ -724,7 +724,7 @@ void cpu::CPU::executeInstruction() {
 
     // Illegal instruction
     default:
-      std::cout << "Illegal instruction " << unsigned(opcode) << " at address $" << unsigned(PC - 1) << std::endl;
+      logger::log<logger::ERROR>("Illegal instruction $%02X at address $%04X\n", opcode, PC - 1);
       reset(true);
       break;
   }
@@ -874,7 +874,8 @@ uint16_t cpu::CPU::getArgAddr(AddressingMode mode, bool check_page_boundary) {
     }
 
     default:
-      std::cerr << "Unknown addressing mode" << std::endl;
-      exit(1);
+      logger::log<logger::ERROR>("Internal error, unknown addressing mode %d!\n", utils::asInt(mode));
+      reset(true);
+      return 0;
   };
 }

@@ -4,15 +4,15 @@
 #include <nesemu/steady_timer.h>
 #include <nesemu/window.h>
 
+#include <cstdio>
 #include <getopt.h>
-#include <iostream>
 #include <string>
 
 #include <SDL2/SDL_events.h>
 
 
 void printUsage() {
-  std::cout << "Usage: nesemu --file ROM.nes\n";
+  printf("Usage: nesemu --file ROM.nes\n");
 }
 
 
@@ -23,16 +23,12 @@ int main(int argc, char* argv[]) {
 
   static struct option long_options[] = {{"file", required_argument, nullptr, 'f'},
                                          {"scale", required_argument, nullptr, 's'},
-                                         {"debug", required_argument, nullptr, 'd'},
-                                         {"cpu", required_argument, nullptr, 'c'},
-                                         {"ppu", required_argument, nullptr, 'p'},
-                                         {"apu", required_argument, nullptr, 'a'},
-                                         {"bus", required_argument, nullptr, 'b'},
-                                         {"mapper", required_argument, nullptr, 'm'},
+                                         {"quiet", no_argument, nullptr, 'q'},
+                                         {"verbose", optional_argument, nullptr, 'v'},
                                          {"help", no_argument, nullptr, 'h'},
                                          {0, 0, 0, 0}};
 
-  while ((opt = getopt_long(argc, argv, "f:s:dcpabmh", long_options, nullptr)) != -1) {
+  while ((opt = getopt_long(argc, argv, "f:s:qv::h", long_options, nullptr)) != -1) {
     switch (opt) {
       case 'f':  // -f or --file
         filename = std::string(optarg);
@@ -40,24 +36,51 @@ int main(int argc, char* argv[]) {
       case 's':  // -s or --scale
         scale = std::atoi(optarg);
         break;
-      case 'd':  // -d or --debug
-        logger::level = logger::DEBUG_ALL;
+      case 'q':  // -q or --quiet
+        logger::level = logger::NONE;
         break;
-      case 'c':  // -c or --cpu
-        logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_CPU);
+      case 'v':  // -v or --verbose
+        if (!optarg) {
+          logger::level = static_cast<logger::Level>(logger::level | logger::ERROR | logger::WARNING | logger::INFO
+                                                     | logger::DEBUG_CPU | logger::DEBUG_PPU | logger::DEBUG_APU
+                                                     | logger::DEBUG_BUS | logger::DEBUG_MAPPER);
+        } else {
+          const auto INFO = logger::INFO | logger::WARNING | logger::ERROR;
+          for (unsigned i = 0; optarg[i] != '\0'; i++) {
+            switch (optarg[i]) {
+              case 'c':
+                logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_CPU | INFO);
+                break;
+              case 'p':
+                logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_PPU | INFO);
+                break;
+              case 'a':
+                logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_APU | INFO);
+                break;
+              case 'b':
+                logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_BUS | INFO);
+                break;
+              case 'm':
+                logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_MAPPER | INFO);
+                break;
+              case 'i':
+                logger::level = static_cast<logger::Level>(logger::level | INFO);
+                break;
+              case 'w':
+                logger::level = static_cast<logger::Level>(logger::level | logger::WARNING | logger::ERROR);
+                break;
+              case 'e':
+                logger::level = static_cast<logger::Level>(logger::level | logger::ERROR);
+                break;
+              default:
+                printf("Unknown log level '%c'\n", optarg[0]);
+                printUsage();
+                return 1;
+            }
+          }
+        }
         break;
-      case 'p':  // -p or --ppu
-        logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_PPU);
-        break;
-      case 'a':  // -a or --apu
-        logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_ALL);
-        break;
-      case 'b':  // -b or --bus
-        logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_BUS);
-        break;
-      case 'm':  // -m or --mapper
-        logger::level = static_cast<logger::Level>(logger::level | logger::DEBUG_MAPPER);
-        break;
+
       case 'h':  // -h or --help
       case '?':  // Unrecognized option
       default:
@@ -70,8 +93,6 @@ int main(int argc, char* argv[]) {
     printUsage();
     return 1;
   }
-
-  std::cout << std::hex;
 
   rom::Rom rom;
   if (rom::parseFromFile(filename, &rom))

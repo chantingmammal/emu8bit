@@ -3,9 +3,8 @@
 #include "internal/mapper_000.h"
 #include "internal/mapper_001.h"
 #include "internal/mapper_004.h"
+#include <nesemu/logger.h>
 #include <nesemu/mapper/mapper_base.h>
-
-#include <iostream>
 
 
 namespace mapper {
@@ -19,7 +18,7 @@ Mapper* make(uint8_t prg_banks, uint8_t chr_banks) {
 
 template <int N>
 Mapper* dummy(uint8_t /*prg_banks*/, uint8_t /*chr_banks*/) {
-  std::cerr << "Mapper " << N << " not supported!" << std::endl;
+  logger::log<logger::ERROR>("Mapper %d not supported!\n", N);
   return nullptr;
 }
 

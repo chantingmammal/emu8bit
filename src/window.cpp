@@ -1,7 +1,8 @@
 #include <nesemu/window.h>
 
-#include <cstdio>
-#include <iostream>
+#include <nesemu/logger.h>
+
+#include <cstdio> // snprintf
 
 
 window::Window::~Window() {
@@ -14,7 +15,8 @@ window::Window::~Window() {
 int window::Window::init(int scale) {
 
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-    std::cerr << "Video initialization failed: " << SDL_GetError() << std::endl;
+
+    logger::log<logger::ERROR>("Video initialization failed: %s\n", SDL_GetError());
     return 1;
   }
 

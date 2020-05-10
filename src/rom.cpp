@@ -1,16 +1,16 @@
 #include <nesemu/rom.h>
 
+#include <nesemu/logger.h>
 #include <nesemu/utils.h>
 
 #include <fstream>
-#include <iostream>
 
 
 int rom::parseFromFile(std::string filename, Rom* rom) {
   std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
 
   if (!file.is_open()) {
-    std::cerr << "Unable to open file " << filename << std::endl;
+    logger::log<logger::ERROR>("Unable to open file %s\n", filename);
     return 1;
   }
 
@@ -23,14 +23,17 @@ int rom::parseFromFile(std::string filename, Rom* rom) {
                            + (rom->header.chr_rom_size * 8 * 1024);
 
   if (!std::equal(rom->header.name, std::end(rom->header.name), header_name)) {
-    std::cerr << "Unable to parse file " << filename << ": Invalid header beginning with '"
-              << utils::uint8_to_hex_string(rom->header.name, 4) << "'" << std::endl;
+    logger::log<logger::ERROR>("Unable to parse file %s: Invalid header beginning with '%s'\n",
+                               filename,
+                               utils::uint8_to_hex_string(rom->header.name, 4));
     return 1;
   }
 
   if (expected_size != size) {
-    std::cerr << "Unable to parse file " << filename << ": Expected " << expected_size << " bytes, but file is " << size
-              << " bytes" << std::endl;
+    logger::log<logger::ERROR>("Unable to parse file %s: Expected $%0X bytes, but file is $%0X bytes\n",
+                               filename,
+                               expected_size,
+                               size);
     return 1;
   }
 
