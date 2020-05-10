@@ -10,7 +10,7 @@ int rom::parseFromFile(std::string filename, Rom* rom) {
   std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
 
   if (!file.is_open()) {
-    logger::log<logger::ERROR>("Unable to open file %s\n", filename);
+    logger::log<logger::ERROR>("Unable to open file %s\n", filename.c_str());
     return 1;
   }
 
@@ -24,14 +24,14 @@ int rom::parseFromFile(std::string filename, Rom* rom) {
 
   if (!std::equal(rom->header.name, std::end(rom->header.name), header_name)) {
     logger::log<logger::ERROR>("Unable to parse file %s: Invalid header beginning with '%s'\n",
-                               filename,
-                               utils::uint8_to_hex_string(rom->header.name, 4));
+                               filename.c_str(),
+                               utils::uint8_to_hex_string(rom->header.name, 4).c_str());
     return 1;
   }
 
   if (expected_size != size) {
     logger::log<logger::ERROR>("Unable to parse file %s: Expected $%0X bytes, but file is $%0X bytes\n",
-                               filename,
+                               filename.c_str(),
                                expected_size,
                                size);
     return 1;
