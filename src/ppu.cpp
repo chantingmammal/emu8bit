@@ -111,9 +111,9 @@ uint8_t ppu::PPU::readRegister(uint16_t cpu_address) {
       logger::log<logger::DEBUG_PPU>("Read $%02X from OAMADDR (Open bus)\n", io_latch_);
       break;
 
-    case (utils::asInt(MemoryMappedIO::OAMDATA)):  // Sprite Memory Data (Write-only)
+    case (utils::asInt(MemoryMappedIO::OAMDATA)):  // Sprite Memory Data
       io_latch_ = primary_oam_.byte[oam_addr_];
-      logger::log<logger::DEBUG_PPU>("Read $%02X from OAMDATA[$%02X] (Open bus)\n", io_latch_, oam_addr_);
+      logger::log<logger::DEBUG_PPU>("Read $%02X from OAMDATA[$%02X]\n", io_latch_, oam_addr_);
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUSCROLL)):  // Screen Scroll Offsets (Write-only)
@@ -130,8 +130,8 @@ uint8_t ppu::PPU::readRegister(uint16_t cpu_address) {
         io_latch_   = read_buffer;
         read_buffer = readByte(v_.raw);
       } else {
+        read_buffer = readByte(0x2000 | (v_.raw & 0x0FFF) | (0x400 * v_.nametable_select));
         io_latch_   = readByte(v_.raw);
-        read_buffer = io_latch_;
       }
 
       if ((scanline_ == 261 || scanline_ < 240) && ctrl_reg_2_.render_enable) {
@@ -218,7 +218,8 @@ void ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
 }
 
 void ppu::PPU::spriteDMAWrite(uint8_t* data) {
-  memcpy(primary_oam_.byte, data, 256);
+  memcpy(primary_oam_.byte + oam_addr_, data, 256 - oam_addr_);
+  memcpy(primary_oam_.byte, data + 256 - oam_addr_, oam_addr_);
 }
 
 
@@ -280,8 +281,7 @@ void ppu::PPU::writeByte(uint16_t address, uint8_t data) {
 
   // Nametables
   else if (address < 0x3F00) {
-    address = ((address - 0x2000) & 0x0FFF) | (0x400 * v_.nametable_select);
-
+    address = (address & 0x0FFF) | (0x400 * v_.nametable_select);
     switch (mirroring_) {
       case Mirroring::none:  // Four-screen VRAM layout
         ram_[address] = data;
