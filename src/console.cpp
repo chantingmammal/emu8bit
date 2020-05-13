@@ -10,11 +10,12 @@
 
 // =*=*=*=*= Console Setup =*=*=*=*=
 
-console::Console::Console() {
+console::Console::Console(bool allow_unofficial_opcodes) {
   bus_.connectChips(nullptr, &cpu_, &ppu_, &joy_1_, &joy_2_);
   cpu_.connectChips(nullptr, &ppu_);
 
   cpu_.connectBus(&bus_);
+  cpu_.allowUnofficialOpcodes(allow_unofficial_opcodes);
 }
 
 console::Console::~Console() {

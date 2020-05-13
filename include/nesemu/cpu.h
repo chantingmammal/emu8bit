@@ -96,6 +96,49 @@ enum class Instruction : uint8_t {
   STY = 0x88,  // STore Y register
 };
 
+enum class UnofficialInstruction : uint8_t {
+  // Combined operations
+  ALR   = 0x4B,
+  ANC_1 = 0x0B,
+  ANC_2 = 0x2B,
+  ARR   = 0x6B,
+  LAX   = 0xAB,
+  SAX   = 0x8B,
+
+  // Read-Modify-Write instructions
+  DCP = 0xCB,
+  ISC = 0xEB,
+  RLA = 0x2B,
+  RRA = 0x6B,
+  SLO = 0x0B,
+  SRE = 0x4B,
+
+  // Duplicate instructions
+  SBC = 0xEB,
+
+  // NOPs
+  NOP_1 = 0x1A,
+  NOP_2 = 0x3A,
+  NOP_3 = 0x5A,
+  NOP_4 = 0x7A,
+  NOP_5 = 0xDA,
+  NOP_6 = 0xFA,
+
+  SKB_1 = 0x80,
+  SKB_2 = 0x82,
+  SKB_3 = 0x89,
+  SKB_4 = 0xC2,
+  SKB_5 = 0xE2,
+
+  IGN_1 = 0x08,
+  IGN_2 = 0x28,
+  IGN_3 = 0x48,
+  IGN_4 = 0x68,
+  IGN_5 = 0xC8,
+  IGN_6 = 0xE8,
+};
+
+
 enum class AddressingMode : int8_t {
   implied     = 0x00,
   accumulator = 0x00,
@@ -126,6 +169,7 @@ public:
   CPU() { timer_.start(); }
 
   // Setup
+  void allowUnofficialOpcodes(bool allow);
   void connectBus(system_bus::SystemBus* bus);
   void connectChips(apu::APU* apu, ppu::PPU* ppu);
 
@@ -135,6 +179,8 @@ public:
   void reset(bool active);
 
 private:
+  bool allow_unofficial_ = {false};
+
   // System bus
   system_bus::SystemBus* bus_ = {nullptr};
 

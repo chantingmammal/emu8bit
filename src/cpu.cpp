@@ -23,6 +23,10 @@ inline void log(uint16_t addr, uint8_t opcode, const char* format, T... args) {
 
 // =*=*=*=*= CPU Setup =*=*=*=*=
 
+void cpu::CPU::allowUnofficialOpcodes(bool allow) {
+  allow_unofficial_ = allow;
+}
+
 void cpu::CPU::connectBus(system_bus::SystemBus* bus) {
   bus_ = bus;
 }
@@ -68,6 +72,8 @@ void cpu::CPU::executeInstruction() {
   const uint8_t  opcode      = readByte(opcode_addr);
 
   switch (opcode) {
+
+    // =*=*=*=*= Official Opcodes =*=*=*=*=
 
     // Add with carry
     case (asInt(Instruction::ADC) + asInt(AddressingMode::immediate)):
@@ -722,7 +728,345 @@ void cpu::CPU::executeInstruction() {
     } break;
 
 
+    // =*=*=*=*= Unofficial Opcodes =*=*=*=*=
+
+    // ALR: AND #i then LSR A
+    case (asInt(UnofficialInstruction::ALR) + asInt(AddressingMode::immediate)):
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      A &= readByte(getArgAddr(AddressingMode::immediate));
+      P.c = (A & 0x01);
+      A >>= 1;
+      P.z = (A == 0);
+      P.n = (A >> 7);  // Always 0
+      log(opcode_addr, opcode, "ALR:       A <- $%02X\n", A);
+      break;
+
+
+    // ANC: AND #i then C<-N
+    case (asInt(UnofficialInstruction::ANC_1) + asInt(AddressingMode::immediate)):
+    case (asInt(UnofficialInstruction::ANC_2) + asInt(AddressingMode::immediate)):
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      A &= readByte(getArgAddr(AddressingMode::immediate));
+      P.z = (A == 0);
+      P.n = (A >> 7);
+      P.c = P.n;
+      log(opcode_addr, opcode, "ANC:       A <- $%02X\n", A);
+      break;
+
+
+    // ARR: AND #i then ROR A, but with different flags
+    case (asInt(UnofficialInstruction::ARR) + asInt(AddressingMode::immediate)):
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      A &= readByte(getArgAddr(AddressingMode::immediate));
+      A   = (A >> 1) | (P.c << 7);
+      P.c = (A >> 6) & 0x01;
+      P.z = (A == 0);
+      P.v = P.c ^ ((A >> 5) & 0x01);
+      P.n = (A >> 7);
+      log(opcode_addr, opcode, "ARR:       A <- $%02X\n", A);
+      break;
+
+
+    // LAX: LDR then TAX
+    case (asInt(UnofficialInstruction::LAX) + asInt(AddressingMode::zero_page)):
+    case (asInt(UnofficialInstruction::LAX) + asInt(AddressingMode::zero_page_x)):  // Should be zero_page_y
+    case (asInt(UnofficialInstruction::LAX) + asInt(AddressingMode::absolute)):
+    case (asInt(UnofficialInstruction::LAX) + asInt(AddressingMode::absolute_x)):  // Should be absolute_y
+    case (asInt(UnofficialInstruction::LAX) + asInt(AddressingMode::indirect_x)):
+    case (asInt(UnofficialInstruction::LAX) + asInt(AddressingMode::indirect_y)): {
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      AddressingMode mode = AddressingMode(opcode - asInt(UnofficialInstruction::LAX));
+      if (mode == AddressingMode::zero_page_x) {
+        mode = AddressingMode::zero_page_y;
+      } else if (mode == AddressingMode::absolute_x) {
+        mode = AddressingMode::absolute_y;
+      }
+
+      A   = readByte(getArgAddr(mode, true));
+      X   = A;
+      P.z = (A == 0);
+      P.n = (A >> 7);
+      log(opcode_addr, opcode, "LAX:       A <- $%02X\n", A);
+    } break;
+
+
+    // SAX: Store A & X
+    case (asInt(UnofficialInstruction::SAX) + asInt(AddressingMode::zero_page)):
+    case (asInt(UnofficialInstruction::SAX) + asInt(AddressingMode::zero_page_x)):  // Should be zero_page_y
+    case (asInt(UnofficialInstruction::SAX) + asInt(AddressingMode::absolute)):
+    case (asInt(UnofficialInstruction::SAX) + asInt(AddressingMode::indirect_x)): {
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      AddressingMode mode = AddressingMode(opcode - asInt(UnofficialInstruction::SAX));
+      if (mode == AddressingMode::zero_page_x) {
+        mode = AddressingMode::zero_page_y;
+      }
+      const uint16_t addr = getArgAddr(mode);
+      writeByte(addr, A & X);
+      log(opcode_addr, opcode, "SAX:   $%04X <- $%02X\n", addr, A & X);
+    } break;
+
+
+    // DCP: DEC then CMP
+    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::zero_page)):
+    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::zero_page_x)):
+    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::absolute)):
+    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::indirect_x)):
+    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::indirect_y)): {
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      const uint16_t addr = getArgAddr(opcode - asInt(UnofficialInstruction::DCP));
+      uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
+
+      arg -= 1;
+      P.z = (A == arg);
+      P.c = (A >= arg);
+      P.n = ((A - arg) >> 7);
+      writeByte(addr, arg);
+      log(opcode_addr, opcode, "DCP:   $%04X <- $%02X\n", addr, arg);
+    } break;
+
+
+    // ISC: INC then SBC
+    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::zero_page)):
+    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::zero_page_x)):
+    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::absolute)):
+    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::indirect_x)):
+    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::indirect_y)): {
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      const uint16_t addr = getArgAddr(opcode - asInt(UnofficialInstruction::ISC));
+      uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
+      arg += 1;
+      writeByte(addr, arg);
+
+      const uint16_t res_long = A + ~arg + P.c;
+      const uint8_t  result   = res_long;
+      P.c                     = !((res_long >> 8) & 0x01);
+      P.z                     = (result == 0);
+      P.v                     = (A >> 7 != arg >> 7) && (A >> 7 != result >> 7);
+      P.n                     = (result >> 7);
+      A                       = result;
+      log(opcode_addr, opcode, "ISC:   $%04X <- $%02X, A <- $%02X\n", addr, arg, A);
+    } break;
+
+
+    // RLA: ROL then AND
+    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::zero_page)):
+    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::zero_page_x)):
+    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::absolute)):
+    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::indirect_x)):
+    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::indirect_y)): {
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      const uint16_t addr = getArgAddr(opcode - asInt(UnofficialInstruction::RLA));
+      uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
+
+      const bool old_carry = (arg >> 7);
+      arg                  = (arg << 1) | P.c;
+      P.c                  = old_carry;
+      writeByte(addr, arg);
+
+      A &= arg;
+      P.z = (A == 0);
+      P.n = (A >> 7);
+      log(opcode_addr, opcode, "RLA:   $%04X <- $%02X, A <- $%02X\n", addr, arg, A);
+    } break;
+
+
+    // RRA: ROR then ADC
+    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::zero_page)):
+    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::zero_page_x)):
+    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::absolute)):
+    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::indirect_x)):
+    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::indirect_y)): {
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      const uint16_t addr = getArgAddr(opcode - asInt(UnofficialInstruction::RRA));
+      uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
+
+      const bool old_carry = (arg & 0x01);
+      arg                  = (arg >> 1) | (P.c << 7);
+      writeByte(addr, arg);
+
+      const uint8_t result = A + arg + old_carry;
+      P.c                  = ((A + arg + old_carry) >> 8) & 0x01;
+      P.z                  = (result == 0);
+      P.v                  = (A >> 7 == arg >> 7) && (A >> 7 != result >> 7);
+      P.n                  = (result >> 7);
+      A                    = result;
+      log(opcode_addr, opcode, "RRA:   $%04X <- $%02X, A <- $%02X\n", addr, arg, A);
+    } break;
+
+
+      // SLO: ASL then ORA
+    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::zero_page)):
+    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::zero_page_x)):
+    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::absolute)):
+    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::indirect_x)):
+    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::indirect_y)): {
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      const uint16_t addr = getArgAddr(opcode - asInt(UnofficialInstruction::SLO));
+      uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
+
+      P.c = (arg >> 7);
+      arg <<= 1;
+      writeByte(addr, arg);
+
+      A |= arg;
+      P.z = (A == 0);
+      P.n = (A >> 7);
+      log(opcode_addr, opcode, "SLO:   $%04X <- $%02X, A <- $%02X\n", addr, arg, A);
+    } break;
+
+
+      // SRE: LSR then EOR
+    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::zero_page)):
+    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::zero_page_x)):
+    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::absolute)):
+    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::indirect_x)):
+    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::indirect_y)): {
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      const uint16_t addr = getArgAddr(opcode - asInt(UnofficialInstruction::SRE));
+      uint8_t        arg  = readByte(addr);
+      writeByte(addr, arg);  // Double write (For absolute addressing)
+
+      P.c = (arg & 0x01);
+      arg >>= 1;
+      writeByte(addr, arg);
+
+      A ^= arg;
+      P.z = (A == 0);
+      P.n = (A >> 7);
+      log(opcode_addr, opcode, "SRE:   $%04X <- $%02X, A <- $%02X\n", addr, arg, A);
+    } break;
+
+
+    // Subtract with carry
+    case (asInt(UnofficialInstruction::SBC) + asInt(AddressingMode::immediate)): {
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      const uint8_t  arg      = readByte(getArgAddr(AddressingMode::immediate));
+      const uint16_t res_long = A + ~arg + P.c;
+      const uint8_t  result   = res_long;
+      P.c                     = !((res_long >> 8) & 0x01);
+      P.z                     = (result == 0);
+      P.v                     = (A >> 7 != arg >> 7) && (A >> 7 != result >> 7);
+      P.n                     = (result >> 7);
+      A                       = result;
+      log(opcode_addr, opcode, "SBC:       A <- $%02X\n", A);
+    } break;
+
+
+    // No OPeration
+    case (asInt(UnofficialInstruction::NOP_1) + asInt(AddressingMode::implied)):
+    case (asInt(UnofficialInstruction::NOP_2) + asInt(AddressingMode::implied)):
+    case (asInt(UnofficialInstruction::NOP_3) + asInt(AddressingMode::implied)):
+    case (asInt(UnofficialInstruction::NOP_4) + asInt(AddressingMode::implied)):
+    case (asInt(UnofficialInstruction::NOP_5) + asInt(AddressingMode::implied)):
+    case (asInt(UnofficialInstruction::NOP_6) + asInt(AddressingMode::implied)):
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      readByte(PC);  // Dummy read (For one-byte opcodes)
+      log(opcode_addr, opcode, "NOP\n");
+      break;
+
+
+    // Skip Next Byte
+    case (asInt(UnofficialInstruction::SKB_1) + asInt(AddressingMode::immediate)):
+    case (asInt(UnofficialInstruction::SKB_2) + asInt(AddressingMode::immediate)):
+    case (asInt(UnofficialInstruction::SKB_3) + asInt(AddressingMode::immediate)):
+    case (asInt(UnofficialInstruction::SKB_4) + asInt(AddressingMode::immediate)):
+    case (asInt(UnofficialInstruction::SKB_5) + asInt(AddressingMode::immediate)):
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      readByte(getArgAddr(AddressingMode::immediate));
+      log(opcode_addr, opcode, "SKB\n");
+      break;
+
+
+    // IGNore
+    case (asInt(UnofficialInstruction::IGN_1) + asInt(AddressingMode::absolute)):
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      readByte(getArgAddr(AddressingMode::absolute));
+      log(opcode_addr, opcode, "IGN");
+      break;
+    case (asInt(UnofficialInstruction::IGN_1) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::IGN_2) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::IGN_3) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::IGN_4) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::IGN_5) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::IGN_6) + asInt(AddressingMode::absolute_x)):
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      readByte(getArgAddr(AddressingMode::absolute_x));
+      log(opcode_addr, opcode, "IGN");
+      break;
+    case (asInt(UnofficialInstruction::IGN_1) + asInt(AddressingMode::zero_page)):
+    case (asInt(UnofficialInstruction::IGN_3) + asInt(AddressingMode::zero_page)):
+    case (asInt(UnofficialInstruction::IGN_4) + asInt(AddressingMode::zero_page)):
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      readByte(getArgAddr(AddressingMode::zero_page));
+      log(opcode_addr, opcode, "IGN");
+      break;
+    case (asInt(UnofficialInstruction::IGN_1) + asInt(AddressingMode::zero_page_x)):
+    case (asInt(UnofficialInstruction::IGN_2) + asInt(AddressingMode::zero_page_x)):
+    case (asInt(UnofficialInstruction::IGN_3) + asInt(AddressingMode::zero_page_x)):
+    case (asInt(UnofficialInstruction::IGN_4) + asInt(AddressingMode::zero_page_x)):
+    case (asInt(UnofficialInstruction::IGN_5) + asInt(AddressingMode::zero_page_x)):
+    case (asInt(UnofficialInstruction::IGN_6) + asInt(AddressingMode::zero_page_x)):
+      if (!allow_unofficial_) {
+        goto illegal_instruction;
+      }
+      readByte(getArgAddr(AddressingMode::zero_page_x));
+      log(opcode_addr, opcode, "IGN");
+      break;
+
+
     // Illegal instruction
+    illegal_instruction:
     default:
       logger::log<logger::ERROR>("Illegal instruction $%02X at address $%04X\n", opcode, PC - 1);
       reset(true);

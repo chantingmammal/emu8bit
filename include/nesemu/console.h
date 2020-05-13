@@ -26,7 +26,7 @@ namespace console {
 
 class Console {
 public:
-  Console();
+  explicit Console(bool allow_unofficial_opcodes);
   ~Console();
 
   // Setup

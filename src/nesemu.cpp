@@ -19,22 +19,27 @@ void printUsage() {
 int main(int argc, char* argv[]) {
   int         opt = 0;
   std::string filename;
-  int         scale = 1;
+  int         scale            = 1;
+  bool        allow_unofficial = true;
 
   static struct option long_options[] = {{"file", required_argument, nullptr, 'f'},
                                          {"scale", required_argument, nullptr, 's'},
+                                         {"official", no_argument, nullptr, 'o'},
                                          {"quiet", no_argument, nullptr, 'q'},
                                          {"verbose", optional_argument, nullptr, 'v'},
                                          {"help", no_argument, nullptr, 'h'},
                                          {0, 0, 0, 0}};
 
-  while ((opt = getopt_long(argc, argv, "f:s:qv::h", long_options, nullptr)) != -1) {
+  while ((opt = getopt_long(argc, argv, "f:s:oqv::h", long_options, nullptr)) != -1) {
     switch (opt) {
       case 'f':  // -f or --file
         filename = std::string(optarg);
         break;
       case 's':  // -s or --scale
         scale = std::atoi(optarg);
+        break;
+      case 'o':  // -o or --official
+        allow_unofficial = false;
         break;
       case 'q':  // -q or --quiet
         logger::level = logger::NONE;
@@ -102,7 +107,7 @@ int main(int argc, char* argv[]) {
   if (window.init(scale))
     return 1;
 
-  console::Console console;
+  console::Console console(allow_unofficial);
   console.setWindow(&window);
   console.loadCart(&rom);
   console.start();
