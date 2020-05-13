@@ -1117,9 +1117,7 @@ uint16_t cpu::CPU::pop16() {
 
 void cpu::CPU::tick(int ticks) {
   for (; ticks > 0; ticks--) {
-    ppu_->tick();
-    ppu_->tick();
-    ppu_->tick();
+    bus_->clock();
     timer_.sleep();
   }
 }

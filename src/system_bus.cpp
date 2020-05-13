@@ -157,3 +157,11 @@ void system_bus::SystemBus::write(uint16_t address, uint8_t data) {
     mapper_->write(address, data);
   }
 }
+
+void system_bus::SystemBus::clock() {
+  mapper_->clock();
+  ppu_->clock();
+  ppu_->clock();
+  ppu_->clock();
+  // Note: Do not clock the CPU - This function is clocked by the CPU itself
+}

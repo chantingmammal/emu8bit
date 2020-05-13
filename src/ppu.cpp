@@ -29,7 +29,7 @@ bool ppu::PPU::hasNMI() {
   return status_reg_.vblank && ctrl_reg_1_.vblank_enable;
 }
 
-void ppu::PPU::tick() {
+void ppu::PPU::clock() {
   uint16_t scanline_length = 341;
 
 
@@ -266,12 +266,10 @@ uint8_t ppu::PPU::readByte(uint16_t address) {
     data = ram_[(address & 0x1F) + 0x1F00] & (ctrl_reg_2_.greyscale ? 0x30 : 0xFF);
   }
 
-  logger::log<logger::DEBUG_PPU>("Read $%02X from PPU $(%04X)\n", data, address);
   return data;
 }
 
 void ppu::PPU::writeByte(uint16_t address, uint8_t data) {
-  logger::log<logger::DEBUG_PPU>("Write $%02X from PPU $(%04X)\n", data, address);
   address &= 0x3FFF;
 
   // Cartridge VRAM/VROM

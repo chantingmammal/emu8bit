@@ -28,7 +28,7 @@ class Mapper;
 namespace system_bus {
 
 /**
- * Represents the CPU address space and interrupt lines
+ * Represents the CPU address space, interrupt lines, and clock lines
  */
 class SystemBus {
 public:
@@ -42,6 +42,7 @@ public:
   bool    hasNMI() const;
   uint8_t read(uint16_t address) const;
   void    write(uint16_t address, uint8_t data);
+  void    clock();
 
 
 private:

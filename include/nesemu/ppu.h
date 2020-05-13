@@ -42,7 +42,7 @@ public:
 
 
   // Execution
-  void    tick();
+  void    clock();
   bool    hasNMI();
   uint8_t readRegister(uint16_t cpu_address);
   void    writeRegister(uint16_t cpu_address, uint8_t data);
@@ -175,7 +175,7 @@ private:
   bool     frame_is_odd_      = true;
 
 
-// Internal operations
+  // Internal operations
   uint8_t readByte(uint16_t address);
   void    writeByte(uint16_t address, uint8_t data);
   void    renderPixel();
