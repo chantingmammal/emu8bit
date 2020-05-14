@@ -68,7 +68,7 @@ void ppu::PPU::clock() {
     }
 
     // On odd frames, shorted pre_render scanline by 1
-    if (frame_is_odd_) {
+    if (frame_is_odd_ && ctrl_reg_2_.render_enable) {
       scanline_length = 340;
     }
 
