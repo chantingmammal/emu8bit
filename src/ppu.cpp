@@ -407,7 +407,7 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
   // Cycles 1-64: Background: Fetch tiles
   //              Sprite:     Clear secondary OAM
   else if (cycle_ < 65) {
-    if ((cycle_ % 8) == 0) {
+    if (ctrl_reg_2_.render_enable && (cycle_ % 8) == 0) {
       fetchNextBGTile();
     }
 
@@ -418,7 +418,7 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
   // Cycles 65-256: Background: Fetch tiles
   //                Sprite:     Sprite evaluation
   else if (cycle_ < 257) {
-    if ((cycle_ % 8) == 0) {
+    if (ctrl_reg_2_.render_enable && (cycle_ % 8) == 0) {
       fetchNextBGTile();
     }
 
@@ -458,7 +458,7 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
       }
     }
 
-    if (fetch_sprites && (cycle_ % 8) == 0) {
+    if (ctrl_reg_2_.render_enable && (cycle_ % 8) == 0) {
       fetchNextSprite();
     }
   }
@@ -467,17 +467,19 @@ void ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
   else if (cycle_ < 337) {
 
     // Load tile 0
-    if (cycle_ == 328) {
-      fetchNextBGTile();
-      pattern_sr_a_ <<= 8;
-      pattern_sr_b_ <<= 8;
-      palette_sr_a_ = palette_latch_a_ ? -1 : 0;
-      palette_sr_b_ = palette_latch_b_ ? -1 : 0;
-    }
+    if (ctrl_reg_2_.render_enable) {
+      if (cycle_ == 328) {
+        fetchNextBGTile();
+        pattern_sr_a_ <<= 8;
+        pattern_sr_b_ <<= 8;
+        palette_sr_a_ = palette_latch_a_ ? -1 : 0;
+        palette_sr_b_ = palette_latch_b_ ? -1 : 0;
+      }
 
-    // Load tile 1
-    else if (cycle_ == 336) {
-      fetchNextBGTile();
+      // Load tile 1
+      else if (cycle_ == 336) {
+        fetchNextBGTile();
+      }
     }
   }
 
@@ -506,14 +508,14 @@ void ppu::PPU::fetchNextBGTile() {
   // ||++----- Bottom left  (4)
   // ++------- Bottom right (6)
 
+  const uint8_t palette = readByte(0x23C0 + at_entry);
+  palette_latch_a_      = (palette >> at_subentry) & 0x01;
+  palette_latch_b_      = (palette >> (at_subentry | 1)) & 0x01;
+
   pattern_sr_a_ &= 0xFF00;
   pattern_sr_b_ &= 0xFF00;
   pattern_sr_a_ |= readByte(pattern_addr);
   pattern_sr_b_ |= readByte(pattern_addr | 8);
-
-  const uint8_t palette = readByte(0x23C0 + at_entry);
-  palette_latch_a_      = (palette >> at_subentry) & 0x01;
-  palette_latch_b_      = (palette >> (at_subentry | 1)) & 0x01;
 
 
   // Coarse X increment, at end of each tile
@@ -554,6 +556,8 @@ void ppu::PPU::fetchNextSprite() {
                                   | ctrl_reg_1_.sprite_pattern_table_addr << 12  // Pattern table
                                   | y_slice;                                     // Horizontal slice
 
+    readByte(0x2000 | (v_.raw & 0x0FFF));  // Garbage NT fetch
+    readByte(0x2000 | (v_.raw & 0x0FFF));  // Garbage NT fetch
     sprite_pattern_sr_a_[num_sprites_fetched_]      = readByte(pattern_addr);
     sprite_pattern_sr_b_[num_sprites_fetched_]      = readByte(pattern_addr | 8);
     sprite_palette_latch_[num_sprites_fetched_].raw = sprite.attributes.raw;
@@ -561,6 +565,8 @@ void ppu::PPU::fetchNextSprite() {
   } else {
     const uint16_t pattern_addr = 0xFF << 4                                       // Base tile address
                                   | ctrl_reg_1_.sprite_pattern_table_addr << 12;  // Pattern table
+    readByte(0x2000 | (v_.raw & 0x0FFF));                                         // Garbage NT fetch
+    readByte(0x2000 | (v_.raw & 0x0FFF));                                         // Garbage NT fetch
     readByte(pattern_addr);
     readByte(pattern_addr | 8);
   }
