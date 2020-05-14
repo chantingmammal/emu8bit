@@ -187,7 +187,7 @@ void cpu::CPU::executeInstruction() {
 
     // Break
     case (asInt(Instruction::BRK) + asInt(AddressingMode::implied)):
-      readByte(PC);  // Dummy read (For one-byte opcodes)
+      readByte(PC++);  // Padding byte
       irq_brk_ = true;
       P.b      = 0b11;
       log(opcode_addr, opcode, "BRK\n");
