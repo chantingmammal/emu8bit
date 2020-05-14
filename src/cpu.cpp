@@ -46,8 +46,7 @@ void cpu::CPU::executeInstruction() {
   if (irq_reset_) {
     interrupt(0xFFFC);
     return;
-  } else if (!prev_nmi_ && bus_->hasNMI()) {
-    prev_nmi_ = true;
+  } else if (bus_->hasNMI()) {
     P.b |= 0b10;
     interrupt(0xFFFA);
     return;
@@ -56,8 +55,6 @@ void cpu::CPU::executeInstruction() {
     interrupt(0xFFFE);
     return;
   }
-
-  prev_nmi_ = bus_->hasNMI();
 
 #if DEBUG
   static uint16_t next_op = PC;
