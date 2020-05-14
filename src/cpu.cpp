@@ -104,7 +104,7 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::AND) + asInt(AddressingMode::absolute_y)):
     case (asInt(Instruction::AND) + asInt(AddressingMode::indirect_x)):
     case (asInt(Instruction::AND) + asInt(AddressingMode::indirect_y)): {
-      A &= readByte(getArgAddr(opcode - asInt(Instruction::AND)));
+      A &= readByte(getArgAddr(opcode - asInt(Instruction::AND), true));
       P.z = (A == 0);
       P.n = (A >> 7);
       log(opcode_addr, opcode, "AND:       A <- $%02X\n", A);
@@ -203,7 +203,6 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::CMP) + asInt(AddressingMode::absolute_y)):
     case (asInt(Instruction::CMP) + asInt(AddressingMode::indirect_x)):
     case (asInt(Instruction::CMP) + asInt(AddressingMode::indirect_y)): {
-      tick();
       const uint8_t arg = readByte(getArgAddr(opcode - asInt(Instruction::CMP), true));
       P.z               = (A == arg);
       P.c               = (A >= arg);
@@ -223,7 +222,6 @@ void cpu::CPU::executeInstruction() {
         mode = AddressingMode::absolute;
       }
 
-      tick();
       const uint8_t arg = readByte(getArgAddr(mode));
       P.z               = (X == arg);
       P.c               = (X >= arg);
@@ -243,7 +241,6 @@ void cpu::CPU::executeInstruction() {
         mode = AddressingMode::absolute;
       }
 
-      tick();
       const uint8_t arg = readByte(getArgAddr(mode));
       P.z               = (Y == arg);
       P.c               = (Y >= arg);
@@ -280,7 +277,6 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::EOR) + asInt(AddressingMode::absolute_y)):
     case (asInt(Instruction::EOR) + asInt(AddressingMode::indirect_x)):
     case (asInt(Instruction::EOR) + asInt(AddressingMode::indirect_y)): {
-      tick();
       A ^= readByte(getArgAddr(opcode - asInt(Instruction::EOR), true));
       P.z = (A == 0);
       P.n = (A >> 7);
@@ -608,7 +604,7 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::RTI) + asInt(AddressingMode::implied)): {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       P.raw = pop() & 0xCF;
-      PC    = pop16();
+      PC    = pop(false) | pop(false) << 8;
       log(opcode_addr, opcode, "RTI:   $%04X\n", PC);
     } break;
 
@@ -616,8 +612,7 @@ void cpu::CPU::executeInstruction() {
     // Return from subroutine
     case (asInt(Instruction::RTS) + asInt(AddressingMode::implied)): {
       readByte(PC);  // Dummy read (For one-byte opcodes)
-      tick();
-      PC = pop16() + 1;
+      PC = (pop() | pop() << 8) + 1;
       log(opcode_addr, opcode, "RTS:   $%04X\n", PC);
     } break;
 
@@ -674,13 +669,11 @@ void cpu::CPU::executeInstruction() {
       break;
     case (asInt(Instruction::PHA) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
-      tick();
       push(A);
       log(opcode_addr, opcode, "PHA:      SP <- $%02X\n", A);
       break;
     case (asInt(Instruction::PLA) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
-      tick(2);
       A   = pop();
       P.z = (A == 0);
       P.n = (A >> 7);
@@ -688,14 +681,12 @@ void cpu::CPU::executeInstruction() {
       break;
     case (asInt(Instruction::PHP) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
-      tick();
       P.b = 0b11;
       push(P.raw);
       log(opcode_addr, opcode, "PHP:      SP <- $%02X\n", P.raw);
       break;
     case (asInt(Instruction::PLP) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
-      tick(2);
       P.raw = pop() & 0xCF;
       log(opcode_addr, opcode, "PHP:       P <- $%02X\n", P.raw);
       break;
@@ -705,7 +696,6 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::STX) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::STX) + asInt(AddressingMode::zero_page_x)):  // Should be zero_page_y
     case (asInt(Instruction::STX) + asInt(AddressingMode::absolute)): {
-      tick();
       uint16_t addr;
       if (opcode == asInt(Instruction::STX) + asInt(AddressingMode::zero_page_x)) {
         addr = getArgAddr(AddressingMode::zero_page_y);
@@ -721,7 +711,6 @@ void cpu::CPU::executeInstruction() {
     case (asInt(Instruction::STY) + asInt(AddressingMode::zero_page)):
     case (asInt(Instruction::STY) + asInt(AddressingMode::zero_page_x)):
     case (asInt(Instruction::STY) + asInt(AddressingMode::absolute)): {
-      tick();
       const uint16_t addr = getArgAddr(opcode - asInt(Instruction::STY));
       writeByte(addr, Y);
       log(opcode_addr, opcode, "STX:   $%04X <- $%02X\n", addr, Y);
@@ -817,13 +806,15 @@ void cpu::CPU::executeInstruction() {
 
 
     // DCP: DEC then CMP
+    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::indirect_y)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::zero_page)):
     case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::zero_page_x)):
     case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::absolute)):
-    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::absolute_x)):
-    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::absolute_y)):
-    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::indirect_x)):
-    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::indirect_y)): {
+    case (asInt(UnofficialInstruction::DCP) + asInt(AddressingMode::indirect_x)): {
       if (!allow_unofficial_) {
         goto illegal_instruction;
       }
@@ -841,13 +832,15 @@ void cpu::CPU::executeInstruction() {
 
 
     // ISC: INC then SBC
+    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::indirect_y)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::zero_page)):
     case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::zero_page_x)):
     case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::absolute)):
-    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::absolute_x)):
-    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::absolute_y)):
-    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::indirect_x)):
-    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::indirect_y)): {
+    case (asInt(UnofficialInstruction::ISC) + asInt(AddressingMode::indirect_x)): {
       if (!allow_unofficial_) {
         goto illegal_instruction;
       }
@@ -869,13 +862,15 @@ void cpu::CPU::executeInstruction() {
 
 
     // RLA: ROL then AND
+    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::indirect_y)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::zero_page)):
     case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::zero_page_x)):
     case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::absolute)):
-    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::absolute_x)):
-    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::absolute_y)):
-    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::indirect_x)):
-    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::indirect_y)): {
+    case (asInt(UnofficialInstruction::RLA) + asInt(AddressingMode::indirect_x)): {
       if (!allow_unofficial_) {
         goto illegal_instruction;
       }
@@ -896,13 +891,15 @@ void cpu::CPU::executeInstruction() {
 
 
     // RRA: ROR then ADC
+    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::indirect_y)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::zero_page)):
     case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::zero_page_x)):
     case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::absolute)):
-    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::absolute_x)):
-    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::absolute_y)):
-    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::indirect_x)):
-    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::indirect_y)): {
+    case (asInt(UnofficialInstruction::RRA) + asInt(AddressingMode::indirect_x)): {
       if (!allow_unofficial_) {
         goto illegal_instruction;
       }
@@ -925,13 +922,15 @@ void cpu::CPU::executeInstruction() {
 
 
       // SLO: ASL then ORA
+    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::indirect_y)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::zero_page)):
     case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::zero_page_x)):
     case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::absolute)):
-    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::absolute_x)):
-    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::absolute_y)):
-    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::indirect_x)):
-    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::indirect_y)): {
+    case (asInt(UnofficialInstruction::SLO) + asInt(AddressingMode::indirect_x)): {
       if (!allow_unofficial_) {
         goto illegal_instruction;
       }
@@ -951,13 +950,15 @@ void cpu::CPU::executeInstruction() {
 
 
       // SRE: LSR then EOR
+    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::absolute_x)):
+    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::absolute_y)):
+    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::indirect_y)):
+      tick();
+      __attribute__((fallthrough));
     case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::zero_page)):
     case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::zero_page_x)):
     case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::absolute)):
-    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::absolute_x)):
-    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::absolute_y)):
-    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::indirect_x)):
-    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::indirect_y)): {
+    case (asInt(UnofficialInstruction::SRE) + asInt(AddressingMode::indirect_x)): {
       if (!allow_unofficial_) {
         goto illegal_instruction;
       }
@@ -1039,7 +1040,7 @@ void cpu::CPU::executeInstruction() {
       if (!allow_unofficial_) {
         goto illegal_instruction;
       }
-      readByte(getArgAddr(AddressingMode::absolute_x));
+      readByte(getArgAddr(AddressingMode::absolute_x, true));
       log(opcode_addr, opcode, "IGN");
       break;
     case (asInt(UnofficialInstruction::IGN_1) + asInt(AddressingMode::zero_page)):
@@ -1103,16 +1104,11 @@ void cpu::CPU::push(uint8_t data) {
   writeByte(0x0100 + SP--, data);
 }
 
-uint8_t cpu::CPU::pop() {
-  tick();  // Increment SP
+uint8_t cpu::CPU::pop(bool do_tick) {
+  if (do_tick) {
+    tick();  // Increment SP
+  }
   return readByte(0x0100 + (++SP));
-}
-
-uint16_t cpu::CPU::pop16() {
-  tick();  // Increment SP by 2
-  uint16_t val = readByte(0x0100 + (++SP));
-  val |= readByte(0x0100 + (++SP)) << 8;
-  return val;
 }
 
 void cpu::CPU::tick(int ticks) {
@@ -1123,7 +1119,7 @@ void cpu::CPU::tick(int ticks) {
 }
 
 void cpu::CPU::interrupt(uint16_t vector_table) {
-  tick();  // TODO: Confirm number of ticks for NMI
+  // tick();  // TODO: Confirm number of ticks for NMI
   push(PC >> 8);
   push(PC);
   push(P.raw);
@@ -1157,23 +1153,23 @@ uint16_t cpu::CPU::getArgAddr(AddressingMode mode, bool check_page_boundary) {
     case (AddressingMode::immediate):  // Or relative
       return PC++;
 
-    case (AddressingMode::zero_page):
+    case (AddressingMode::zero_page):  // 1 cycles
       return readByte(PC++);
 
-    case (AddressingMode::zero_page_x):
+    case (AddressingMode::zero_page_x):  // 2 cycles
       tick();
       return (readByte(PC++) + X) & 0xFF;
 
-    case (AddressingMode::zero_page_y):
+    case (AddressingMode::zero_page_y):  // 2 cycles
       tick();
       return (readByte(PC++) + Y) & 0xFF;
 
-    case (AddressingMode::absolute): {
+    case (AddressingMode::absolute): {  // 2 cycles
       const uint16_t addr = readByte(PC++);
       return addr | (readByte(PC++) << 8);
     }
 
-    case (AddressingMode::absolute_x): {
+    case (AddressingMode::absolute_x): {  // 2+ cycles
       const uint16_t addr = readByte(PC++);
 
       // If low byte + X carries, take an extra tick to correct the high byte
@@ -1183,7 +1179,7 @@ uint16_t cpu::CPU::getArgAddr(AddressingMode mode, bool check_page_boundary) {
       return (addr | (readByte(PC++) << 8)) + X;
     }
 
-    case (AddressingMode::absolute_y): {
+    case (AddressingMode::absolute_y): {  // 2+ cycles
       const uint16_t addr = readByte(PC++);
 
       // If low byte + Y carries, take an extra tick to correct the high byte
@@ -1193,19 +1189,19 @@ uint16_t cpu::CPU::getArgAddr(AddressingMode mode, bool check_page_boundary) {
       return (addr | (readByte(PC++) << 8)) + Y;
     }
 
-    case (AddressingMode::indirect): {
+    case (AddressingMode::indirect): {  // 4 cycles
       uint16_t addr = readByte(PC++);
       addr |= (readByte(PC++) << 8);
       return readByte(addr) | (readByte(addr + 1) << 8);
     }
 
-    case (AddressingMode::indirect_x): {
+    case (AddressingMode::indirect_x): {  // 4 cycles
       tick();
       const uint8_t addr = readByte(PC++) + X;
       return readByte(addr) | (readByte((addr + 1) & 0xFF) << 8);
     }
 
-    case (AddressingMode::indirect_y): {
+    case (AddressingMode::indirect_y): {  // 3+ cycles
       const uint8_t addr = readByte(PC++);
 
       // If low byte + Y carries, take an extra tick to correct the high byte
