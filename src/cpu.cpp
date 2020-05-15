@@ -349,7 +349,7 @@ void cpu::CPU::executeInstruction() {
     // Jump to service routine
     case (asInt(Instruction::JSR) + asInt(AddressingMode::absolute)): {
       const uint16_t address = getArgAddr(AddressingMode::absolute);
-      tick(); // Unknown extra cycle (Pre-decrement S?)
+      tick();  // Unknown extra cycle (Pre-decrement S?)
       push((PC - 1) >> 8);
       push(PC - 1);
       PC = address;
@@ -1108,13 +1108,13 @@ void cpu::CPU::interrupt(uint16_t vector_table) {
 void cpu::CPU::branch(bool condition) {
   const int8_t offset = utils::deComplement(readByte(getArgAddr(AddressingMode::relative)));
   if (condition) {
-    tick();
-    const uint8_t src_page = PC >> 8;
+    const uint8_t PCL = PC & 0xFF;
     PC += offset;
+    readByte((PC & 0xFF00) | PCL);  // Dummy read
 
     // Extra tick if page boundary crossed
-    if (src_page != (PC >> 8)) {
-      tick();
+    if ((PCL + offset) & 0x0100) {
+      readByte(PC);  // Dummy read
     }
   }
 }
