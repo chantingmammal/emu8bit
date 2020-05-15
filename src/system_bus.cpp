@@ -1,6 +1,6 @@
 #include <nesemu/system_bus.h>
 
-#include <nesemu/apu.h>
+#include <nesemu/apu/apu.h>
 #include <nesemu/cpu.h>
 #include <nesemu/joystick.h>
 #include <nesemu/logger.h>

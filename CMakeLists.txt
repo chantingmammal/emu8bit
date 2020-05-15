@@ -24,7 +24,9 @@ find_package(SDL2 REQUIRED)
 include_directories(include ${SDL2_INCLUDE_DIRS})
 
 add_executable(${PROJECT_NAME}
-  src/apu.cpp
+  src/apu/apu.cpp
+  src/apu/channels.cpp
+  src/apu/units.cpp
   src/console.cpp
   src/cpu.cpp
   src/joystick.cpp

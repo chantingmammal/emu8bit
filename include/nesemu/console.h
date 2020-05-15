@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nesemu/apu.h>
+#include <nesemu/apu/apu.h>
 #include <nesemu/cpu.h>
 #include <nesemu/joystick.h>
 #include <nesemu/ppu.h>
