@@ -8,14 +8,6 @@
 
 
 // Forward declarations
-namespace apu {
-class APU;
-}
-
-namespace ppu {
-class PPU;
-}
-
 namespace system_bus {
 class SystemBus;
 }
@@ -171,7 +163,6 @@ public:
   // Setup
   void allowUnofficialOpcodes(bool allow);
   void connectBus(system_bus::SystemBus* bus);
-  void connectChips(apu::APU* apu, ppu::PPU* ppu);
 
 
   // Execution
@@ -184,9 +175,7 @@ private:
   // System bus
   system_bus::SystemBus* bus_ = {nullptr};
 
-  // Other chips
-  apu::APU*                 apu_ = {nullptr};
-  ppu::PPU*                 ppu_ = {nullptr};
+  // System clock
   SteadyTimer<22, 39375000> timer_;  //  ~1.79MHz
 
 

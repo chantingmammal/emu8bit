@@ -12,7 +12,6 @@
 
 console::Console::Console(bool allow_unofficial_opcodes) {
   bus_.connectChips(&apu_, &cpu_, &ppu_, &joy_1_, &joy_2_);
-  cpu_.connectChips(&apu_, &ppu_);
 
   cpu_.connectBus(&bus_);
   cpu_.allowUnofficialOpcodes(allow_unofficial_opcodes);

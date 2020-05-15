@@ -1,8 +1,6 @@
 #include <nesemu/cpu.h>
 
-#include <nesemu/apu.h>
 #include <nesemu/logger.h>
-#include <nesemu/ppu.h>
 #include <nesemu/system_bus.h>
 #include <nesemu/utils.h>
 
@@ -29,11 +27,6 @@ void cpu::CPU::allowUnofficialOpcodes(bool allow) {
 
 void cpu::CPU::connectBus(system_bus::SystemBus* bus) {
   bus_ = bus;
-}
-
-void cpu::CPU::connectChips(apu::APU* apu, ppu::PPU* ppu) {
-  apu_ = apu;
-  ppu_ = ppu;
 }
 
 
