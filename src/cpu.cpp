@@ -183,8 +183,12 @@ void cpu::CPU::executeInstruction() {
     // Break
     case (asInt(Instruction::BRK) + asInt(AddressingMode::implied)):
       readByte(PC++);  // Padding byte
+
+      P.b = 0b11;
+      push(PC >> 8);
+      push(PC);
+
       irq_brk_ = true;
-      P.b      = 0b11;
       log(opcode_addr, opcode, "BRK\n");
       break;
 
@@ -1094,9 +1098,15 @@ void cpu::CPU::tick(int ticks) {
 }
 
 void cpu::CPU::interrupt(uint16_t vector_table) {
-  // tick();  // TODO: Confirm number of ticks for NMI
-  push(PC >> 8);
-  push(PC);
+
+  // NMI and IRQ should take 7 cycles, so add 2 dummy cycles if not BRK
+  if (!irq_brk_) {
+    readByte(PC);
+    readByte(PC);
+    push(PC >> 8);
+    push(PC);
+  }
+
   push(P.raw);
 
   irq_brk_ = false;
