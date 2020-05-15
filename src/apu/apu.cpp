@@ -268,6 +268,10 @@ void apu::APU::writeRegister(uint16_t address, uint8_t data) {
       irq_inhibit_        = data & 0x40;
       frame_counter_mode_ = data & 0x80;
 
+      if (irq_inhibit_) {
+        has_irq_ = false;
+      }
+
       if (cycle_count_ % 2) {  // If odd:
         cycle_counter_reset_latch_ = cycle_count_ + 2;
       } else {
