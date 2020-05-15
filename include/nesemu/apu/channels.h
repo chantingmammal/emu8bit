@@ -42,7 +42,7 @@ public:
   unit::Sweep         sweep;
   unit::LengthCounter length_counter;
 
-  void    clock() override;
+  void    clock() override {};
   uint8_t getOutput() override;
 };
 
@@ -55,26 +55,14 @@ public:
  *                v                v
  *    Timer ---> Gate ----------> Gate ---> Sequencer ---> (to mixer)
  */
-struct Triangle : public Channel {
-  union {
-    uint8_t             raw_0 = {0};
-    utils::RegBit<0, 7> linear_counter_load;
-    utils::RegBit<7, 1> halt_control_flag;
-  };
-  union {
-    uint8_t raw_1 = {0};
-    uint8_t unused;
-  };
-  union {
-    uint8_t raw_2 = {0};
-    uint8_t timer_low;
-  };
-  union {
-    uint8_t             raw_3 = {0};
-    utils::RegBit<0, 3> timer_high;
-    utils::RegBit<3, 5> length_counter_;
-  };
+class Triangle : public Channel {
+public:
+  const uint8_t sequence_[32] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5,  4,  3,  2,  1,  0,
+                                 0,  1,  2,  3,  4,  5,  6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 
+  uint16_t timer;  // 11-bit.
+
+  unit::LinearCounter linear_counter;
   unit::LengthCounter length_counter;
 
   void    clock() override {}

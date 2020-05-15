@@ -32,6 +32,10 @@ public:
   void    writeRegister(uint16_t address, uint8_t data);
 
 private:
+  inline void clockHalfFrame();
+  inline void clockQuarterFrame();
+
+
   bool has_irq_ = {false};
 
   channel::Square          square_1 = {1};   // CPU 0x4000 - 0x4003

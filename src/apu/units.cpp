@@ -121,3 +121,18 @@ void apu::unit::LengthCounter::clock() {
 uint8_t apu::unit::LengthCounter::getOutput(uint8_t input) {
   return (counter_ == 0) ? 0 : input;
 }
+
+
+// =*=*=*=*= Linear Counter =*=*=*=*=
+
+void apu::unit::LinearCounter::clock() {
+  if (reload_) {
+    counter_ = reload_value_;
+  } else if (counter_ > 0) {
+    counter_--;
+  }
+
+  if (!control_) {
+    reload_ = false;
+  }
+}

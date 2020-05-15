@@ -3,9 +3,6 @@
 
 // =*=*=*=*= Square =*=*=*=*=
 
-
-void apu::channel::Square::clock() {};
-
 uint8_t apu::channel::Square::getOutput() {
   return length_counter.getOutput(sweep.getOutput(envelope.getVolume()));
 };

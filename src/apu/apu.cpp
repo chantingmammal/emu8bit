@@ -4,31 +4,50 @@
 #include <nesemu/logger.h>
 
 
+// Clock length counter and sweep units
+void apu::APU::clockHalfFrame() {
+  square_1.length_counter.clock();
+  square_2.length_counter.clock();
+  triangle.length_counter.clock();
+  noise.length_counter.clock();
+  dmc.length_counter.clock();
+
+  square_1.sweep.clock();
+  square_2.sweep.clock();
+}
+
+// Clock envelope and linear counter units
+void apu::APU::clockQuarterFrame() {
+  triangle.linear_counter.clock();
+}
+
+
 void apu::APU::clock() {
 
   if (cycle_counter_reset_latch_ == cycle_count_) {
-    cycle_count_ = 0;
+    cycle_count_               = 0;
     cycle_counter_reset_latch_ = 0xFFFF;
 
     // If 5-step mode, clock everything
     if (frame_counter_mode_) {
-      square_1.length_counter.clock();
-      square_2.length_counter.clock();
+      clockHalfFrame();
+      clockQuarterFrame();
     }
   }
 
 
   switch (cycle_count_++) {
-    case 7457:  // Clock envelope and linear counter
+    case 7457:
+      clockQuarterFrame();
       break;
 
-    case 14913:  // Clock length counter and sweep
-                 // Clock envelope and linear counter
-      square_1.length_counter.clock();
-      square_2.length_counter.clock();
+    case 14913:
+      clockHalfFrame();
+      clockQuarterFrame();
       break;
 
-    case 22371:  // Clock envelope and linear counter
+    case 22371:
+      clockQuarterFrame();
       break;
 
     case 29828:  // (4-step only) Set frame interrupt flag if inhibit is clear
@@ -37,12 +56,10 @@ void apu::APU::clock() {
       }
       break;
 
-    case 29829:  // (4-step only) Clock length counter and sweep
-                 //               Clock envelope and linear counter
-                 //               Set frame interrupt flag if inhibit is clear
+    case 29829:  // (4-step only) Set frame interrupt flag if inhibit is clear
       if (!frame_counter_mode_) {
-        square_1.length_counter.clock();
-        square_2.length_counter.clock();
+        clockHalfFrame();
+        clockQuarterFrame();
         if (!irq_inhibit_) {
           has_irq_ = true;
         }
@@ -59,11 +76,9 @@ void apu::APU::clock() {
       }
       break;
 
-    case 37281:  // (5-step only) Clock length counter and sweep
-                 //               Clock envelope and linear counter
-                 //               Set frame interrupt flag if inhibit is clear
-      square_1.length_counter.clock();
-      square_2.length_counter.clock();
+    case 37281:  // (5-step only) Set frame interrupt flag if inhibit is clear
+      clockHalfFrame();
+      clockQuarterFrame();
       break;
 
     case 37282:  // (5-step only) Reset counter
@@ -81,7 +96,7 @@ uint8_t apu::APU::readRegister(uint16_t address) {
       static registers::StatusControl status = {0};
       status.ch_1                            = square_1.length_counter.counter_ > 0;
       status.ch_2                            = square_2.length_counter.counter_ > 0;
-      status.ch_3                            = false;  // TODO
+      status.ch_3                            = triangle.length_counter.counter_ > 0;
       status.ch_4                            = false;  // TODO
       status.ch_5                            = false;  // TODO
       status.frame_interrupt                 = has_irq_;
@@ -169,12 +184,29 @@ void apu::APU::writeRegister(uint16_t address, uint8_t data) {
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4007)\n", data);
       break;
 
-
-    // TODO: Triangle
+    // Triangle
     case 0x4008:
+      triangle.linear_counter.reload_value_ = (data & 0x7F);
+      triangle.linear_counter.control_      = (data & 0x80);
+      triangle.length_counter.halt_         = (data & 0x80);
+      logger::log<logger::DEBUG_APU>("Write $%02X to Triangle (0x4008)\n", data);
+      break;
     case 0x4009:
+      // Unused
+      break;
     case 0x400A:
+      triangle.timer &= 0xFF00;
+      triangle.timer |= data;
+      logger::log<logger::DEBUG_APU>("Write $%02X to Triangle (0x400A)\n", data);
+      break;
     case 0x400B:
+      triangle.timer &= 0x00FF;
+      triangle.timer |= data & 0x7;
+      if (sound_en_.ch_3) {
+        triangle.length_counter.load(data >> 3);
+      }
+      // TODO: Set linear counter reload
+      logger::log<logger::DEBUG_APU>("Write $%02X to Triangle (0x400B)\n", data);
       break;
 
     // TODO: Noise
@@ -201,7 +233,7 @@ void apu::APU::writeRegister(uint16_t address, uint8_t data) {
         square_2.length_counter.counter_ = 0;
       }
       if (!sound_en_.ch_3) {
-        ;  // TODO
+        triangle.length_counter.counter_ = 0;
       }
       if (!sound_en_.ch_4) {
         ;  // TODO

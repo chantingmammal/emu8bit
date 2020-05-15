@@ -119,4 +119,18 @@ public:
   uint8_t getOutput(uint8_t input);
 };
 
+
+/**
+ * TODO
+ */
+class LinearCounter {
+public:
+  uint8_t counter_      = {0};  // 0 to 127
+  uint8_t reload_value_ = {0};  // 0 to 127
+  bool    control_      = {false};
+  bool    reload_       = {false};
+
+  void clock();
+};
+
 }  // namespace apu::unit
