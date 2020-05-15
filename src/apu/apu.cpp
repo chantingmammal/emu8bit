@@ -97,7 +97,7 @@ uint8_t apu::APU::readRegister(uint16_t address) {
       status.ch_1                            = square_1.length_counter.counter_ > 0;
       status.ch_2                            = square_2.length_counter.counter_ > 0;
       status.ch_3                            = triangle.length_counter.counter_ > 0;
-      status.ch_4                            = false;  // TODO
+      status.ch_4                            = noise.length_counter.counter_ > 0;
       status.ch_5                            = false;  // TODO
       status.frame_interrupt                 = has_irq_;
       status.dmc_interrupt                   = false;  // TODO
@@ -209,11 +209,29 @@ void apu::APU::writeRegister(uint16_t address, uint8_t data) {
       logger::log<logger::DEBUG_APU>("Write $%02X to Triangle (0x400B)\n", data);
       break;
 
-    // TODO: Noise
+    // Noise
     case 0x400C:
+      noise.envelope.divider_.setPeriod(data & 0x0F);
+      noise.envelope.volume_       = (data & 0x0F);
+      noise.envelope.use_envelope_ = !(data & 0x10);
+      noise.length_counter.halt_   = (data & 0x20);
+      noise.envelope.loop_         = (data & 0x20);
+      logger::log<logger::DEBUG_APU>("Write $%02X to Noise (0x400C)\n", data);
+      break;
     case 0x400D:
+      // Unused
+      break;
     case 0x400E:
+      noise.loadPeriod(data & 0x0F);
+      noise.mode = (data & 0x80);
+      logger::log<logger::DEBUG_APU>("Write $%02X to Noise (0x400E)\n", data);
+      break;
     case 0x400F:
+      noise.envelope.start_ = true;
+      if (sound_en_.ch_4) {
+        noise.length_counter.load(data >> 3);
+      }
+      logger::log<logger::DEBUG_APU>("Write $%02X to Noise (0x400F)\n", data);
       break;
 
     // TODO: DMC
@@ -236,7 +254,7 @@ void apu::APU::writeRegister(uint16_t address, uint8_t data) {
         triangle.length_counter.counter_ = 0;
       }
       if (!sound_en_.ch_4) {
-        ;  // TODO
+        noise.length_counter.counter_ = 0;
       }
       if (!sound_en_.ch_5) {
         ;  // TODO
