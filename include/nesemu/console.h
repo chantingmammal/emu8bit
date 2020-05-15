@@ -1,5 +1,6 @@
 #pragma once
 
+#include <nesemu/apu.h>
 #include <nesemu/cpu.h>
 #include <nesemu/joystick.h>
 #include <nesemu/ppu.h>
@@ -43,6 +44,7 @@ private:
 
   // HW Components
   system_bus::SystemBus bus_;
+  apu::APU              apu_;
   cpu::CPU              cpu_;
   ppu::PPU              ppu_;
   joystick::Joystick    joy_1_  = {1};

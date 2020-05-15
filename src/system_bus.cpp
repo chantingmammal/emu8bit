@@ -1,5 +1,6 @@
 #include <nesemu/system_bus.h>
 
+#include <nesemu/apu.h>
 #include <nesemu/cpu.h>
 #include <nesemu/joystick.h>
 #include <nesemu/logger.h>
@@ -27,7 +28,7 @@ void system_bus::SystemBus::loadCart(mapper::Mapper* mapper, uint8_t* prg_rom, u
 
 
 bool system_bus::SystemBus::hasIRQ() const {
-  return mapper_->hasIRQ();  // || apu_->hasIRQ();
+  return mapper_->hasIRQ() || apu_->hasIRQ();
 }
 
 bool system_bus::SystemBus::hasNMI() const {
@@ -47,7 +48,7 @@ uint8_t system_bus::SystemBus::read(uint16_t address) const {
   }
 
   else if (address < 0x4014) {  // Sound Registers
-    data = 0;                   // TODO
+    data = apu_->readRegister(address);
   }
 
   else if (address == 0x4014) {  // PPU DMA Access
@@ -56,7 +57,7 @@ uint8_t system_bus::SystemBus::read(uint16_t address) const {
   }
 
   else if (address == 0x4015) {  // Sound Channel Switch
-    data = 0;                    // Cannot read sound channel register
+    data = apu_->readRegister(address);
   }
 
   else if (address == 0x4016) {  // Joystick 1
@@ -105,7 +106,7 @@ void system_bus::SystemBus::write(uint16_t address, uint8_t data) {
   }
 
   else if (address < 0x4014) {  // Sound Registers
-    ;                           // TODO
+    apu_->writeRegister(address, data);
   }
 
   else if (address == 0x4014) {  // PPU DMA Access
@@ -125,7 +126,7 @@ void system_bus::SystemBus::write(uint16_t address, uint8_t data) {
   }
 
   else if (address == 0x4015) {  // Sound Channel Switch
-    ;                            // TODO
+    apu_->writeRegister(address, data);
   }
 
   else if (address == 0x4016) {  // Joystick Strobe
@@ -134,7 +135,7 @@ void system_bus::SystemBus::write(uint16_t address, uint8_t data) {
   }
 
   else if (address == 0x4017) {  // APU frame counter
-    ;                            // TODO
+    apu_->writeRegister(address, data);
   }
 
   else if (address == 0x4020) {  // Unused
@@ -163,5 +164,6 @@ void system_bus::SystemBus::clock() {
   ppu_->clock();
   ppu_->clock();
   ppu_->clock();
+  apu_->clock();
   // Note: Do not clock the CPU - This function is clocked by the CPU itself
 }
