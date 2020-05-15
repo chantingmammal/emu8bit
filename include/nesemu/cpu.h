@@ -219,7 +219,7 @@ private:
   inline uint8_t readByte(uint16_t address);                 // 1 cycle
   inline void    writeByte(uint16_t address, uint8_t data);  // 1 cycle
   inline void    push(uint8_t data);                         // 1 cycle
-  inline uint8_t pop(bool do_tick = true);                   // 2 cycles
+  inline uint8_t pop();                                      // 1 cycle
 
   inline void     tick(int ticks = 1);
   inline void     interrupt(uint16_t vector_table);  // 5 cycles

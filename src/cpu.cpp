@@ -349,7 +349,7 @@ void cpu::CPU::executeInstruction() {
     // Jump to service routine
     case (asInt(Instruction::JSR) + asInt(AddressingMode::absolute)): {
       const uint16_t address = getArgAddr(AddressingMode::absolute);
-      tick();
+      tick(); // Unknown extra cycle (Pre-decrement S?)
       push((PC - 1) >> 8);
       push(PC - 1);
       PC = address;
@@ -588,8 +588,9 @@ void cpu::CPU::executeInstruction() {
     // Return from interrupt
     case (asInt(Instruction::RTI) + asInt(AddressingMode::implied)): {
       readByte(PC);  // Dummy read (For one-byte opcodes)
+      tick();        // Increment stack pointer
       P.raw = pop() & 0xCF;
-      PC    = pop(false) | pop(false) << 8;
+      PC    = pop() | pop() << 8;
       log(opcode_addr, opcode, "RTI:   $%04X\n", PC);
     } break;
 
@@ -597,7 +598,9 @@ void cpu::CPU::executeInstruction() {
     // Return from subroutine
     case (asInt(Instruction::RTS) + asInt(AddressingMode::implied)): {
       readByte(PC);  // Dummy read (For one-byte opcodes)
+      tick();        // Increment stack pointer
       PC = (pop() | pop() << 8) + 1;
+      tick();  // Increment PC
       log(opcode_addr, opcode, "RTS:   $%04X\n", PC);
     } break;
 
@@ -659,6 +662,7 @@ void cpu::CPU::executeInstruction() {
       break;
     case (asInt(Instruction::PLA) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
+      tick();        // Increment stack pointer
       A   = pop();
       P.z = (A == 0);
       P.n = (A >> 7);
@@ -672,6 +676,7 @@ void cpu::CPU::executeInstruction() {
       break;
     case (asInt(Instruction::PLP) + asInt(AddressingMode::implied)):
       readByte(PC);  // Dummy read (For one-byte opcodes)
+      tick();        // Increment stack pointer
       P.raw = pop() & 0xCF;
       log(opcode_addr, opcode, "PHP:       P <- $%02X\n", P.raw);
       break;
@@ -1077,10 +1082,7 @@ void cpu::CPU::push(uint8_t data) {
   writeByte(0x0100 + SP--, data);
 }
 
-uint8_t cpu::CPU::pop(bool do_tick) {
-  if (do_tick) {
-    tick();  // Increment SP
-  }
+uint8_t cpu::CPU::pop() {
   return readByte(0x0100 + (++SP));
 }
 
