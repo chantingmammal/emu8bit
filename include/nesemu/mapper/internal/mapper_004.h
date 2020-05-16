@@ -92,29 +92,29 @@ public:
 
 
     if (bank_select_ & 0x80) {
-      if (addr < 0x03FF) {                                   // 0x0000-0x03FF
+      if (addr < 0x0400) {                                   // 0x0000-0x03FF
         return (0x400 * bank_values_[2]) | (addr & 0x03FF);  //   -> R2
-      } else if (addr < 0x07FF) {                            // 0x0400-0x07FF
+      } else if (addr < 0x0800) {                            // 0x0400-0x07FF
         return (0x400 * bank_values_[3]) | (addr & 0x03FF);  //   -> R3
-      } else if (addr < 0x0BFF) {                            // 0x0800-0x0BFF
+      } else if (addr < 0x0C00) {                            // 0x0800-0x0BFF
         return (0x400 * bank_values_[4]) | (addr & 0x03FF);  //   -> R4
-      } else if (addr < 0x0FFF) {                            // 0x0C00-0x0FFF
+      } else if (addr < 0x1000) {                            // 0x0C00-0x0FFF
         return (0x400 * bank_values_[5]) | (addr & 0x03FF);  //   -> R5
-      } else if (addr < 0x17FF) {                            // 0x1000-0x17FF
+      } else if (addr < 0x1800) {                            // 0x1000-0x17FF
         return (0x400 * bank_values_[0]) | (addr & 0x07FF);  //   -> R0
       } else {                                               // 0x1800-0x1FFF
         return (0x400 * bank_values_[1]) | (addr & 0x07FF);  //   -> R1
       }
     } else {
-      if (addr < 0x07FF) {                                   // 0x0000-0x07FF
+      if (addr < 0x0800) {                                   // 0x0000-0x07FF
         return (0x400 * bank_values_[0]) | (addr & 0x07FF);  //   -> R0
-      } else if (addr < 0x0FFF) {                            // 0x0800-0x0FFF
+      } else if (addr < 0x1000) {                            // 0x0800-0x0FFF
         return (0x400 * bank_values_[1]) | (addr & 0x07FF);  //   -> R1
-      } else if (addr < 0x13FF) {                            // 0x1000-0x13FF
+      } else if (addr < 0x1400) {                            // 0x1000-0x13FF
         return (0x400 * bank_values_[2]) | (addr & 0x03FF);  //   -> R2
-      } else if (addr < 0x17FF) {                            // 0x1400-0x17FF
+      } else if (addr < 0x1800) {                            // 0x1400-0x17FF
         return (0x400 * bank_values_[3]) | (addr & 0x03FF);  //   -> R3
-      } else if (addr < 0x1BFF) {                            // 0x1800-0x1BFF
+      } else if (addr < 0x1C00) {                            // 0x1800-0x1BFF
         return (0x400 * bank_values_[4]) | (addr & 0x03FF);  //   -> R4
       } else {                                               // 0x1C00-0x1FFF
         return (0x400 * bank_values_[5]) | (addr & 0x03FF);  //   -> R5
@@ -134,9 +134,9 @@ public:
       case 0x8001: {  // 0x8000-0x9FFF, odd
         const uint8_t bank = bank_select_ & 0x07;
         if (bank < 2) {
-          data = data & 0xFE;
+          data &= 0xFE;
         } else if (bank > 5) {
-          data = data & 0x3F;
+          data &= 0x3F;
         }
         bank_values_[bank] = data;
       } break;

@@ -61,7 +61,7 @@ public:
     addr &= 0x1FFF;
 
     if (control_ & 0x10) {
-      if (addr < 0x0FFF) {
+      if (addr < 0x1000) {
         return (0x1000 * chr_bank_0_) | (addr & 0x0FFF);
       } else {
         return (0x1000 * chr_bank_1_) | (addr & 0x0FFF);
