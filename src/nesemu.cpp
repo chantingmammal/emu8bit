@@ -1,7 +1,7 @@
-#include <nesemu/console.h>
+#include <nesemu/hw/console.h>
+#include <nesemu/hw/rom.h>
 #include <nesemu/logger.h>
-#include <nesemu/rom.h>
-#include <nesemu/steady_timer.h>
+#include <nesemu/utils/steady_timer.h>
 #include <nesemu/window.h>
 
 #include <cstdio>
@@ -99,20 +99,20 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  rom::Rom rom;
-  if (rom::parseFromFile(filename, &rom))
+  hw::rom::Rom rom;
+  if (hw::rom::parseFromFile(filename, &rom))
     return 1;
 
   window::Window window;
   if (window.init(scale))
     return 1;
 
-  console::Console console(allow_unofficial);
+  hw::console::Console console(allow_unofficial);
   console.setWindow(&window);
   console.loadCart(&rom);
   console.start();
 
-  SteadyTimer<1, 30> sdl_timer;
+  utils::SteadyTimer<1, 30> sdl_timer;
   sdl_timer.start();
 
   bool      running = true;

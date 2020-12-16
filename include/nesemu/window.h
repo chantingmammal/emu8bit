@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nesemu/buffer.h>
+#include <nesemu/utils/buffer.h>
 
 #include <chrono>
 #include <cstdint>
@@ -23,7 +23,7 @@ public:
 private:
   unsigned frame_ = {0};
 
-  Buffer<double, 10>                    fps_buffer_;
+  utils::Buffer<double, 10>             fps_buffer_;
   std::chrono::steady_clock::time_point prev_frame_;
 
   SDL_Window*   window_   = {nullptr};

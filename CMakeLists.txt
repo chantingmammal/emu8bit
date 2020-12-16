@@ -24,17 +24,17 @@ find_package(SDL2 REQUIRED)
 include_directories(include ${SDL2_INCLUDE_DIRS})
 
 add_executable(${PROJECT_NAME}
-  src/apu/apu.cpp
-  src/apu/channels.cpp
-  src/apu/units.cpp
-  src/console.cpp
-  src/cpu.cpp
-  src/joystick.cpp
+  src/hw/apu/apu.cpp
+  src/hw/apu/channels.cpp
+  src/hw/apu/units.cpp
+  src/hw/console.cpp
+  src/hw/cpu.cpp
+  src/hw/joystick.cpp
+  src/hw/ppu.cpp
+  src/hw/rom.cpp
+  src/hw/system_bus.cpp
   src/logger.cpp
   src/nesemu.cpp
-  src/ppu.cpp
-  src/rom.cpp
-  src/system_bus.cpp
   src/window.cpp
 )
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
