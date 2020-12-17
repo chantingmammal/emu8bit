@@ -1,29 +1,33 @@
 #include <nesemu/hw/console.h>
 #include <nesemu/hw/rom.h>
 #include <nesemu/logger.h>
+#include <nesemu/ui/screen.h>
+#include <nesemu/ui/window.h>
 #include <nesemu/utils/steady_timer.h>
-#include <nesemu/window.h>
 
 #include <cstdio>
 #include <getopt.h>
+#include <map>
 #include <string>
 
 #include <SDL2/SDL_events.h>
 
 
+std::map<std::string, ui::Window*> windows;
+
 void printUsage() {
   printf("Usage: nesemu --file ROM.nes\n");
 }
 
+int  init();
+void exit();
 
 int main(int argc, char* argv[]) {
   int         opt = 0;
   std::string filename;
-  int         scale            = 1;
   bool        allow_unofficial = true;
 
   static struct option long_options[] = {{"file", required_argument, nullptr, 'f'},
-                                         {"scale", required_argument, nullptr, 's'},
                                          {"official", no_argument, nullptr, 'o'},
                                          {"quiet", no_argument, nullptr, 'q'},
                                          {"verbose", optional_argument, nullptr, 'v'},
@@ -34,9 +38,6 @@ int main(int argc, char* argv[]) {
     switch (opt) {
       case 'f':  // -f or --file
         filename = std::string(optarg);
-        break;
-      case 's':  // -s or --scale
-        scale = std::atoi(optarg);
         break;
       case 'o':  // -o or --official
         allow_unofficial = false;
@@ -100,38 +101,88 @@ int main(int argc, char* argv[]) {
   }
 
   hw::rom::Rom rom;
-  if (hw::rom::parseFromFile(filename, &rom))
+  if (hw::rom::parseFromFile(filename, &rom)) {
     return 1;
+  }
 
-  window::Window window;
-  if (window.init(scale))
+  // Initialize SDL
+  if (init()) {
+    exit();
     return 1;
+  }
+
+  // Setup the windows
+  windows["screen"] = new ui::Screen();
+  if (windows["screen"]->init("NES Emu")) {
+    exit();
+    return 1;
+  }
 
   hw::console::Console console(allow_unofficial);
-  console.setWindow(&window);
+  console.setScreen(static_cast<ui::Screen*>(windows["screen"]));
   console.loadCart(&rom);
   console.start();
 
   utils::SteadyTimer<1, 30> sdl_timer;
   sdl_timer.start();
 
-  bool      running = true;
+  // When the main window is closed, exit the program
+  bool running = true;
+  windows["screen"]->onClose([&]() -> void { running = false; });
+
   SDL_Event event;
   while (running) {
+
+    console.update();
 
     // Process SDL events at 30Hz
     if (sdl_timer.ready()) {
       while (SDL_PollEvent(&event)) {
+        // Exit on SDL_QUIT
         if (event.type == SDL_QUIT) {
           running = false;
-        } else {
-          console.handleEvent(event);
         }
+
+        // Handle window events (show/hide, focus, resize, etc)
+        for (auto&& window : windows) {
+          window.second->handleEvent(event);
+        }
+
+        // Handle console events (Controller input)
+        console.handleEvent(event);
+
+      }
+
+      // Render all visible windows
+      for (auto&& window : windows) {
+        window.second->update();
       }
     }
+  }
 
-    console.update();
+  exit();
+  return 0;
+}
+
+/// Initialize SDL subsystems
+int init() {
+  if (SDL_Init(SDL_INIT_VIDEO)) {
+    logger::log<logger::ERROR>("Video initialization failed: %s\n", SDL_GetError());
+    return 1;
   }
 
   return 0;
+}
+
+/// Cleanup windows and shutdown SDL subsystems
+void exit() {
+
+  // Cleanup all windows
+  for (auto&& window : windows) {
+    window.second->close();
+    delete window.second;
+  }
+
+  // Quit SDL subsystems
+  SDL_Quit();
 }

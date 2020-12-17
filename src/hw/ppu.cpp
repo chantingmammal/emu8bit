@@ -4,8 +4,8 @@
 #include <nesemu/hw/mapper/mapper_base.h>
 #include <nesemu/logger.h>
 #include <nesemu/temp_mapping.h>
+#include <nesemu/ui/screen.h>
 #include <nesemu/utils/enum.h>
-#include <nesemu/window.h>
 
 #include <cstring>  // For memcpy
 
@@ -19,8 +19,8 @@ void hw::ppu::PPU::loadCart(mapper::Mapper* mapper, uint8_t* chr_mem, bool is_ra
   mirroring_      = mirror;
 }
 
-void hw::ppu::PPU::setWindow(window::Window* window) {
-  window_ = window;
+void hw::ppu::PPU::setScreen(ui::Screen* screen) {
+  screen_ = screen;
 }
 
 
@@ -51,7 +51,7 @@ void hw::ppu::PPU::clock() {
   // =*=*=*=*=  Post-render scanline (Idle) =*=*=*=*=
   else if (scanline_ < 241) {
     if (cycle_ == 0) {
-      window_->updateScreen(pixels_);
+      screen_->update(pixels_);
     }
   }
 

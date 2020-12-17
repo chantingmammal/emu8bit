@@ -18,8 +18,8 @@ namespace hw::rom {
 class Rom;
 }
 
-namespace window {
-class Window;
+namespace ui {
+class Screen;
 }
 
 
@@ -32,7 +32,7 @@ public:
 
   // Setup
   void loadCart(rom::Rom* rom);
-  void setWindow(window::Window* window);
+  void setScreen(ui::Screen* screen);
 
   // Execution
   void start();
@@ -40,7 +40,7 @@ public:
   void handleEvent(const SDL_Event& event);
 
 private:
-  window::Window* window_ = {nullptr};
+  ui::Screen* screen_ = {nullptr};
 
   // HW Components
   system_bus::SystemBus bus_;

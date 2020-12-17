@@ -11,8 +11,8 @@ namespace hw::mapper {
 class Mapper;
 }
 
-namespace window {
-class Window;
+namespace ui {
+class Screen;
 }
 
 
@@ -38,7 +38,7 @@ class PPU {
 public:
   // Setup
   void loadCart(mapper::Mapper* mapper, uint8_t* chr_mem, bool is_ram, Mirroring mirror);
-  void setWindow(window::Window* window);
+  void setScreen(ui::Screen* screen);
 
 
   // Execution
@@ -53,7 +53,7 @@ private:
   bool has_nmi_ = {false};
 
   // Other chips
-  window::Window* window_ = {nullptr};
+  ui::Screen* screen_ = {nullptr};
 
   // Registers
   union PPUReg {

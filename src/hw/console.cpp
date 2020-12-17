@@ -3,7 +3,7 @@
 #include <nesemu/hw/mapper/mappers.h>
 #include <nesemu/hw/rom.h>
 #include <nesemu/logger.h>
-#include <nesemu/window.h>
+#include <nesemu/ui/screen.h>
 
 #include <cstdint>
 
@@ -38,9 +38,9 @@ void hw::console::Console::loadCart(rom::Rom* rom) {
   ppu_.loadCart(mapper_, rom->chr[0], (rom->header.chr_rom_size == 0), mirror);
 }
 
-void hw::console::Console::setWindow(window::Window* window) {
-  window_ = window;
-  ppu_.setWindow(window_);
+void hw::console::Console::setScreen(ui::Screen* screen) {
+  screen_ = screen;
+  ppu_.setScreen(screen_);
 }
 
 

@@ -34,8 +34,9 @@ add_executable(${PROJECT_NAME}
   src/hw/rom.cpp
   src/hw/system_bus.cpp
   src/logger.cpp
+  src/ui/screen.cpp
+  src/ui/window.cpp
   src/nesemu.cpp
-  src/window.cpp
 )
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
