@@ -48,7 +48,7 @@ void ui::NametableViewer::update() {
 
         // Tile col
         for (uint8_t j = 0; j < 8; j++) {
-          const uint8_t pixel        = ((ptrn_a >> (7 - j)) & 0x01) | (((ptrn_b >> (7 - j)) << 1) & 0x02);
+          const uint8_t pixel = ((ptrn_a >> (7 - j)) & 0x01) | (((ptrn_b >> (7 - j)) << 1) & 0x02);
 
           uint8_t palette_addr;
           if (pixel == 0) {
@@ -81,11 +81,17 @@ void ui::NametableViewer::update() {
     pixels[((y + 239) % TEXTURE_HEIGHT) * TEXTURE_WIDTH + (col % TEXTURE_WIDTH)] = box_color;
   }
 
-  // Draw the nametable to the screen, with locked aspect ratio
+  // Draw the nametable to the screen, with locked aspect ratio TEXTURE_HEIGHT/TEXTURE_WIDTH
   SDL_UpdateTexture(texture_, nullptr, pixels, TEXTURE_WIDTH * sizeof(uint32_t));
   SDL_RenderClear(renderer_);
-  int      d    = std::min(width_, height_);
-  SDL_Rect dest = {(width_ - d) / 2, (height_ - d) / 2, d, d};
+  SDL_Rect dest;
+  if (width_ * TEXTURE_HEIGHT < height_ * TEXTURE_WIDTH) {
+    const int h = (width_ * TEXTURE_HEIGHT) / TEXTURE_WIDTH;
+    dest  = SDL_Rect{0, (height_ - h) / 2, width_, h};
+  } else {
+    const int w = (height_ * TEXTURE_WIDTH) / TEXTURE_HEIGHT;
+    dest  = SDL_Rect{(width_ - w) / 2, 0, w, height_};
+  }
   SDL_RenderCopy(renderer_, texture_, NULL, &dest);
   SDL_RenderPresent(renderer_);
 }
