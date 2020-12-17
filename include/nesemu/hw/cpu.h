@@ -203,6 +203,10 @@ private:
   bool irq_reset_ = {false};  // Level sensitive
   bool irq_brk_   = {false};  // Level sensitive
 
+  // Interrupt Detected
+  bool do_poll_interrupts_ = {true};
+  bool do_nmi_[2]          = {false, false};
+  bool do_irq_[2]          = {false, false};
 
   // Internal operations
   inline uint8_t readByte(uint16_t address);                 // 1 cycle
@@ -211,8 +215,9 @@ private:
   inline uint8_t pop();                                      // 1 cycle
 
   inline void     tick(int ticks = 1);
-  inline void     interrupt(uint16_t vector_table);  // 5 cycles
-  inline void     branch(bool condition);            // 1 cycle
+  inline void     pollInterrupt();
+  inline void     interrupt();             // 5 cycles
+  inline void     branch(bool condition);  // 1 cycle
   inline uint16_t getArgAddr(std::underlying_type<AddressingMode>::type mode, bool check_page_boundary = false);
   inline uint16_t getArgAddr(AddressingMode mode, bool check_page_boundary = false);
 };

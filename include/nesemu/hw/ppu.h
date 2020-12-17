@@ -53,8 +53,6 @@ public:
 
 
 private:
-  bool has_nmi_ = {false};
-
   // Other chips
   ui::Screen* screen_ = {nullptr};
 

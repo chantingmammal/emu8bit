@@ -35,17 +35,9 @@ void hw::cpu::CPU::connectBus(system_bus::SystemBus* bus) {
 void hw::cpu::CPU::executeInstruction() {
   using utils::asInt;
 
-  // This is the correct interrupt priority
-  if (irq_reset_) {
-    interrupt(0xFFFC);
-    return;
-  } else if (bus_->hasNMI()) {
-    P.b |= 0b10;
-    interrupt(0xFFFA);
-    return;
-  } else if (irq_brk_ || (bus_->hasIRQ() && !P.i)) {
-    P.b |= 0b10;
-    interrupt(0xFFFE);
+  // If there is a pending interrupt:
+  if (irq_reset_ || do_nmi_[1] || irq_brk_ || do_irq_[1]) {
+    interrupt();
     return;
   }
 
@@ -669,6 +661,7 @@ void hw::cpu::CPU::executeInstruction() {
       readByte(PC);  // Dummy read (For one-byte opcodes)
       P.b = 0b11;
       push(P.raw);
+      P.b = 0;
       log(opcode_addr, opcode, "PHP:      SP <- $%02X\n", P.raw);
       break;
     case (asInt(Instruction::PLP) + asInt(AddressingMode::implied)):
@@ -1088,9 +1081,28 @@ void hw::cpu::CPU::tick(int ticks) {
     bus_->clock();
     timer_.sleep();
   }
+  pollInterrupt();
 }
 
-void hw::cpu::CPU::interrupt(uint16_t vector_table) {
+void hw::cpu::CPU::pollInterrupt() {
+  if (!do_poll_interrupts_) {
+    return;
+  }
+
+  static bool prev_nmi = false;
+  const bool  cur_nmi  = bus_->hasNMI();
+
+  do_nmi_[1] = do_nmi_[0];
+  do_irq_[1] = do_irq_[0];
+  do_nmi_[0] |= (!prev_nmi && cur_nmi);
+  do_irq_[0] = bus_->hasIRQ() && !P.i;
+
+  prev_nmi = cur_nmi;
+}
+
+void hw::cpu::CPU::interrupt() {
+
+  do_poll_interrupts_ = false;
 
   // NMI and IRQ should take 7 cycles, so add 2 dummy cycles if not BRK
   if (!irq_brk_) {
@@ -1100,12 +1112,28 @@ void hw::cpu::CPU::interrupt(uint16_t vector_table) {
     push(PC);
   }
 
-  push(P.raw);
+  // Determine vector here, allowing for interrupt hijacking
+  // This is the correct interrupt priority
+  uint16_t vector;
+  if (irq_reset_) {
+    vector = 0xFFFC;
+  } else if (do_nmi_[1] || do_nmi_[0]) {
+    do_nmi_[1] = false;
+    do_nmi_[0] = false;
+    vector     = 0xFFFA;
+  } else /*if (irq_brk_ || do_irq_)*/ {
+    vector = 0xFFFE;
+  }
 
-  irq_brk_ = false;
-  P.i      = true;
-  PC       = readByte(vector_table) | (readByte(vector_table + 1) << 8);
-  logger::log<logger::DEBUG_CPU>("Interrupt, jumping to $%04X\n", vector_table);
+  P.b |= 0b10;
+  push(P.raw);
+  P.b = 0;
+
+  irq_brk_            = false;
+  P.i                 = true;
+  PC                  = readByte(vector) | (readByte(vector + 1) << 8);
+  do_poll_interrupts_ = true;
+  logger::log<logger::DEBUG_CPU>("Interrupt, jumping to $%04X\n", vector);
 }
 
 void hw::cpu::CPU::branch(bool condition) {

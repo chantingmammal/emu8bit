@@ -27,11 +27,7 @@ void hw::ppu::PPU::setScreen(ui::Screen* screen) {
 // =*=*=*=*= PPU Execution =*=*=*=*=
 
 bool hw::ppu::PPU::hasNMI() {
-  if (has_nmi_) {
-    has_nmi_ = false;
-    return true;
-  }
-  return false;
+  return status_reg_.vblank && ctrl_reg_1_.vblank_enable;
 }
 
 void hw::ppu::PPU::clock() {
@@ -60,9 +56,6 @@ void hw::ppu::PPU::clock() {
   else if (scanline_ < 261) {
     if (scanline_ == 241 && cycle_ == 1) {
       status_reg_.vblank = true;
-      if (ctrl_reg_1_.vblank_enable) {
-        has_nmi_ = true;
-      }
     }
   }
 
