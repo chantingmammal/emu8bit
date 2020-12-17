@@ -2,6 +2,7 @@
 
 #include <nesemu/hw/system_bus.h>
 #include <nesemu/logger.h>
+#include <nesemu/utils/enum.h>
 #include <nesemu/utils/utils.h>
 
 #include <iostream>

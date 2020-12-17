@@ -9,18 +9,6 @@
 
 namespace utils {
 
-// Enum utilities
-template <typename Enumeration>
-constexpr typename std::underlying_type<Enumeration>::type asInt(const Enumeration value) {
-  return static_cast<typename std::underlying_type<Enumeration>::type>(value);
-}
-
-template <typename Enumeration>
-constexpr Enumeration asEnum(const int value) {
-  return static_cast<Enumeration>(value);
-}
-
-
 // Byte utilities
 constexpr int8_t deComplement(uint8_t value) {
   return (value & 0xF0) ? -uint8_t(~value + 1) : value;
