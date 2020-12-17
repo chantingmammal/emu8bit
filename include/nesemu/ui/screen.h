@@ -13,6 +13,7 @@ namespace ui {
 
 class Screen : public Window {
 public:
+  Screen() : Window(256, 240) {}
 
   // Note: Do not use default update(), since this window is updated in the PPU loop rather than SDL loop
   void update() override {};

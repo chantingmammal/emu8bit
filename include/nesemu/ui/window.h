@@ -10,12 +10,9 @@
 
 namespace ui {
 
-// Default window size
-constexpr int WINDOW_WIDTH  = 256;
-constexpr int WINDOW_HEIGHT = 240;
-
 class Window {
 public:
+  Window(unsigned width, unsigned height) : TEXTURE_WIDTH(width), TEXTURE_HEIGHT(height) {}
   virtual ~Window() = default;
 
   // Setup & cleanup window
@@ -43,6 +40,9 @@ public:
   // bool isMinimized();
 
 protected:
+  const unsigned TEXTURE_WIDTH;
+  const unsigned TEXTURE_HEIGHT;
+
   // SDL data
   SDL_Window*   window_   = {nullptr};
   SDL_Renderer* renderer_ = {nullptr};

@@ -22,12 +22,12 @@ void ui::Screen::update(const uint32_t* pixels) {
     delete buffer;
   }
 
-  SDL_UpdateTexture(texture_, nullptr, pixels, WINDOW_WIDTH * sizeof(uint32_t));
+  SDL_UpdateTexture(texture_, nullptr, pixels, TEXTURE_WIDTH * sizeof(uint32_t));
   SDL_RenderClear(renderer_);
 
   if (lock_aspect_ratio_) {
-    int d = std::min(width_, height_);
-    SDL_Rect dest = {(width_ - d)/2, (height_ - d)/2, d, d};
+    int      d    = std::min(width_, height_);
+    SDL_Rect dest = {(width_ - d) / 2, (height_ - d) / 2, d, d};
     SDL_RenderCopy(renderer_, texture_, NULL, &dest);
   } else {
     SDL_RenderCopy(renderer_, texture_, NULL, NULL);

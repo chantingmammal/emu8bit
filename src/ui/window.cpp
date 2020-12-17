@@ -14,8 +14,8 @@ bool ui::Window::init(const std::string&& title, bool shown) {
   if (!(window_ = SDL_CreateWindow(title_.c_str(),           // Window title
                                    SDL_WINDOWPOS_UNDEFINED,  // Initial x position
                                    SDL_WINDOWPOS_UNDEFINED,  // Initial y position
-                                   WINDOW_WIDTH,             // Width, in pixels
-                                   WINDOW_HEIGHT,            // Height, in pixels
+                                   TEXTURE_WIDTH,             // Width, in pixels
+                                   TEXTURE_HEIGHT,            // Height, in pixels
                                    window_flags))) {         // Flags
     logger::log<logger::ERROR>("Window initialization failed: %s\n", SDL_GetError());
     return 1;
@@ -30,8 +30,8 @@ bool ui::Window::init(const std::string&& title, bool shown) {
   if (!(texture_ = SDL_CreateTexture(renderer_,
                                      SDL_PIXELFORMAT_ARGB8888,
                                      SDL_TEXTUREACCESS_STREAMING,
-                                     WINDOW_WIDTH,
-                                     WINDOW_HEIGHT))) {
+                                     TEXTURE_WIDTH,
+                                     TEXTURE_HEIGHT))) {
     logger::log<logger::ERROR>("Texture initialization failed: %s\n", SDL_GetError());
     return 1;
   }
@@ -40,8 +40,8 @@ bool ui::Window::init(const std::string&& title, bool shown) {
   mouse_focus_    = true;
   keyboard_focus_ = true;
   shown_          = shown;
-  width_          = WINDOW_WIDTH;
-  height_         = WINDOW_HEIGHT;
+  width_          = TEXTURE_WIDTH;
+  height_         = TEXTURE_HEIGHT;
 
   return 0;
 }
