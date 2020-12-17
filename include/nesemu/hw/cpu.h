@@ -1,7 +1,7 @@
 #pragma once
 
+#include <nesemu/utils/reg_bit.h>
 #include <nesemu/utils/steady_timer.h>
-#include <nesemu/utils/utils.h>
 
 #include <cstdint>
 #include <type_traits>

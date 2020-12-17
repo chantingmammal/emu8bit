@@ -4,6 +4,7 @@
 #include <nesemu/hw/mapper/mapper_base.h>
 #include <nesemu/logger.h>
 #include <nesemu/temp_mapping.h>
+#include <nesemu/utils/utils.h>
 #include <nesemu/window.h>
 
 #include <cstring>  // For memcpy

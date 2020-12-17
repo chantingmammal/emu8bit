@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nesemu/utils/utils.h>
+#include <nesemu/utils/reg_bit.h>
 
 #include <cstdint>
 #include <string>

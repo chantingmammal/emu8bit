@@ -1,7 +1,7 @@
 #pragma once
 
 #include <nesemu/hw/apu/units.h>
-#include <nesemu/utils/utils.h>
+#include <nesemu/utils/reg_bit.h>
 
 #include <cstdint>
 
