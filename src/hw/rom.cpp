@@ -1,9 +1,25 @@
 #include <nesemu/hw/rom.h>
 
 #include <nesemu/logger.h>
-#include <nesemu/utils/utils.h>
 
 #include <fstream>
+#include <iomanip>
+#include <sstream>
+
+
+// TODO: Make more lightweight
+inline std::string uint8_to_hex_string(const uint8_t* arr, const std::size_t size) {
+  std::stringstream ss;
+  ss << std::hex << std::setfill('0');
+
+  for (unsigned i = 0; i < size; i++) {
+    ss << "0x" << std::hex << std::setw(2) << static_cast<int>(arr[i]);
+    if (i < size - 1) {
+      ss << " ";
+    }
+  }
+  return ss.str();
+}
 
 
 int hw::rom::parseFromFile(std::string filename, Rom* rom) {
@@ -25,7 +41,7 @@ int hw::rom::parseFromFile(std::string filename, Rom* rom) {
   if (!std::equal(rom->header.name, std::end(rom->header.name), header_name)) {
     logger::log<logger::ERROR>("Unable to parse file %s: Invalid header beginning with '%s'\n",
                                filename.c_str(),
-                               utils::uint8_to_hex_string(rom->header.name, 4).c_str());
+                               uint8_to_hex_string(rom->header.name, 4).c_str());
     return 1;
   }
 

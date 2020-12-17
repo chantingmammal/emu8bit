@@ -3,7 +3,6 @@
 #include <nesemu/hw/system_bus.h>
 #include <nesemu/logger.h>
 #include <nesemu/utils/enum.h>
-#include <nesemu/utils/utils.h>
 
 #include <iostream>
 
@@ -1110,7 +1109,8 @@ void hw::cpu::CPU::interrupt(uint16_t vector_table) {
 }
 
 void hw::cpu::CPU::branch(bool condition) {
-  const int8_t offset = utils::deComplement(readByte(getArgAddr(AddressingMode::relative)));
+  const uint8_t val    = readByte(getArgAddr(AddressingMode::relative));
+  const int8_t  offset = (val & 0xF0) ? -uint8_t(~val + 1) : val;
   if (condition) {
     const uint8_t PCL = PC & 0xFF;
     PC += offset;
