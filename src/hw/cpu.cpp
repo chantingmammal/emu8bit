@@ -1219,7 +1219,7 @@ uint16_t hw::cpu::CPU::getArgAddr(AddressingMode mode, bool dummy_read_optional)
     case (AddressingMode::indirect_y): {  // 3+ cycles
       const uint8_t ptr_addr  = readByte(PC++);
       const uint8_t low_byte  = readByte(ptr_addr);
-      const uint8_t high_byte = readByte(ptr_addr + 1);
+      const uint8_t high_byte = readByte((ptr_addr + 1) & 0xFF);
 
       // If low byte + Y carries, take an extra tick to correct the high byte
       if (!dummy_read_optional || ((low_byte + Y) & 0x0100)) {
