@@ -21,7 +21,7 @@ public:
     return (0x2000 * bank_num) | (addr & 0x1FFF);
   };
 
-  void write(uint16_t addr, uint8_t data) override { prg_bank_ = data; };
+  void write(uint16_t /*addr*/, uint8_t data) override { prg_bank_ = data; };
 
 private:
   uint8_t prg_bank_ = {0};
