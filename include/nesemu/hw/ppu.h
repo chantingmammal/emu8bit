@@ -13,7 +13,8 @@ class Mapper;
 
 namespace ui {
 class Screen;
-}
+class NametableViewer;
+}  // namespace ui
 
 
 // Ricoh RP2A03 (based on MOS6502)
@@ -35,6 +36,8 @@ enum class MemoryMappedIO {
 enum class Mirroring { none, vertical, horizontal };
 
 class PPU {
+  friend class ui::NametableViewer;
+
 public:
   // Setup
   void loadCart(mapper::Mapper* mapper, uint8_t* chr_mem, bool is_ram, Mirroring mirror);
@@ -176,7 +179,7 @@ private:
 
 
   // Internal operations
-  uint8_t readByte(uint16_t address);
+  uint8_t readByte(uint16_t address) const;
   void    writeByte(uint16_t address, uint8_t data);
   void    renderPixel();
 

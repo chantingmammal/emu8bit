@@ -39,6 +39,9 @@ public:
   void update();
   void handleEvent(const SDL_Event& event);
 
+  // Misc
+  const ppu::PPU* getPPU() const { return &ppu_; }
+
 private:
   ui::Screen* screen_ = {nullptr};
 

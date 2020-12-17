@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  // Setup the windows
+  // Create the windows
   windows["screen"] = new ui::Screen();
   if (windows["screen"]->init("NES Emu")) {
     exit();
@@ -124,10 +124,15 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // Create the emulated hardware
   hw::console::Console console(allow_unofficial);
-  console.setScreen(static_cast<ui::Screen*>(windows["screen"]));
   console.loadCart(&rom);
   console.start();
+
+  // Connect the emulated HW to the UI
+  console.setScreen(static_cast<ui::Screen*>(windows["screen"]));
+  static_cast<ui::NametableViewer*>(windows["ppu"])->attachPPU(console.getPPU());
+
 
   utils::SteadyTimer<1, 30> sdl_timer;
   sdl_timer.start();

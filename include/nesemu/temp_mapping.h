@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-uint32_t decodeColor(uint8_t color) {
+inline uint32_t decodeColor(uint8_t color) {
   switch (color) {
     case 0x00:
       return 0x00757575;
