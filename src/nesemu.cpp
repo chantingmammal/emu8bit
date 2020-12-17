@@ -1,6 +1,7 @@
 #include <nesemu/hw/console.h>
 #include <nesemu/hw/rom.h>
 #include <nesemu/logger.h>
+#include <nesemu/ui/nametable_viewer.h>
 #include <nesemu/ui/screen.h>
 #include <nesemu/ui/window.h>
 #include <nesemu/utils/steady_timer.h>
@@ -117,6 +118,11 @@ int main(int argc, char* argv[]) {
     exit();
     return 1;
   }
+  windows["ppu"] = new ui::NametableViewer();
+  if (windows["ppu"]->init("Nametable Viewer", false)) {
+    exit();
+    return 1;
+  }
 
   hw::console::Console console(allow_unofficial);
   console.setScreen(static_cast<ui::Screen*>(windows["screen"]));
@@ -151,6 +157,14 @@ int main(int argc, char* argv[]) {
         // Handle console events (Controller input)
         console.handleEvent(event);
 
+        // Show/hide windows
+        if (event.type == SDL_KEYDOWN) {
+          switch (event.key.keysym.sym) {
+            case SDLK_1:
+              windows["ppu"]->focus();
+              break;
+          }
+        }
       }
 
       // Render all visible windows

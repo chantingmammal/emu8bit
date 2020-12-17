@@ -34,6 +34,7 @@ add_executable(${PROJECT_NAME}
   src/hw/rom.cpp
   src/hw/system_bus.cpp
   src/logger.cpp
+  src/ui/nametable_viewer.cpp
   src/ui/screen.cpp
   src/ui/window.cpp
   src/nesemu.cpp
