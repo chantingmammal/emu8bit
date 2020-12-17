@@ -138,7 +138,8 @@ uint8_t hw::ppu::PPU::readRegister(uint16_t cpu_address) {
         io_latch_   = read_buffer;
         read_buffer = readByte(v_.raw);
       } else {
-        read_buffer = readByte(0x2000 | (v_.raw & 0x0FFF) | (0x400 * v_.nametable_select));
+        // TODO: Double check this buffer
+        read_buffer = readByte(0x2000 | (v_.raw & 0x0FFF));
         io_latch_   = readByte(v_.raw);
       }
 
@@ -233,18 +234,20 @@ void hw::ppu::PPU::spriteDMAWrite(uint8_t* data) {
 
 // =*=*=*=*= PPU Internal Operations =*=*=*=*=
 
-uint8_t hw::ppu::PPU::readByte(uint16_t address) {
+uint8_t hw::ppu::PPU::readByte(uint16_t address) const {
   uint8_t data;
   address &= 0x3FFF;
 
   // Cartridge VRAM/VROM
+  // 0x0000-0x1FFF
   if (address < 0x2000) {
     data = chr_mem_[mapper_->decodePPUAddress(address)];
   }
 
   // Nametables
+  // 0x2000-0x2FFF, mirrored to 0x3EFF
   else if (address < 0x3F00) {
-    address = (address & 0x0FFF) | (0x400 * v_.nametable_select);
+    address &= 0x0FFF;
     switch (mirroring_) {
       case Mirroring::none:  // Four-screen VRAM layout
         data = ram_[address];
@@ -261,6 +264,7 @@ uint8_t hw::ppu::PPU::readByte(uint16_t address) {
   }
 
   // Palettes
+  // 0x3F00-0x3F1F, mirrored to 0x3FFF
   else {
 
     // TODO: Hackey
@@ -504,9 +508,9 @@ void hw::ppu::PPU::fetchNextBGTile() {
                                 | ctrl_reg_1_.screen_pattern_table_addr << 12  // Pattern table
                                 | v_.fine_y_scroll;                            // Y offset (Tile slice)
 
-  const uint16_t at_entry = (v_.coarse_x_scroll >> 2)                         // Coarse X / 4
-                            | ((v_.coarse_y_scroll & 0x1C) << 1)              // Coarse Y / 4
-                            | (ctrl_reg_1_.screen_pattern_table_addr << 12);  // Pattern table
+  const uint16_t at_entry = (v_.coarse_x_scroll >> 2)             // Coarse X / 4
+                            | ((v_.coarse_y_scroll & 0x1C) << 1)  // Coarse Y / 4
+                            | (v_.nametable_select << 10);        // Nametable select
 
   const uint8_t at_subentry = (v_.coarse_x_scroll & 2) | ((v_.coarse_y_scroll & 2) << 1);
   // 76543210
