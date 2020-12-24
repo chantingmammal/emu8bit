@@ -146,7 +146,9 @@ public:
         logger::log<logger::DEBUG_MAPPER>("Set bank[%d] = $%02X\n", bank, data);
       } break;
       case 0xA000:  // 0xA000-0xBFFE, even
-        // Nametable mirroring. Already handled by iNES header
+        if (mirroring_ != Mirroring::none) {
+          mirroring_ = (data & 0x01) ? Mirroring::horizontal : Mirroring::vertical;
+        }
         break;
       case 0xA001:  // 0xA001-0xBFFF, odd
         // PRG RAM write protect. Not implemented to ensure compatibility with MMC6

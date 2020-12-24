@@ -8,7 +8,7 @@ namespace hw::mapper {
 constexpr unsigned PRG_ROM_OFFSET = 0x8000;
 constexpr unsigned CHR_ROM_OFFSET = 0x0000;
 
-enum class Mirroring { none, vertical, horizontal };
+enum class Mirroring { none, vertical, horizontal, single_lower, single_upper };
 
 class Mapper {
 public:
@@ -33,10 +33,14 @@ public:
       switch (mirroring_) {
         case Mirroring::none:  // Four-screen VRAM layout
           return addr;
-        case Mirroring::vertical:  // Vertical mirroring_
-          return addr & ~0x800;
-        case Mirroring::horizontal:  // Horizontal mirroring_
-          return addr & ~0x400;
+        case Mirroring::vertical:  // Vertical mirroring
+          return addr & ~0x0800;
+        case Mirroring::horizontal:  // Horizontal mirroring
+          return addr & ~0x0400;
+        case Mirroring::single_lower:  // Single-screen, lower tilemap
+          return addr & 0x03FF;
+        case Mirroring::single_upper:  // Single-screen, upper tilemap
+          return (addr & 0x03FF) | 0x0400;
         default:
           __builtin_unreachable();
       }

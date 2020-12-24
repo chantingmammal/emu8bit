@@ -85,6 +85,20 @@ public:
       switch (addr & 0xE000) {
         case 0x8000:
           control_ = shift_register_;
+          switch (control_ & 0x03) {
+            case 0x00:
+              mirroring_ = Mirroring::single_lower;
+              break;
+            case 0x01:
+              mirroring_ = Mirroring::single_upper;
+              break;
+            case 0x02:
+              mirroring_ = Mirroring::vertical;
+              break;
+            case 0x03:
+              mirroring_ = Mirroring::horizontal;
+              break;
+          }
           break;
         case 0xA000:
           chr_bank_0_ = shift_register_;
