@@ -178,6 +178,7 @@ private:
 
   // Internal operations
   uint8_t readByte(uint16_t address) const;
+  uint8_t readPaletteByte(uint16_t address) const;
   void    writeByte(uint16_t address, uint8_t data);
   void    renderPixel();
 

@@ -77,6 +77,7 @@ void hw::ppu::PPU::clock() {
       v_.coarse_y_scroll  = t_.coarse_y_scroll;
       v_.nametable_select = (v_.nametable_select & 0x01) | (t_.nametable_select & 0x02);
       v_.fine_y_scroll    = t_.fine_y_scroll;
+      mapper_->decodePPUAddress(v_.raw);
     }
 
     fetchTilesAndSprites(false);
@@ -141,6 +142,7 @@ uint8_t hw::ppu::PPU::readRegister(uint16_t cpu_address) {
         incrementFineY();
       } else {
         v_.raw += (ctrl_reg_1_.vertical_write ? 32 : 1);
+        mapper_->decodePPUAddress(v_.raw);
       }
 
       logger::log<logger::DEBUG_PPU>("Read $%02X from PPUDATA\n", io_latch_);
@@ -196,6 +198,7 @@ void hw::ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
       if (write_toggle_) {                         // Write lower byte on second write
         t_.lower = data;
         v_.raw   = t_.raw;
+        mapper_->decodePPUAddress(v_.raw);
       } else {  // Write upper byte on first write
         t_.upper = data & 0x3F;
       }
@@ -210,6 +213,7 @@ void hw::ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
         incrementFineY();
       } else {
         v_.raw += (ctrl_reg_1_.vertical_write ? 32 : 1);
+        mapper_->decodePPUAddress(v_.raw);
       }
       logger::log<logger::DEBUG_PPU>("Set PPUDATA = $%02X\n", data);
       break;
@@ -229,12 +233,14 @@ void hw::ppu::PPU::spriteDMAWrite(uint8_t* data) {
 
 uint8_t hw::ppu::PPU::readByte(uint16_t address) const {
   uint8_t data;
+
   address &= 0x3FFF;
+  const uint16_t mapped_addr = mapper_->decodePPUAddress(address);
 
   // Cartridge VRAM/VROM
   // 0x0000-0x1FFF
   if (address < 0x2000) {
-    data = chr_mem_[mapper_->decodePPUAddress(address)];
+    data = chr_mem_[mapped_addr];
   }
 
   // Nametables
@@ -259,29 +265,37 @@ uint8_t hw::ppu::PPU::readByte(uint16_t address) const {
   // Palettes
   // 0x3F00-0x3F1F, mirrored to 0x3FFF
   else {
-
-    // TODO: Hackey
-    switch (address) {
-      case 0x3F10:
-      case 0x3F14:
-      case 0x3F18:
-      case 0x3F1C:
-        address &= ~0x0010;
-    }
-
-    data = ram_[(address & 0x1F) + 0x1F00] & (ctrl_reg_2_.greyscale ? 0x30 : 0xFF);
+    data = readPaletteByte(address);
   }
 
   return data;
 }
 
+
+uint8_t hw::ppu::PPU::readPaletteByte(uint16_t address) const {
+  address &= 0x1F;
+
+  // Color #0 of each sprite palette mirrors the corresponding background palette
+  switch (address) {
+    case 0x10:
+    case 0x14:
+    case 0x18:
+    case 0x1C:
+      address &= ~0x10;
+  }
+
+  return ram_[0x1F00 | address] & (ctrl_reg_2_.greyscale ? 0x30 : 0xFF);
+}
+
+
 void hw::ppu::PPU::writeByte(uint16_t address, uint8_t data) {
   address &= 0x3FFF;
+  const uint16_t mapped_addr = mapper_->decodePPUAddress(address);
 
   // Cartridge VRAM/VROM
   if (address < 0x2000) {
     if (chr_mem_is_ram_)  // Uses VRAM, not VROM
-      chr_mem_[mapper_->decodePPUAddress(address)] = data;
+      chr_mem_[mapped_addr] = data;
   }
 
   // Nametables
@@ -302,17 +316,18 @@ void hw::ppu::PPU::writeByte(uint16_t address, uint8_t data) {
 
   // Palettes
   else {
+    address &= 0x1F;
 
-    // TODO: Hackey
+    // Color #0 of each sprite palette mirrors the corresponding background palette
     switch (address) {
-      case 0x3F10:
-      case 0x3F14:
-      case 0x3F18:
-      case 0x3F1C:
-        address &= ~0x0010;
+      case 0x10:
+      case 0x14:
+      case 0x18:
+      case 0x1C:
+        address &= ~0x10;
     }
 
-    ram_[(address & 0x1F) + 0x1F00] = data;
+    ram_[0x1F00 | address] = data;
   }
 }
 
@@ -386,7 +401,7 @@ void hw::ppu::PPU::renderPixel() {
 
 
   // Write the pixel to the screen buffer
-  pixels_[(scanline_ * 256) + cycle_] = decodeColor(readByte(0x3F00 | palette_addr));
+  pixels_[(scanline_ * 256) + cycle_] = decodeColor(readPaletteByte(palette_addr));
 
   // Shift SRs left
   pattern_sr_a_ <<= 1;
@@ -598,5 +613,6 @@ void hw::ppu::PPU::incrementFineY() {
         v_.coarse_y_scroll += 1;
       }
     }
+    mapper_->decodePPUAddress(v_.raw);
   }
 }
