@@ -1118,12 +1118,14 @@ void hw::cpu::CPU::interrupt() {
   if (irq_reset_) {
     vector = 0xFFFC;
   } else if (do_nmi_[1] || do_nmi_[0]) {
-    do_nmi_[1] = false;
-    do_nmi_[0] = false;
     vector     = 0xFFFA;
   } else /*if (irq_brk_ || do_irq_)*/ {
     vector = 0xFFFE;
   }
+  do_nmi_[1] = false;
+  do_nmi_[0] = false;
+  do_irq_[1] = false;
+  do_irq_[0] = false;
 
   P.b |= 0b10;
   push(P.raw);
