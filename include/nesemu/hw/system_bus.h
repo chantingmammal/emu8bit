@@ -8,6 +8,10 @@ namespace hw::apu {
 class APU;
 }
 
+namespace hw::clock {
+class CPUClock;
+}
+
 namespace hw::cpu {
 class CPU;
 }
@@ -33,7 +37,12 @@ namespace hw::system_bus {
 class SystemBus {
 public:
   // Setup
-  void connectChips(apu::APU* apu, cpu::CPU* cpu, ppu::PPU* ppu, joystick::Joystick* joy_1, joystick::Joystick* joy_2);
+  void connectChips(clock::CPUClock*    clock,
+                    apu::APU*           apu,
+                    cpu::CPU*           cpu,
+                    ppu::PPU*           ppu,
+                    joystick::Joystick* joy_1,
+                    joystick::Joystick* joy_2);
   void loadCart(mapper::Mapper* mapper, uint8_t* prg_rom, uint8_t* expansion_ram);
 
 
@@ -54,6 +63,7 @@ private:
 
 
   // Chips
+  clock::CPUClock*    clock_;
   apu::APU*           apu_;
   cpu::CPU*           cpu_;
   ppu::PPU*           ppu_;

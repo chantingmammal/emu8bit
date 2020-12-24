@@ -1,6 +1,7 @@
 #pragma once
 
 #include <nesemu/hw/apu/apu.h>
+#include <nesemu/hw/clock.h>
 #include <nesemu/hw/cpu.h>
 #include <nesemu/hw/joystick.h>
 #include <nesemu/hw/ppu.h>
@@ -38,6 +39,7 @@ public:
   void start();
   void update();
   void handleEvent(const SDL_Event& event);
+  void limitSpeed(bool limit) { clock_.skip(!limit); };
 
   // Misc
   const ppu::PPU* getPPU() const { return &ppu_; }
@@ -53,6 +55,9 @@ private:
   joystick::Joystick    joy_1_  = {1};
   joystick::Joystick    joy_2_  = {2};
   mapper::Mapper*       mapper_ = {nullptr};
+
+  // System clock
+  clock::CPUClock clock_;
 };
 
 }  // namespace hw::console

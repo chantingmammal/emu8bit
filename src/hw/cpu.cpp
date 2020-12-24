@@ -1079,7 +1079,6 @@ uint8_t hw::cpu::CPU::pop() {
 void hw::cpu::CPU::tick(int ticks) {
   for (; ticks > 0; ticks--) {
     bus_->clock();
-    timer_.sleep();
   }
   pollInterrupt();
 }

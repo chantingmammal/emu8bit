@@ -162,14 +162,31 @@ int main(int argc, char* argv[]) {
         // Handle console events (Controller input)
         console.handleEvent(event);
 
-        // Show/hide windows
+        // Emulator controls
         if (event.type == SDL_KEYDOWN) {
           switch (event.key.keysym.sym) {
+
+            // Unlock speed limit
+            case SDLK_TAB:
+              console.limitSpeed(false);
+              break;
+
+            // Show nametable viewer
             case SDLK_1:
               windows["ppu"]->focus();
               break;
           }
         }
+        else if (event.type == SDL_KEYUP) {
+          switch (event.key.keysym.sym) {
+
+            // Relock speed limit
+            case SDLK_TAB:
+              console.limitSpeed(true);
+              break;
+          }
+        }
+
       }
 
       // Render all visible windows

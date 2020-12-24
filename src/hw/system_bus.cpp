@@ -1,6 +1,7 @@
 #include <nesemu/hw/system_bus.h>
 
 #include <nesemu/hw/apu/apu.h>
+#include <nesemu/hw/clock.h>
 #include <nesemu/hw/cpu.h>
 #include <nesemu/hw/joystick.h>
 #include <nesemu/hw/mapper/mapper_base.h>
@@ -8,11 +9,13 @@
 #include <nesemu/logger.h>
 
 
-void hw::system_bus::SystemBus::connectChips(apu::APU*           apu,
+void hw::system_bus::SystemBus::connectChips(clock::CPUClock*    clock,
+                                             apu::APU*           apu,
                                              cpu::CPU*           cpu,
                                              ppu::PPU*           ppu,
                                              joystick::Joystick* joy_1,
                                              joystick::Joystick* joy_2) {
+  clock_ = clock;
   apu_   = apu;
   cpu_   = cpu;
   ppu_   = ppu;
@@ -166,4 +169,6 @@ void hw::system_bus::SystemBus::clock() {
   ppu_->clock();
   apu_->clock();
   // Note: Do not clock the CPU - This function is clocked by the CPU itself
+
+  clock_->sleep();
 }

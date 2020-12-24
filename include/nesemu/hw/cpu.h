@@ -1,7 +1,6 @@
 #pragma once
 
 #include <nesemu/utils/reg_bit.h>
-#include <nesemu/utils/steady_timer.h>
 
 #include <cstdint>
 #include <type_traits>
@@ -158,7 +157,6 @@ enum class AddressingMode : int8_t {
 
 class CPU {
 public:
-  CPU() { timer_.start(); }
 
   // Setup
   void allowUnofficialOpcodes(bool allow);
@@ -174,10 +172,6 @@ private:
 
   // System bus
   system_bus::SystemBus* bus_ = {nullptr};
-
-  // System clock
-  utils::SteadyTimer<22, 39375000> timer_;  //  ~1.79MHz
-
 
   // Registers
   uint16_t PC = {0};          // Program counter

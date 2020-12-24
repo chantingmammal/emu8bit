@@ -11,7 +11,7 @@
 // =*=*=*=*= Console Setup =*=*=*=*=
 
 hw::console::Console::Console(bool allow_unofficial_opcodes) {
-  bus_.connectChips(&apu_, &cpu_, &ppu_, &joy_1_, &joy_2_);
+  bus_.connectChips(&clock_, &apu_, &cpu_, &ppu_, &joy_1_, &joy_2_);
 
   cpu_.connectBus(&bus_);
   cpu_.allowUnofficialOpcodes(allow_unofficial_opcodes);
@@ -47,6 +47,7 @@ void hw::console::Console::setScreen(ui::Screen* screen) {
 // =*=*=*=*= Console Execution =*=*=*=*=
 
 void hw::console::Console::start() {
+  clock_.start();
   cpu_.reset(true);
   cpu_.executeInstruction();
   cpu_.reset(false);
