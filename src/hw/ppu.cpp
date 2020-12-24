@@ -12,11 +12,10 @@
 
 // =*=*=*=*= PPU Setup =*=*=*=*=
 
-void hw::ppu::PPU::loadCart(mapper::Mapper* mapper, uint8_t* chr_mem, bool is_ram, Mirroring mirror) {
+void hw::ppu::PPU::loadCart(mapper::Mapper* mapper, uint8_t* chr_mem, bool is_ram) {
   mapper_         = mapper;
   chr_mem_        = chr_mem;
   chr_mem_is_ram_ = is_ram;
-  mirroring_      = mirror;
 }
 
 void hw::ppu::PPU::setScreen(ui::Screen* screen) {
@@ -233,101 +232,34 @@ void hw::ppu::PPU::spriteDMAWrite(uint8_t* data) {
 
 uint8_t hw::ppu::PPU::readByte(uint16_t address) const {
   uint8_t data;
-
   address &= 0x3FFF;
-  const uint16_t mapped_addr = mapper_->decodePPUAddress(address);
 
   // Cartridge VRAM/VROM
-  // 0x0000-0x1FFF
   if (address < 0x2000) {
-    data = chr_mem_[mapped_addr];
+    data = chr_mem_[mapper_->decodePPUAddress(address)];
   }
 
-  // Nametables
-  // 0x2000-0x2FFF, mirrored to 0x3EFF
-  else if (address < 0x3F00) {
-    address &= 0x0FFF;
-    switch (mirroring_) {
-      case Mirroring::none:  // Four-screen VRAM layout
-        data = ram_[address];
-        break;
-      case Mirroring::vertical:  // Vertical mirroring_
-        data = ram_[address & ~0x800];
-        break;
-      case Mirroring::horizontal:  // Horizontal mirroring_
-        data = ram_[address & ~0x400];
-        break;
-      default:
-        __builtin_unreachable();
-    }
-  }
-
-  // Palettes
-  // 0x3F00-0x3F1F, mirrored to 0x3FFF
+  // Nametables & palettes
   else {
-    data = readPaletteByte(address);
+    data = ram_[mapper_->decodeCIRAMAddress(address)];
   }
 
   return data;
 }
 
 
-uint8_t hw::ppu::PPU::readPaletteByte(uint16_t address) const {
-  address &= 0x1F;
-
-  // Color #0 of each sprite palette mirrors the corresponding background palette
-  switch (address) {
-    case 0x10:
-    case 0x14:
-    case 0x18:
-    case 0x1C:
-      address &= ~0x10;
-  }
-
-  return ram_[0x1F00 | address] & (ctrl_reg_2_.greyscale ? 0x30 : 0xFF);
-}
-
-
 void hw::ppu::PPU::writeByte(uint16_t address, uint8_t data) {
   address &= 0x3FFF;
-  const uint16_t mapped_addr = mapper_->decodePPUAddress(address);
 
   // Cartridge VRAM/VROM
   if (address < 0x2000) {
     if (chr_mem_is_ram_)  // Uses VRAM, not VROM
-      chr_mem_[mapped_addr] = data;
+      chr_mem_[mapper_->decodePPUAddress(address)] = data;
   }
 
-  // Nametables
-  else if (address < 0x3F00) {
-    address = (address & 0x0FFF) | (0x400 * v_.nametable_select);
-    switch (mirroring_) {
-      case Mirroring::none:  // Four-screen VRAM layout
-        ram_[address] = data;
-        break;
-      case Mirroring::vertical:  // Vertical mirroring_
-        ram_[address & ~0x800] = data;
-        break;
-      case Mirroring::horizontal:  // Horizontal mirroring_
-        ram_[address & ~0x400] = data;
-        break;
-    }
-  }
-
-  // Palettes
+  // Nametables & palettes
   else {
-    address &= 0x1F;
-
-    // Color #0 of each sprite palette mirrors the corresponding background palette
-    switch (address) {
-      case 0x10:
-      case 0x14:
-      case 0x18:
-      case 0x1C:
-        address &= ~0x10;
-    }
-
-    ram_[0x1F00 | address] = data;
+    ram_[mapper_->decodeCIRAMAddress(address)] = data;
   }
 }
 
@@ -401,7 +333,8 @@ void hw::ppu::PPU::renderPixel() {
 
 
   // Write the pixel to the screen buffer
-  pixels_[(scanline_ * 256) + cycle_] = decodeColor(readPaletteByte(palette_addr));
+  const uint8_t color                 = readByte(0x3F00 | palette_addr) & (ctrl_reg_2_.greyscale ? 0x30 : 0xFF);
+  pixels_[(scanline_ * 256) + cycle_] = decodeColor(color);
 
   // Shift SRs left
   pattern_sr_a_ <<= 1;

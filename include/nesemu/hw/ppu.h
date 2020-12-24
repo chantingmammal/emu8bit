@@ -33,14 +33,12 @@ enum class MemoryMappedIO {
   OAMDMA    = 0x4014
 };
 
-enum class Mirroring { none, vertical, horizontal };
-
 class PPU {
   friend class ui::NametableViewer;
 
 public:
   // Setup
-  void loadCart(mapper::Mapper* mapper, uint8_t* chr_mem, bool is_ram, Mirroring mirror);
+  void loadCart(mapper::Mapper* mapper, uint8_t* chr_mem, bool is_ram);
   void setScreen(ui::Screen* screen);
 
 
@@ -166,7 +164,6 @@ private:
   uint8_t         ram_[0x2000]    = {0};        // 8KiB RAM, at address 0x2000-0x3FFF
   uint8_t*        chr_mem_        = {nullptr};  // Character VRAM/VROM, at address 0x0000-0x1FFF
   bool            chr_mem_is_ram_ = {false};    // Whether chr_mem is VRAM or VROM
-  Mirroring       mirroring_;                   // Nametable mirroring mode
 
 
   // Rendering
@@ -178,7 +175,6 @@ private:
 
   // Internal operations
   uint8_t readByte(uint16_t address) const;
-  uint8_t readPaletteByte(uint16_t address) const;
   void    writeByte(uint16_t address, uint8_t data);
   void    renderPixel();
 

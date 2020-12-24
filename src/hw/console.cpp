@@ -24,18 +24,18 @@ hw::console::Console::~Console() {
 }
 
 void hw::console::Console::loadCart(rom::Rom* rom) {
-  const uint16_t mapper_num = rom->header.mapper_upper << 8 | rom->header.mapper_lower;
-  mapper_                   = mapper::mappers[mapper_num](rom->header.prg_rom_size, rom->header.chr_rom_size);
+  // Setup the mapper
+  const uint16_t          mapper_num = rom->header.mapper_upper << 8 | rom->header.mapper_lower;
+  const mapper::Mirroring mirror     = rom->header.ignore_mirroring
+                                       ? mapper::Mirroring::none
+                                       : (rom->header.nametable_mirror ? mapper::Mirroring::vertical
+                                                                       : mapper::Mirroring::horizontal);
+  mapper_ = mapper::mappers[mapper_num](rom->header.prg_rom_size, rom->header.chr_rom_size, mirror);
   logger::log<logger::DEBUG_MAPPER>("Using mapper #%d\n", mapper_num);
 
+  // Load the rom and mapper onto the busses
   bus_.loadCart(mapper_, rom->prg[0], (rom->header.has_battery ? rom->expansion[0] : nullptr));
-
-  ppu::Mirroring mirror = ppu::Mirroring::horizontal;
-  if (rom->header.ignore_mirroring)
-    mirror = ppu::Mirroring::none;
-  else if (rom->header.nametable_mirror)
-    mirror = ppu::Mirroring::vertical;
-  ppu_.loadCart(mapper_, rom->chr[0], (rom->header.chr_rom_size == 0), mirror);
+  ppu_.loadCart(mapper_, rom->chr[0], (rom->header.chr_rom_size == 0));
 }
 
 void hw::console::Console::setScreen(ui::Screen* screen) {
