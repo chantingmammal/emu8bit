@@ -38,7 +38,7 @@ void hw::ppu::PPU::clock() {
     fetchTilesAndSprites(true);
 
     // Cycles 0-255: Render
-    if (cycle_ < 256 && ctrl_reg_2_.render_enable) {
+    if (cycle_ < 256) {
       renderPixel();
     }
   }
