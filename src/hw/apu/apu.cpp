@@ -89,29 +89,26 @@ void hw::apu::APU::clock() {
 
 
 uint8_t hw::apu::APU::readRegister(uint16_t address) {
-  switch (address) {
-
-    // Status
-    case (0x4015): {
-      static registers::StatusControl status = {0};
-      status.ch_1                            = square_1.length_counter.counter_ > 0;
-      status.ch_2                            = square_2.length_counter.counter_ > 0;
-      status.ch_3                            = triangle.length_counter.counter_ > 0;
-      status.ch_4                            = noise.length_counter.counter_ > 0;
-      status.ch_5                            = false;  // TODO
-      status.frame_interrupt                 = has_irq_;
-      status.dmc_interrupt                   = false;  // TODO
-
-      has_irq_ = false;
-      logger::log<logger::DEBUG_APU>("Read $%02X from Status (0x4015)\n", status.raw);
-      return status.raw;
-    }
-
-
+  if (address != 0x4015) {
     // Unknown register, or read-only register. Note that all registers except 0x4015 are write-only
-    default:
-      return 0;
+    // To ensure open bus behaviour is maintained, this func should only be called with addr == 0x4015
+    logger::log<logger::Level::WARNING>("Attempted to read a write-only APU register ($%02X)!\n", address);
+    return 0;
   }
+
+  // Status
+  static registers::StatusControl status = {0};
+  status.ch_1                            = square_1.length_counter.counter_ > 0;
+  status.ch_2                            = square_2.length_counter.counter_ > 0;
+  status.ch_3                            = triangle.length_counter.counter_ > 0;
+  status.ch_4                            = noise.length_counter.counter_ > 0;
+  status.ch_5                            = false;  // TODO
+  status.frame_interrupt                 = has_irq_;
+  status.dmc_interrupt                   = false;  // TODO
+
+  has_irq_ = false;
+  logger::log<logger::DEBUG_APU>("Read $%02X from Status (0x4015)\n", status.raw);
+  return status.raw;
 }
 
 void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
@@ -257,9 +254,10 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
         noise.length_counter.counter_ = 0;
       }
       if (!sound_en_.ch_5) {
-        ;  // TODO
+        ;  // TODO: Set bytes remaining to 0
+      } else {
+        ;  // TODO: Restart DMC sample only if bytes remaining > 0
       }
-      has_irq_ = false;
       logger::log<logger::DEBUG_APU>("Write $%02X to Status (0x4015)\n", data);
       break;
 
@@ -272,10 +270,11 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
         has_irq_ = false;
       }
 
+      // TODO: These timings are wrong
       if (cycle_count_ % 2) {  // If odd:
         frame_counter_reset_counter_ = cycle_count_ + 2;
       } else {
-        frame_counter_reset_counter_ = cycle_count_ + 3;
+        frame_counter_reset_counter_ = cycle_count_ + 2;
       }
       break;
   }

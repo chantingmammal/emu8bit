@@ -39,7 +39,7 @@ bool hw::system_bus::SystemBus::hasNMI() const {
 }
 
 uint8_t hw::system_bus::SystemBus::read(uint16_t address) const {
-  uint8_t data;
+  static uint8_t data;
   address &= 0xFFFF;
 
   if (address < 0x2000) {  // Stack and RAM
@@ -51,12 +51,11 @@ uint8_t hw::system_bus::SystemBus::read(uint16_t address) const {
   }
 
   else if (address < 0x4014) {  // Sound Registers
-    data = apu_->readRegister(address);
+    // Open bus, these registers are write-only
   }
 
   else if (address == 0x4014) {  // PPU DMA Access
-                                 // TODO: Open bus?
-    data = 0;                    // Cannot read DMA register
+    // Open bus, cannot read DMA register
   }
 
   else if (address == 0x4015) {  // Sound Channel Switch
@@ -71,19 +70,21 @@ uint8_t hw::system_bus::SystemBus::read(uint16_t address) const {
     data = joy_2_->read();
   }
 
-  else if (address == 0x4020) {  // Unused
-    data = 0;
+  else if (address < 0x4100) {  // Unallocated I/O space
+    // Open bus
   }
 
   else if (address < 0x6000) {  // Expansion Modules, ie. Famicom Disk System
-    data = 0;
+    // Open bus
   }
 
   else if (address < 0x8000) {  // Cartridge RAM
     if (expansion_ram_) {
       data = expansion_ram_[address - 0x6000];
     } else {
-      data = 0;  // No cartridge RAM
+      // No cartridge RAM
+      // Depending on the mapper, this should actually be open bus sometimes
+      data = 0;
     }
   }
 
