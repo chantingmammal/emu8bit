@@ -14,7 +14,7 @@ struct RegBit {
   operator T() const { return (data & mask) >> bit_pos; }
 
   RegBit& operator=(const RegBit& val) {
-    *this = val.data;
+    *this = (T) val;
     return *this;
   }
 
