@@ -1053,6 +1053,9 @@ void hw::cpu::CPU::executeInstruction() {
 
 void hw::cpu::CPU::reset(bool active) {
   irq_reset_ = active;
+  if (!irq_reset_) {
+    reset_ready_ = false;
+  }
 }
 
 
@@ -1065,7 +1068,13 @@ uint8_t hw::cpu::CPU::readByte(uint16_t address) {
 
 void hw::cpu::CPU::writeByte(uint16_t address, uint8_t data) {
   tick();
-  bus_->write(address, data);
+
+  // Writes are prohibitted during reset, reads performed instead
+  if (irq_reset_) {
+    bus_->read(address);
+  } else {
+    bus_->write(address, data);
+  }
 }
 
 void hw::cpu::CPU::push(uint8_t data) {
@@ -1101,6 +1110,11 @@ void hw::cpu::CPU::pollInterrupt() {
 
 void hw::cpu::CPU::interrupt() {
 
+  // While reset is held, only handle the IRQ once
+  if (irq_reset_ && reset_ready_) {
+    return;
+  }
+
   do_poll_interrupts_ = false;
 
   // NMI and IRQ should take 7 cycles, so add 2 dummy cycles if not BRK
@@ -1111,26 +1125,31 @@ void hw::cpu::CPU::interrupt() {
     push(PC);
   }
 
+  // Push status register
+  P.b |= 0b10;
+  push(P.raw);
+  P.b = 0;
+
   // Determine vector here, allowing for interrupt hijacking
   // This is the correct interrupt priority
   uint16_t vector;
   if (irq_reset_) {
     vector = 0xFFFC;
   } else if (do_nmi_[1] || do_nmi_[0]) {
-    vector     = 0xFFFA;
+    vector = 0xFFFA;
   } else /*if (irq_brk_ || do_irq_)*/ {
     vector = 0xFFFE;
   }
-  do_nmi_[1] = false;
-  do_nmi_[0] = false;
-  do_irq_[1] = false;
-  do_irq_[0] = false;
 
-  P.b |= 0b10;
-  push(P.raw);
-  P.b = 0;
+  // Clear IRQs
+  do_nmi_[1]   = false;
+  do_nmi_[0]   = false;
+  do_irq_[1]   = false;
+  do_irq_[0]   = false;
+  irq_brk_     = false;
+  reset_ready_ = true;
 
-  irq_brk_            = false;
+  // Prepare for ISR
   P.i                 = true;
   PC                  = readByte(vector) | (readByte(vector + 1) << 8);
   do_poll_interrupts_ = true;

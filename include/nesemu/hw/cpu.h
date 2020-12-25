@@ -201,6 +201,7 @@ private:
   bool do_poll_interrupts_ = {true};
   bool do_nmi_[2]          = {false, false};
   bool do_irq_[2]          = {false, false};
+  bool reset_ready_        = {false};
 
   // Internal operations
   inline uint8_t readByte(uint16_t address);                 // 1 cycle
