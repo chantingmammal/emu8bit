@@ -49,7 +49,7 @@ private:
   // Frame counter: CPU 0x4017
   bool     irq_inhibit_                 = {false};  // If 0, inhibit IRQ generation
   bool     frame_counter_mode_          = {false};  // 0=4-step, 1=5-step
-  uint8_t  frame_counter_reset_counter_ = {0};      // Countdown to trigger next frame counter reset
+  uint16_t frame_counter_reset_counter_ = {0};      // Countdown to trigger next frame counter reset
   uint16_t cycle_count_                 = {0};
 };
 
