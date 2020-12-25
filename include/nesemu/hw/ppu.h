@@ -144,11 +144,11 @@ private:
     uint8_t             raw;                      //
     utils::RegBit<3, 2> render_enable;            //  - Read only, shortcut for checking if rendering is enabled
     utils::RegBit<0>    greyscale;                //  - Produce greyscale display
-    utils::RegBit<1>    image_mask;               //  - Show left 8 columns of the screen
+    utils::RegBit<1>    bg_mask;                  //  - Show left 8 columns of the background
     utils::RegBit<2>    sprite_mask;              //  - Show sprites in left 8 columns
-    utils::RegBit<3>    screen_enable;            //  - 0=Blank screen, 1=Show picture
-    utils::RegBit<4>    sprites_enable;           //  - 0=Hide sprites, 1=Show sprites
-    utils::RegBit<5, 3> background_color;         //  - 0=Black, 1=Blue, 2=Green, 4=Red. Do not use other numbers
+    utils::RegBit<3>    bg_enable;                //  - 0=Blank screen, 1=Show background
+    utils::RegBit<4>    sprite_enable;            //  - 0=Hide sprites, 1=Show sprites
+    utils::RegBit<5, 3> background_color;         //  - 0=Black, 1=Blue, 2=Green, 4=Red. Do not use other numbers (TODO)
   } ctrl_reg_2_ = {0};                            //
   union {                                         // PPU Status Register, mapped to CPU 0x2002 (R)
     uint8_t raw;                                  //

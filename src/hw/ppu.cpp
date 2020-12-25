@@ -265,30 +265,43 @@ void hw::ppu::PPU::writeByte(uint16_t address, uint8_t data) {
 
 void hw::ppu::PPU::renderPixel() {
 
-  // TODO: Image mask and sprite mask
-
-  const uint8_t bg_pixel = ((pattern_sr_a_ >> (15 - fine_x_scroll_)) & 0x01)
-                           | (((pattern_sr_b_ >> (15 - fine_x_scroll_)) << 1) & 0x02);
+  // Determine background pixel and palette
+  uint8_t bg_pixel = ((pattern_sr_a_ >> (15 - fine_x_scroll_)) & 0x01)
+                     | (((pattern_sr_b_ >> (15 - fine_x_scroll_)) << 1) & 0x02);
   const uint8_t bg_palette = ((palette_sr_a_ >> (7 - fine_x_scroll_)) & 0x01)
                              | (((palette_sr_b_ >> (7 - fine_x_scroll_)) << 1) & 0x02);
+
+  // If background renderind is disabled or left column is masked, set pixel to 0
+  if (!ctrl_reg_2_.bg_enable || (cycle_ < 8 && !ctrl_reg_2_.bg_mask)) {
+    bg_pixel = 0;
+  }
 
   uint8_t sprite_pixel    = 0;
   uint8_t sprite_palette  = 0;
   uint8_t sprite_priority = 0;
   for (unsigned i = 0; i < 8; i++) {
+
+    // Decrement x position until cur dot intersects sprite
     if (sprite_x_position_[i] != 0) {
       sprite_x_position_[i]--;
-    } else {
+    }
+
+    // Otherwise, determine the pixel of the sprite
+    else {
       bool pixel_found = sprite_pixel != 0;
 
       if (sprite_palette_latch_[i].flip_horiz) {
-        if (!pixel_found) {
+
+        // Skip if pixel already found, or if sprite rendering is disabled or left column is masked
+        if (!pixel_found && ctrl_reg_2_.sprite_enable && (cycle_ > 7 || ctrl_reg_2_.sprite_mask)) {
           sprite_pixel = (sprite_pattern_sr_a_[i] & 0x01) | ((sprite_pattern_sr_b_[i] << 1) & 0x02);
         }
         sprite_pattern_sr_a_[i] >>= 1;
         sprite_pattern_sr_b_[i] >>= 1;
       } else {
-        if (!pixel_found) {
+
+        // Skip if pixel already found, or if sprite rendering is disabled or left column is masked
+        if (!pixel_found && ctrl_reg_2_.sprite_enable && (cycle_ > 7 || ctrl_reg_2_.sprite_mask)) {
           sprite_pixel = ((sprite_pattern_sr_a_[i] >> 7) & 0x01) | ((sprite_pattern_sr_b_[i] >> 6) & 0x02);
         }
         sprite_pattern_sr_a_[i] <<= 1;
@@ -296,13 +309,10 @@ void hw::ppu::PPU::renderPixel() {
       }
 
       // Sprite zero hit
-      if (i == 0 && sr_has_sprite_zero_                                             // Sprite is #0
-          && ctrl_reg_2_.screen_enable                                              // Background is being rendered
-          && ctrl_reg_2_.sprites_enable                                             // Sprites are being rendered
-          && ((ctrl_reg_2_.image_mask && ctrl_reg_2_.sprite_mask) || (cycle_ > 7))  // Left-side clipping
-          && cycle_ != 255                                                          // Not right-most pixel
-          && bg_pixel != 0 && sprite_pixel != 0                                     // Both BG and sprite are opaque
-          && !did_hit_sprite_zero_) {                                               // Hasn't already hit this frame
+      if (i == 0 && sr_has_sprite_zero_          // Sprite is #0
+          && cycle_ != 255                       // Not right-most pixel
+          && bg_pixel != 0 && sprite_pixel != 0  // Both BG and sprite are opaque
+          && !did_hit_sprite_zero_) {            // Hasn't already hit this frame
         did_hit_sprite_zero_ = true;
         status_reg_.hit      = true;
       }
@@ -322,7 +332,7 @@ void hw::ppu::PPU::renderPixel() {
   // +----- Background/Sprite select
 
   // Determine address to read color for current pixel
-  // TODO: Screen and sprite enable
+  // TODO: If bg is disabled, render black, not bg palette?
   if (bg_pixel == 0 && sprite_pixel == 0) {
     palette_addr = 0;
   } else if (sprite_pixel == 0 || (bg_pixel != 0 && sprite_priority == 1)) {
