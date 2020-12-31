@@ -5,10 +5,6 @@
 #include <nesemu/temp_mapping.h>
 
 
-void ui::NametableViewer::attachPPU(const hw::ppu::PPU* ppu) {
-  ppu_ = ppu;
-}
-
 void ui::NametableViewer::update() {
   if (minimized_) {
     return;

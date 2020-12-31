@@ -12,8 +12,9 @@ class Mapper;
 }
 
 namespace ui {
-class Screen;
 class NametableViewer;
+class Screen;
+class SpriteViewer;
 }  // namespace ui
 
 
@@ -35,6 +36,7 @@ enum class MemoryMappedIO {
 
 class PPU {
   friend class ui::NametableViewer;
+  friend class ui::SpriteViewer;
 
 public:
   // Setup

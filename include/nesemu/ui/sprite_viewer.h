@@ -11,9 +11,9 @@ class PPU;
 
 namespace ui {
 
-class NametableViewer : public Window {
+class SpriteViewer : public Window {
 public:
-  NametableViewer() : Window(512, 480) {}
+  SpriteViewer() : Window(64, 64) {}
 
   void attachPPU(const hw::ppu::PPU* ppu) { ppu_ = ppu; };
   void update() override;

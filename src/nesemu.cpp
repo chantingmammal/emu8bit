@@ -3,6 +3,7 @@
 #include <nesemu/logger.h>
 #include <nesemu/ui/nametable_viewer.h>
 #include <nesemu/ui/screen.h>
+#include <nesemu/ui/sprite_viewer.h>
 #include <nesemu/ui/window.h>
 #include <nesemu/utils/steady_timer.h>
 
@@ -118,8 +119,13 @@ int main(int argc, char* argv[]) {
     exit();
     return 1;
   }
-  windows["ppu"] = new ui::NametableViewer();
-  if (windows["ppu"]->init("Nametable Viewer", false)) {
+  windows["nt"] = new ui::NametableViewer();
+  if (windows["nt"]->init("Nametable Viewer", false)) {
+    exit();
+    return 1;
+  }
+  windows["oam"] = new ui::SpriteViewer();
+  if (windows["oam"]->init("Sprite Viewer", false)) {
     exit();
     return 1;
   }
@@ -131,7 +137,8 @@ int main(int argc, char* argv[]) {
 
   // Connect the emulated HW to the UI
   console.setScreen(static_cast<ui::Screen*>(windows["screen"]));
-  static_cast<ui::NametableViewer*>(windows["ppu"])->attachPPU(console.getPPU());
+  static_cast<ui::NametableViewer*>(windows["nt"])->attachPPU(console.getPPU());
+  static_cast<ui::SpriteViewer*>(windows["oam"])->attachPPU(console.getPPU());
 
 
   utils::SteadyTimer<1, 30> sdl_timer;
@@ -173,7 +180,12 @@ int main(int argc, char* argv[]) {
 
             // Show nametable viewer
             case SDLK_1:
-              windows["ppu"]->focus();
+              windows["nt"]->focus();
+              break;
+
+            // Show sprite viewer
+            case SDLK_2:
+              windows["oam"]->focus();
               break;
           }
         }
