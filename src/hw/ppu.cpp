@@ -63,6 +63,7 @@ void hw::ppu::PPU::clock() {
   else {
     if (cycle_ == 1) {
       did_hit_sprite_zero_ = false;
+      status_reg_.overflow = false;
       status_reg_.hit      = false;
       status_reg_.vblank   = false;
     }
@@ -113,7 +114,11 @@ uint8_t hw::ppu::PPU::readRegister(uint16_t cpu_address) {
       break;
 
     case (utils::asInt(MemoryMappedIO::OAMDATA)):  // Sprite Memory Data
-      io_latch_ = primary_oam_.byte[oam_addr_];
+      if (1 <= cycle_ && cycle_ <= 64) {
+        io_latch_ = 0xFF;
+      } else {
+        io_latch_ = primary_oam_.byte[oam_addr_];
+      }
       logger::log<logger::DEBUG_PPU>("Read $%02X from OAMDATA[$%02X]\n", io_latch_, oam_addr_);
       break;
 
@@ -358,6 +363,7 @@ void hw::ppu::PPU::renderPixel() {
 }
 
 void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
+  static uint8_t sprite_overflow_counter;
 
   // Cycle 0: Idle
   if (cycle_ < 1) {
@@ -374,7 +380,8 @@ void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
       fetchNextBGTile();
     }
 
-    secondary_oam_.byte[cycle_ - 1] = 0xFF;  // TODO
+    secondary_oam_.byte[cycle_ - 1] = 0xFF;  // TODO: Every other index
+    sprite_overflow_counter = 0;
   }
 
 
@@ -385,20 +392,45 @@ void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
       fetchNextBGTile();
     }
 
-    if (fetch_sprites && (cycle_ % 2) == 0) {
+    // On odd clocks, data is read from primary OAM
+    // On even clocks, data is written to secondary OAM
+    // TODO: Timing here is wrong
+    if (ctrl_reg_2_.render_enable && fetch_sprites && (cycle_ % 2) == 0) {
+      const uint8_t sprite_height = ctrl_reg_1_.large_sprites ? 16 : 8;
+
+      // Read next sprite
       if (primary_oam_counter_ < 64 && secondary_oam_counter_ < 8) {
         Sprite& sprite    = secondary_oam_.sprite[secondary_oam_counter_];
         sprite.y_position = primary_oam_.sprite[primary_oam_counter_].y_position;
 
-        const uint8_t sprite_height = ctrl_reg_1_.large_sprites ? 16 : 8;
+        // If Y val in range, copy over rest of sprite data into secondary OAM
         if (sprite.y_position <= scanline_ && (sprite.y_position + sprite_height) > scanline_) {
           secondary_oam_.sprite[secondary_oam_counter_++] = primary_oam_.sprite[primary_oam_counter_];
           if (primary_oam_counter_ == 0) {
             oam_has_sprite_zero_ = true;
           }
         }
+        // Increment OAM counter
         primary_oam_counter_++;
-        // TODO: Incomplete
+      }
+
+
+      // Check for overflow
+      if (primary_oam_counter_ < 64 && secondary_oam_counter_ == 8) {
+        const uint8_t y_position = reinterpret_cast<uint8_t*>(
+            &primary_oam_.sprite[primary_oam_counter_])[sprite_overflow_counter];
+        if (y_position <= scanline_ && (y_position + sprite_height) > scanline_) {
+          status_reg_.overflow = true;
+          sprite_overflow_counter += 4;
+          if (sprite_overflow_counter > 3) {
+            primary_oam_counter_++;
+          }
+          sprite_overflow_counter %= 4;
+        } else {
+          primary_oam_counter_++;
+          sprite_overflow_counter++;
+          sprite_overflow_counter %= 4;
+        }
       }
     }
   }
