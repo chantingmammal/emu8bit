@@ -363,14 +363,18 @@ void hw::ppu::PPU::renderPixel() {
 }
 
 void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
-  static uint8_t sprite_overflow_counter;
 
   // Cycle 0: Idle
   if (cycle_ < 1) {
-    primary_oam_counter_   = 0;
-    secondary_oam_counter_ = 0;
-    sr_has_sprite_zero_    = oam_has_sprite_zero_;
-    oam_has_sprite_zero_   = false;
+
+    // Initialize Sprite Evaluation state machine
+    sprite_eval_fsm_.state_      = SpriteEvaluationFSM::State::CHECK_Y_IN_RANGE;
+    sprite_eval_fsm_.poam_index_ = 0;
+    sprite_eval_fsm_.soam_index_ = 0;
+
+    // Save sprite_zero status
+    sr_has_sprite_zero_          = oam_has_sprite_zero_;
+    oam_has_sprite_zero_         = false;
   }
 
   // Cycles 1-64: Background: Fetch tiles
@@ -381,55 +385,103 @@ void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
     }
 
     secondary_oam_.byte[cycle_ - 1] = 0xFF;  // TODO: Every other index
-    sprite_overflow_counter = 0;
   }
 
 
   // Cycles 65-256: Background: Fetch tiles
   //                Sprite:     Sprite evaluation
   else if (cycle_ < 257) {
-    if (ctrl_reg_2_.render_enable && (cycle_ % 8) == 0) {
-      fetchNextBGTile();
-    }
-
-    // On odd clocks, data is read from primary OAM
-    // On even clocks, data is written to secondary OAM
-    // TODO: Timing here is wrong
-    if (ctrl_reg_2_.render_enable && fetch_sprites && (cycle_ % 2) == 0) {
-      const uint8_t sprite_height = ctrl_reg_1_.large_sprites ? 16 : 8;
-
-      // Read next sprite
-      if (primary_oam_counter_ < 64 && secondary_oam_counter_ < 8) {
-        Sprite& sprite    = secondary_oam_.sprite[secondary_oam_counter_];
-        sprite.y_position = primary_oam_.sprite[primary_oam_counter_].y_position;
-
-        // If Y val in range, copy over rest of sprite data into secondary OAM
-        if (sprite.y_position <= scanline_ && (sprite.y_position + sprite_height) > scanline_) {
-          secondary_oam_.sprite[secondary_oam_counter_++] = primary_oam_.sprite[primary_oam_counter_];
-          if (primary_oam_counter_ == 0) {
-            oam_has_sprite_zero_ = true;
-          }
-        }
-        // Increment OAM counter
-        primary_oam_counter_++;
+    if (ctrl_reg_2_.render_enable) {
+      if ((cycle_ % 8) == 0) {
+        fetchNextBGTile();
       }
 
+      SpriteEvaluationFSM& fsm           = sprite_eval_fsm_;
+      const uint8_t        sprite_height = ctrl_reg_1_.large_sprites ? 16 : 8;
 
-      // Check for overflow
-      if (primary_oam_counter_ < 64 && secondary_oam_counter_ == 8) {
-        const uint8_t y_position = reinterpret_cast<uint8_t*>(
-            &primary_oam_.sprite[primary_oam_counter_])[sprite_overflow_counter];
-        if (y_position <= scanline_ && (y_position + sprite_height) > scanline_) {
-          status_reg_.overflow = true;
-          sprite_overflow_counter += 4;
-          if (sprite_overflow_counter > 3) {
-            primary_oam_counter_++;
-          }
-          sprite_overflow_counter %= 4;
-        } else {
-          primary_oam_counter_++;
-          sprite_overflow_counter++;
-          sprite_overflow_counter %= 4;
+      if ((cycle_ % 2) == 1) {
+        fsm.latch_ = primary_oam_.byte[fsm.poam_index_];
+      } else {
+
+        switch (fsm.state_) {
+          using State = SpriteEvaluationFSM::State;
+
+          // If Y val in range, copy over rest of sprite data into secondary OAM
+          case State::CHECK_Y_IN_RANGE:
+            secondary_oam_.byte[fsm.soam_index_] = fsm.latch_;
+            if (fsm.latch_ <= scanline_ && uint8_t(fsm.latch_ + sprite_height) > scanline_) {
+              if (fsm.poam_index_ == 0) {
+                oam_has_sprite_zero_ = true;
+              }
+              fsm.state_         = State::COPY_SPRITE;
+              fsm.state_counter_ = 3;
+              fsm.soam_index_++;
+              fsm.poam_index_++;
+            } else {
+              fsm.poam_index_ += 4;
+              if (fsm.poam_index_ == 0) {
+                fsm.state_ = State::DONE;
+              }
+            }
+            break;
+
+          // Copy sprite data into seconary OAM
+          case State::COPY_SPRITE:
+            secondary_oam_.byte[fsm.soam_index_++] = fsm.latch_;
+            fsm.poam_index_++;
+
+            fsm.state_counter_--;
+            if (fsm.state_counter_ == 0) {
+
+              // Primary OAM index overflowed, therefore all 64 sprites have been evaluated
+              if (fsm.poam_index_ == 0) {
+                fsm.state_ = State::DONE;
+              }
+
+              // Secondary OAM not yet full, so continue scanning through Primary OAM
+              else if (fsm.soam_index_ < 32) {
+                fsm.state_ = State::CHECK_Y_IN_RANGE;
+              }
+
+              // Secondary OAM is full, check for sprite overflow
+              else {
+                fsm.state_ = State::OVERFLOW;
+              }
+            }
+            break;
+
+          // Check if Y val in range
+          case State::OVERFLOW:
+            if (fsm.latch_ <= scanline_ && uint8_t(fsm.latch_ + sprite_height) > scanline_) {
+              status_reg_.overflow = true;
+
+              fsm.poam_index_++;
+              fsm.state_         = State::DUMMY_READ;
+              fsm.state_counter_ = 3;
+            } else {
+              fsm.poam_index_ += 4;
+              if ((fsm.poam_index_ / 4) == 0) {
+                fsm.state_ = State::DONE;
+              } else {
+                fsm.poam_index_ = (fsm.poam_index_ & 0xFC) | ((fsm.poam_index_ + 1) & 0x03);
+              }
+            }
+
+            break;
+
+          // Dummy read
+          case State::DUMMY_READ:
+            fsm.poam_index_++;
+            fsm.state_counter_--;
+            if (fsm.state_counter_ == 0) {
+              fsm.state_ = State::OVERFLOW;
+            }
+            break;
+
+          // Do nothing; Just read next sprite, and discard result
+          case State::DONE:
+            fsm.poam_index_ += 4;
+            break;
         }
       }
     }
@@ -523,7 +575,7 @@ void hw::ppu::PPU::fetchNextBGTile() {
 }
 
 void hw::ppu::PPU::fetchNextSprite() {
-  if (num_sprites_fetched_ < secondary_oam_counter_) {
+  if (num_sprites_fetched_ < (sprite_eval_fsm_.soam_index_ / 4)) {
 
     const Sprite& sprite = secondary_oam_.sprite[num_sprites_fetched_];
     uint8_t       tile_index;

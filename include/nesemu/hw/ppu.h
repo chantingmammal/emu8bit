@@ -94,6 +94,16 @@ private:
   } __attribute__((__packed__));
 
 
+  // Sprite evaluation state machine
+  struct SpriteEvaluationFSM {
+    enum State { CHECK_Y_IN_RANGE, COPY_SPRITE, OVERFLOW, DUMMY_READ, DONE } state_;
+    uint8_t state_counter_ = {0};  // Number of cycles until state change
+    uint8_t poam_index_    = {0};  // Position within primary OAM (0-64)*4
+    uint8_t soam_index_    = {0};  // Position within secondary OAM (0-8)*4
+    uint8_t latch_         = {0};
+  } sprite_eval_fsm_;
+
+
   // Background registers
   PPUReg              t_               = {0};
   PPUReg              v_               = {0};
@@ -116,8 +126,6 @@ private:
     uint8_t byte[0x40];
     Sprite  sprite[0x08];
   } secondary_oam_                          = {0};      // 64 byte/8 sprite ram, for current scanline
-  uint8_t          primary_oam_counter_     = {0};      // Position within primary OAM (0-64)
-  uint8_t          secondary_oam_counter_   = {0};      // Position within secondary OAM (0-8)
   uint8_t          num_sprites_fetched_     = {0};      // The number of sprites fetched so far
   bool             oam_has_sprite_zero_     = {false};  // Whether the secondary OAM contains sprite 0 (next line)
   bool             sr_has_sprite_zero_      = {false};  // Whether the sprite registers contains sprite 0 (current line)
@@ -151,8 +159,8 @@ private:
     utils::RegBit<5, 3> background_color;         //  - 0=Black, 1=Blue, 2=Green, 4=Red. Do not use other numbers (TODO)
   } ctrl_reg_2_ = {0};                            //
   union {                                         // PPU Status Register, mapped to CPU 0x2002 (R)
-    uint8_t raw;                                  //
-                                                  //  - Unknown
+    uint8_t          raw;                         //
+    utils::RegBit<5> overflow;                    //  - Sprite overflow
     utils::RegBit<6> hit;                         //  - Sprite refresh hit sprite #0. Reset when screen refresh starts.
     utils::RegBit<7> vblank;                      //  - PPU is in VBlank. Reset when VBlank ends or CPU reads 0x2002
   } status_reg_     = {0};                        //
