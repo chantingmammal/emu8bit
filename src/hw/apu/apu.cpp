@@ -108,10 +108,10 @@ uint8_t hw::apu::APU::readRegister(uint16_t address) {
 
   // Status
   static registers::StatusControl status = {0};
-  status.ch_1                            = square_1.length_counter.counter_ > 0;
-  status.ch_2                            = square_2.length_counter.counter_ > 0;
-  status.ch_3                            = triangle.length_counter.counter_ > 0;
-  status.ch_4                            = noise.length_counter.counter_ > 0;
+  status.ch_1                            = square_1.status();
+  status.ch_2                            = square_2.status();
+  status.ch_3                            = triangle.status();
+  status.ch_4                            = noise.status();
   status.ch_5                            = false;  // TODO
   status.frame_interrupt                 = has_irq_;
   status.dmc_interrupt                   = false;  // TODO

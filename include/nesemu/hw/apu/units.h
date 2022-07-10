@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 
@@ -143,6 +144,25 @@ public:
 
   void    clock();
   uint8_t getOutput(uint8_t input);
+};
+
+
+/**
+ * The Sequencer serves as a simple wrapping counter
+ *
+ * When clocked:
+ *  1) If the reload flag is set, reload the counter. Otherwise, decrement the count if non-zero
+ *  2) If control flag is clear, clear reload flag
+ */
+template <typename T, size_t SEQ_LEN>
+class Sequencer {
+public:
+  void      reset() { pos_ = 0; };
+  void      clock() { pos_ = (pos_ + 1) % SEQ_LEN; };
+  virtual T get() { return pos_; };
+
+private:
+  T pos_ = 0;
 };
 
 }  // namespace hw::apu::unit

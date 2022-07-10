@@ -4,7 +4,6 @@
 #include <nesemu/hw/apu/units.h>
 #include <nesemu/utils/reg_bit.h>
 
-#include <cstddef>
 #include <cstdint>
 
 
@@ -16,30 +15,19 @@ public:
   virtual void enable(bool enabled) {
     enabled_ = enabled;
     if (!enabled_) {
-      length_counter.counter_ = 0;
+      length_counter_.counter_ = 0;
     }
   }
+  virtual bool status() { return length_counter_.counter_ > 0; }
 
   virtual void    writeReg(uint8_t reg, uint8_t data) = 0;
   virtual void    clockCPU()                          = 0;
   virtual void    clockFrame(APUClock clock_type)     = 0;
   virtual uint8_t getOutput()                         = 0;
 
-  // protected:
-  bool                enabled_ = {false};
-  unit::LengthCounter length_counter;
-};
-
-
-template <typename T, size_t SEQ_LEN>
-class Sequencer {
-public:
-  void resetSequencer() { sequencer_pos_ = 0; };
-
 protected:
-  void            advanceSequencer() { sequencer_pos_ = (sequencer_pos_ + 1) % SEQ_LEN; };
-  virtual uint8_t getSequencerOutput() = 0;
-  T               sequencer_pos_       = 0;
+  bool                enabled_ = {false};
+  unit::LengthCounter length_counter_;
 };
 
 
@@ -54,7 +42,7 @@ protected:
  *                       v            v             v
  *    Envelope -------> Gate -----> Gate -------> Gate ---> (to mixer)
  */
-class Square : public Channel, public Sequencer<uint8_t, 8> {
+class Square : public Channel {
 public:
   Square(int channel) {
     sweep_.channel_period_ = &period_;
@@ -74,11 +62,10 @@ private:
   uint8_t  duty_cycle_;  // 2-bit. 12.5%, 25%, 50%, or -25%
   uint16_t period_;      // 11-bit. Used to reload timer.
 
-  unit::Divider<uint16_t> timer_;  // 11-bit
-  unit::Envelope          envelope_;
-  unit::Sweep             sweep_;
-
-  uint8_t getSequencerOutput() override { return SEQUENCE[duty_cycle_] * (1 << (8 - sequencer_pos_)); };
+  unit::Divider<uint16_t>     timer_;  // 11-bit
+  unit::Sequencer<uint8_t, 8> sequencer_;
+  unit::Envelope              envelope_;
+  unit::Sweep                 sweep_;
 };
 
 
@@ -90,14 +77,14 @@ private:
  *                v                v
  *    Timer ---> Gate ----------> Gate ---> Sequencer ---> (to mixer)
  */
-class Triangle : public Channel, public Sequencer<uint8_t, 32> {
+class Triangle : public Channel {
 public:
   Triangle() { timer_.setExtPeriod(&period_); }
 
   void    writeReg(uint8_t reg, uint8_t data) override;
   void    clockCPU() override;
   void    clockFrame(APUClock clock_type) override;
-  uint8_t getOutput() override { return getSequencerOutput(); };
+  uint8_t getOutput() override { return SEQUENCE[sequencer_.get()]; };
 
 private:
   static constexpr uint8_t SEQUENCE[32] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5,  4,  3,  2,  1,  0,
@@ -105,10 +92,9 @@ private:
 
   uint16_t period_;  // 11-bit. Used to reload timer.
 
-  unit::Divider<uint16_t> timer_;  // 11-bit
-  unit::LinearCounter     linear_counter_;
-
-  uint8_t getSequencerOutput() override { return SEQUENCE[sequencer_pos_]; };
+  unit::Divider<uint16_t>      timer_;  // 11-bit
+  unit::Sequencer<uint8_t, 32> sequencer_;
+  unit::LinearCounter          linear_counter_;
 };
 
 
@@ -166,7 +152,7 @@ struct DMC : public Channel {
     uint8_t sample_length;
   };
 
-  void    writeReg(uint8_t reg, uint8_t data) override {};
+  void    writeReg(uint8_t /*reg*/, uint8_t /*data*/) override {};
   void    clockCPU() override {};
   void    clockFrame(APUClock clock_type) override;
   uint8_t getOutput() override { return 0; };
