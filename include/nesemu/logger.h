@@ -26,5 +26,10 @@ inline void log(const char* format, T... args) {
   }
 }
 
+template <Level L>
+inline void log(const char* msg) {
+  log<L>("%s", msg);
+}
+
 
 }  // namespace logger
