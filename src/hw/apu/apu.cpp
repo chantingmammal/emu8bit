@@ -1,8 +1,17 @@
 #include <nesemu/hw/apu/apu.h>
 
-
 #include <nesemu/logger.h>
+#include <nesemu/ui/audio.h>
 
+
+// =*=*=*=*= PPU Setup =*=*=*=*=
+
+void hw::apu::APU::setAudio(ui::Audio* audio) {
+  audio_ = audio;
+}
+
+
+// =*=*=*=*= PPU Execution =*=*=*=*=
 
 // Clock length counter and sweep units
 void hw::apu::APU::clockHalfFrame() {
@@ -85,6 +94,10 @@ void hw::apu::APU::clock() {
       cycle_count_ = 0;
       break;
   }
+
+  // TODO: Mix samples from chips and send to speaker
+  uint8_t buffer[1] = {0};
+  audio_->update(buffer, 1);
 }
 
 

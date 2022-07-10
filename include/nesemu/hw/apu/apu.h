@@ -6,6 +6,12 @@
 #include <cstdint>
 
 
+// Forward declarations
+namespace ui {
+class Audio;
+}
+
+
 namespace hw::apu {
 
 namespace registers {
@@ -25,6 +31,9 @@ union StatusControl {
 
 class APU {
 public:
+  // Setup
+  void setAudio(ui::Audio* audio);
+
   // Execution
   void    clock();
   bool    hasIRQ() const { return has_irq_; }
@@ -32,6 +41,9 @@ public:
   void    writeRegister(uint16_t address, uint8_t data);
 
 private:
+  // Other chips
+  ui::Audio* audio_ = {nullptr};
+
   inline void clockHalfFrame();
   inline void clockQuarterFrame();
 

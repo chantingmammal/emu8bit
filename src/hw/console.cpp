@@ -3,6 +3,7 @@
 #include <nesemu/hw/mapper/mappers.h>
 #include <nesemu/hw/rom.h>
 #include <nesemu/logger.h>
+#include <nesemu/ui/audio.h>
 #include <nesemu/ui/screen.h>
 
 #include <cstdint>
@@ -41,6 +42,11 @@ void hw::console::Console::loadCart(rom::Rom* rom) {
 void hw::console::Console::setScreen(ui::Screen* screen) {
   screen_ = screen;
   ppu_.setScreen(screen_);
+}
+
+void hw::console::Console::setAudio(ui::Audio* audio) {
+  audio_ = audio;
+  apu_.setAudio(audio_);
 }
 
 

@@ -21,7 +21,8 @@ class Rom;
 
 namespace ui {
 class Screen;
-}
+class Audio;
+}  // namespace ui
 
 
 namespace hw::console {
@@ -34,6 +35,7 @@ public:
   // Setup
   void loadCart(rom::Rom* rom);
   void setScreen(ui::Screen* screen);
+  void setAudio(ui::Audio* audio);
 
   // Execution
   void start();
@@ -46,6 +48,7 @@ public:
 
 private:
   ui::Screen* screen_ = {nullptr};
+  ui::Audio*  audio_  = {nullptr};
 
   // HW Components
   system_bus::SystemBus bus_;

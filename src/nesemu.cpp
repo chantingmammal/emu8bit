@@ -1,6 +1,7 @@
 #include <nesemu/hw/console.h>
 #include <nesemu/hw/rom.h>
 #include <nesemu/logger.h>
+#include <nesemu/ui/audio.h>
 #include <nesemu/ui/nametable_viewer.h>
 #include <nesemu/ui/screen.h>
 #include <nesemu/ui/sprite_viewer.h>
@@ -16,6 +17,7 @@
 
 
 std::map<std::string, ui::Window*> windows;
+ui::Audio                          audio;
 
 void printUsage() {
   printf("Usage: nesemu --file ROM.nes\n");
@@ -130,15 +132,21 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // Create the audio engine
+  audio.init();
+
   // Create the emulated hardware
   hw::console::Console console(allow_unofficial);
   console.loadCart(&rom);
-  console.start();
 
   // Connect the emulated HW to the UI
   console.setScreen(static_cast<ui::Screen*>(windows["screen"]));
+  console.setAudio(&audio);
   static_cast<ui::NametableViewer*>(windows["nt"])->attachPPU(console.getPPU());
   static_cast<ui::SpriteViewer*>(windows["oam"])->attachPPU(console.getPPU());
+
+  // Start the hardware
+  console.start();
 
 
   utils::SteadyTimer<1, 30> sdl_timer;
@@ -188,8 +196,7 @@ int main(int argc, char* argv[]) {
               windows["oam"]->focus();
               break;
           }
-        }
-        else if (event.type == SDL_KEYUP) {
+        } else if (event.type == SDL_KEYUP) {
           switch (event.key.keysym.sym) {
 
             // Relock speed limit
@@ -198,7 +205,6 @@ int main(int argc, char* argv[]) {
               break;
           }
         }
-
       }
 
       // Render all visible windows
@@ -219,6 +225,11 @@ int init() {
     return 1;
   }
 
+  if (SDL_Init(SDL_INIT_AUDIO)) {
+    logger::log<logger::ERROR>("Audio initialization failed: %s\n", SDL_GetError());
+    return 1;
+  }
+
   return 0;
 }
 
@@ -230,6 +241,8 @@ void exit() {
     window.second->close();
     delete window.second;
   }
+
+  audio.close();
 
   // Quit SDL subsystems
   SDL_Quit();
