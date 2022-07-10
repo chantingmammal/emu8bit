@@ -92,13 +92,9 @@ private:
  */
 class Triangle : public Channel, public Sequencer<uint8_t, 32> {
 public:
-  Triangle() { timer.setExtPeriod(&period); }
+  Triangle() { timer_.setExtPeriod(&period_); }
 
-  uint16_t                period;  // 11-bit. Used to reload timer.
-  unit::Divider<uint16_t> timer;   // 11-bit
-  unit::LinearCounter     linear_counter;
-
-  void    writeReg(uint8_t reg, uint8_t data) override {};
+  void    writeReg(uint8_t reg, uint8_t data) override;
   void    clockCPU() override;
   void    clockFrame(APUClock clock_type) override;
   uint8_t getOutput() override { return getSequencerOutput(); };
@@ -106,6 +102,11 @@ public:
 private:
   static constexpr uint8_t SEQUENCE[32] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5,  4,  3,  2,  1,  0,
                                            0,  1,  2,  3,  4,  5,  6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+
+  uint16_t period_;  // 11-bit. Used to reload timer.
+
+  unit::Divider<uint16_t> timer_;  // 11-bit
+  unit::LinearCounter     linear_counter_;
 
   uint8_t getSequencerOutput() override { return SEQUENCE[sequencer_pos_]; };
 };

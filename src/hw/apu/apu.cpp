@@ -144,27 +144,11 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
 
     // Triangle
     case 0x4008:
-      triangle.linear_counter.reload_value_ = (data & 0x7F);
-      triangle.linear_counter.control_      = (data & 0x80);
-      triangle.length_counter.halt_         = (data & 0x80);
-      logger::log<logger::DEBUG_APU>("Write $%02X to Triangle (0x4008)\n", data);
-      break;
     case 0x4009:
-      // Unused
-      break;
     case 0x400A:
-      triangle.period &= 0xFF00;
-      triangle.period |= data;
-      logger::log<logger::DEBUG_APU>("Write $%02X to Triangle (0x400A)\n", data);
-      break;
     case 0x400B:
-      triangle.period &= 0x00FF;
-      triangle.period |= (data & 0x7) << 8;
-      if (sound_en_.ch_3) {
-        triangle.length_counter.load(data >> 3);
-      }
-      triangle.linear_counter.reload_ = true;
-      logger::log<logger::DEBUG_APU>("Write $%02X to Triangle (0x400B)\n", data);
+      triangle.writeReg(address & 0x03, data);
+      logger::log<logger::DEBUG_APU>("Write $%02X to Triangle ($%04X)\n", data, address);
       break;
 
     // Noise
