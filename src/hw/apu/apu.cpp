@@ -159,7 +159,7 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
     case 0x4001:
       square_1.sweep.shift_count_ = (data & 0x07);
       square_1.sweep.negate_      = (data & 0x08);
-      square_1.sweep.divider_.setPeriod(((data & 0x70) >> 4) + 1);
+      square_1.sweep.divider_.setPeriod((data & 0x70) >> 4);
       square_1.sweep.enable_ = (data & 0x80);
       square_1.sweep.reload_ = true;
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 1 (0x4001)\n", data);
@@ -193,7 +193,7 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
     case (0x4005):
       square_2.sweep.shift_count_ = (data & 0x07);
       square_2.sweep.negate_      = (data & 0x08);
-      square_2.sweep.divider_.setPeriod(((data & 0x70) >> 4) + 1);
+      square_2.sweep.divider_.setPeriod((data & 0x70) >> 4);
       square_2.sweep.enable_ = (data & 0x80);
       square_2.sweep.reload_ = true;
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4005)\n", data);

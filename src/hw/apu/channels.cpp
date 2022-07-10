@@ -2,6 +2,7 @@
 
 #include <cstdio>
 
+
 // =*=*=*=*= Square =*=*=*=*=
 
 void hw::apu::channel::Square::clock() {
@@ -16,6 +17,7 @@ void hw::apu::channel::Square::clock() {
 uint8_t hw::apu::channel::Square::getOutput() {
   return length_counter.getOutput(getSequencerOutput() ? sweep.getOutput(envelope.getVolume()) : 0);
 };
+
 
 // =*=*=*=*= Triangle =*=*=*=*=
 
@@ -86,8 +88,6 @@ void hw::apu::channel::Noise::loadPeriod(uint8_t code) {
   }
 }
 
-
-// Clocked at CPU freq / 2
 void hw::apu::channel::Noise::clock() {
 
   // Clock the timer

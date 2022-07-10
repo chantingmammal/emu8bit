@@ -4,9 +4,10 @@
 // =*=*=*=*= Envelope =*=*=*=*=
 
 void hw::apu::unit::Envelope::clock() {
-  if (!start_) {
+  if (start_) {
     decay_level_ = 15;
     divider_.reload();
+    start_ = false;
     return;
   }
 
@@ -27,7 +28,7 @@ void hw::apu::unit::Envelope::clock() {
 // =*=*=*=*= Sweep =*=*=*=*=
 
 void hw::apu::unit::Sweep::clock() {
-  if (!divider_.clock() && enable_ && shift_count_ > 0 && !mute()) {
+  if (divider_.clock() && enable_ && shift_count_ > 0 && !mute()) {
     *channel_period_ = getTarget() & 0x7FF;
     reload_          = false;
   }
@@ -39,7 +40,6 @@ void hw::apu::unit::Sweep::clock() {
 }
 
 uint16_t hw::apu::unit::Sweep::getTarget() {
-  // apu_ref.txt is off by one, it says to add +1
   return *channel_period_ + (*channel_period_ >> shift_count_) * (negate_ ? -1 : 1) - (negate_ && !is_ch_2_ ? 1 : 0);
 }
 
