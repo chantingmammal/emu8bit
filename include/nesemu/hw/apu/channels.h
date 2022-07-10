@@ -3,6 +3,7 @@
 #include <nesemu/hw/apu/units.h>
 #include <nesemu/utils/reg_bit.h>
 
+#include <cstddef>
 #include <cstdint>
 
 
@@ -12,6 +13,17 @@ class Channel {
 public:
   virtual void    clock()     = 0;
   virtual uint8_t getOutput() = 0;
+};
+
+template <typename T, size_t SEQ_LEN>
+class Sequencer {
+public:
+  void resetSequencer() { sequencer_pos_ = 0; };
+
+protected:
+  void            advanceSequencer() { sequencer_pos_ = (sequencer_pos_ + 1) % SEQ_LEN; };
+  virtual uint8_t getSequencerOutput() = 0;
+  T               sequencer_pos_       = 0;
 };
 
 
@@ -26,19 +38,15 @@ public:
  *                       v            v             v
  *    Envelope -------> Gate -----> Gate -------> Gate ---> (to mixer)
  */
-class Square : public Channel {
+class Square : public Channel, public Sequencer<uint8_t, 8> {
 public:
   Square(int channel) {
     sweep.channel_period_ = &timer;
     sweep.is_ch_2_        = (channel == 2);
   }
 
-  uint8_t       seq_         = 0;
-  const uint8_t sequence_[4] = {0b01000000, 0b01100000, 0b01111000, 0b10011111};
-
-  uint8_t  duty_cycle;     // 2-bit. 12.5%, 25%, 50%, or -25%.
-  uint16_t timer;          // 11-bit.
-  uint16_t cur_time_ = 0;  // 11-bit.
+  uint8_t  duty_cycle;  // 2-bit. 12.5%, 25%, 50%, or -25%
+  uint16_t timer;       // 11-bit
 
   unit::Envelope      envelope;
   unit::Sweep         sweep;
@@ -46,6 +54,13 @@ public:
 
   void    clock() override;
   uint8_t getOutput() override;
+
+private:
+  static constexpr uint8_t SEQUENCE[4] = {0b01000000, 0b01100000, 0b01111000, 0b10011111};
+
+  uint16_t cur_time_ = 0;  // 11-bit
+
+  uint8_t getSequencerOutput() override { return SEQUENCE[duty_cycle] * (1 << (8 - sequencer_pos_)); };
 };
 
 
@@ -57,18 +72,23 @@ public:
  *                v                v
  *    Timer ---> Gate ----------> Gate ---> Sequencer ---> (to mixer)
  */
-class Triangle : public Channel {
+class Triangle : public Channel, public Sequencer<uint8_t, 32> {
 public:
-  const uint8_t sequence_[32] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5,  4,  3,  2,  1,  0,
-                                 0,  1,  2,  3,  4,  5,  6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-
-  uint16_t timer;  // 11-bit.
+  uint16_t timer;  // 11-bit
 
   unit::LinearCounter linear_counter;
   unit::LengthCounter length_counter;
 
-  void    clock() override {}
-  uint8_t getOutput() override { return 0; }
+  void    clock() override;
+  uint8_t getOutput() override { return getSequencerOutput(); };
+
+private:
+  static constexpr uint8_t SEQUENCE[32] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5,  4,  3,  2,  1,  0,
+                                           0,  1,  2,  3,  4,  5,  6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+
+  uint16_t cur_time_ = 0;  // 11-bit
+
+  uint8_t getSequencerOutput() override { return SEQUENCE[sequencer_pos_]; };
 };
 
 

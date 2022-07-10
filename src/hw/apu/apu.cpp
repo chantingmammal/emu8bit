@@ -100,10 +100,10 @@ void hw::apu::APU::clock() {
   if (even) {
     square_1.clock();
     square_2.clock();
-    triangle.clock();
     noise.clock();
     dmc.clock();
   }
+  triangle.clock();
 
   // TODO: Nicer mixer? Maybe a LUT?
   float square_sum = square_1.getOutput() + square_2.getOutput();
@@ -172,7 +172,7 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       if (sound_en_.ch_1) {
         square_1.length_counter.load(data >> 3);
       }
-      square_1.seq_ = 0;
+      square_1.resetSequencer();
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 1 (0x4003)\n", data);
       break;
 
@@ -206,7 +206,7 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       if (sound_en_.ch_2) {
         square_2.length_counter.load(data >> 3);
       }
-      square_2.seq_ = 0;
+      square_1.resetSequencer();
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4007)\n", data);
       break;
 

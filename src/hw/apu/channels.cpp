@@ -7,15 +7,27 @@
 void hw::apu::channel::Square::clock() {
   if (cur_time_ == 0) {
     cur_time_ = timer;
-    seq_      = (seq_ + 1) % 8;
+    advanceSequencer();
   } else {
     cur_time_--;
   }
 };
 
 uint8_t hw::apu::channel::Square::getOutput() {
-  return length_counter.getOutput(sequence_[duty_cycle] & (1 << (7 - seq_)) ? sweep.getOutput(envelope.getVolume())
-                                                                            : 0);
+  return length_counter.getOutput(getSequencerOutput() ? sweep.getOutput(envelope.getVolume()) : 0);
+};
+
+// =*=*=*=*= Triangle =*=*=*=*=
+
+void hw::apu::channel::Triangle::clock() {
+  if (cur_time_ == 0) {
+    cur_time_ = timer;
+    if (linear_counter.counter_ != 0 && length_counter.counter_ != 0) {
+      advanceSequencer();
+    }
+  } else {
+    cur_time_--;
+  }
 };
 
 
