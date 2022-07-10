@@ -122,19 +122,19 @@ private:
  */
 class Noise : public Channel {
 public:
-  bool mode = {false};
-
-  unit::Divider<uint16_t> timer;  // 11-bit
-  unit::Envelope          envelope;
-
-  void    writeReg(uint8_t reg, uint8_t data) override {};
-  void    loadPeriod(uint8_t code);
+  void    writeReg(uint8_t reg, uint8_t data) override;
   void    clockCPU() override;
   void    clockFrame(APUClock clock_type) override;
   uint8_t getOutput() override;
 
 private:
-  uint16_t lfsr = {1};  // 15-bit linear feedback shift register. Initially loaded w/ 1
+  static constexpr uint16_t PERIODS[16] = {4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068};
+
+  uint16_t lfsr_ = {1};  // 15-bit linear feedback shift register. Initially loaded w/ 1
+  bool     mode_ = {false};
+
+  unit::Divider<uint16_t> timer_;  // 11-bit
+  unit::Envelope          envelope_;
 };
 
 

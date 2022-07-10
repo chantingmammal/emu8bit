@@ -153,27 +153,11 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
 
     // Noise
     case 0x400C:
-      noise.envelope.divider_.setPeriod(data & 0x0F);
-      noise.envelope.volume_       = (data & 0x0F);
-      noise.envelope.const_volume_ = (data & 0x10);
-      noise.length_counter.halt_   = (data & 0x20);
-      noise.envelope.loop_         = (data & 0x20);
-      logger::log<logger::DEBUG_APU>("Write $%02X to Noise (0x400C)\n", data);
-      break;
     case 0x400D:
-      // Unused
-      break;
     case 0x400E:
-      noise.loadPeriod(data & 0x0F);
-      noise.mode = (data & 0x80);
-      logger::log<logger::DEBUG_APU>("Write $%02X to Noise (0x400E)\n", data);
-      break;
     case 0x400F:
-      noise.envelope.start_ = true;
-      if (sound_en_.ch_4) {
-        noise.length_counter.load(data >> 3);
-      }
-      logger::log<logger::DEBUG_APU>("Write $%02X to Noise (0x400F)\n", data);
+      noise.writeReg(address & 0x03, data);
+      logger::log<logger::DEBUG_APU>("Write $%02X to Noise ($%04X)\n", data, address);
       break;
 
     // TODO: DMC
