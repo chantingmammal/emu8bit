@@ -62,7 +62,7 @@ public:
   bool    start_ = {false};  // Flag to indicate restart
 
   void    clock();
-  uint8_t getVolume() { return const_volume_ ? volume_ : decay_level_; }
+  uint8_t getOutput() { return const_volume_ ? volume_ : decay_level_; }
 
 private:
   uint8_t decay_level_ = {0};  // 4-bit. 0 to 15. The current decay level

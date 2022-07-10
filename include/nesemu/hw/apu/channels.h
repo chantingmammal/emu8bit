@@ -57,17 +57,10 @@ protected:
 class Square : public Channel, public Sequencer<uint8_t, 8> {
 public:
   Square(int channel) {
-    sweep.channel_period_ = &period;
-    sweep.is_ch_2_        = (channel == 2);
-    timer.setExtPeriod(&period);
+    sweep_.channel_period_ = &period_;
+    sweep_.is_ch_2_        = (channel == 2);
+    timer_.setExtPeriod(&period_);
   }
-
-  uint8_t duty_cycle;  // 2-bit. 12.5%, 25%, 50%, or -25%
-
-  uint16_t                period;  // 11-bit. Used to reload timer.
-  unit::Divider<uint16_t> timer;   // 11-bit
-  unit::Envelope          envelope;
-  unit::Sweep             sweep;
 
   void    writeReg(uint8_t reg, uint8_t data) override;
   void    clockCPU() override;
@@ -77,9 +70,15 @@ public:
 private:
   static constexpr uint8_t SEQUENCE[4] = {0b01000000, 0b01100000, 0b01111000, 0b10011111};
 
-  bool clock_is_even_ = {false};
+  bool     clock_is_even_ = {false};
+  uint8_t  duty_cycle_;  // 2-bit. 12.5%, 25%, 50%, or -25%
+  uint16_t period_;      // 11-bit. Used to reload timer.
 
-  uint8_t getSequencerOutput() override { return SEQUENCE[duty_cycle] * (1 << (8 - sequencer_pos_)); };
+  unit::Divider<uint16_t> timer_;  // 11-bit
+  unit::Envelope          envelope_;
+  unit::Sweep             sweep_;
+
+  uint8_t getSequencerOutput() override { return SEQUENCE[duty_cycle_] * (1 << (8 - sequencer_pos_)); };
 };
 
 

@@ -8,28 +8,28 @@
 void hw::apu::channel::Square::writeReg(uint8_t reg, uint8_t data) {
   switch (reg & 0x03) {
     case 0x00:
-      envelope.divider_.setPeriod(data & 0x0F);
-      envelope.volume_       = (data & 0x0F);
-      envelope.const_volume_ = (data & 0x10);
-      length_counter.halt_   = (data & 0x20);
-      envelope.loop_         = (data & 0x20);
-      duty_cycle             = (data & 0xC0) >> 6;
+      envelope_.divider_.setPeriod(data & 0x0F);
+      envelope_.volume_       = (data & 0x0F);
+      envelope_.const_volume_ = (data & 0x10);
+      length_counter.halt_    = (data & 0x20);
+      envelope_.loop_         = (data & 0x20);
+      duty_cycle_             = (data & 0xC0) >> 6;
       break;
     case 0x01:
-      sweep.shift_count_ = (data & 0x07);
-      sweep.negate_      = (data & 0x08);
-      sweep.divider_.setPeriod((data & 0x70) >> 4);
-      sweep.enable_ = (data & 0x80);
-      sweep.reload_ = true;
+      sweep_.shift_count_ = (data & 0x07);
+      sweep_.negate_      = (data & 0x08);
+      sweep_.divider_.setPeriod((data & 0x70) >> 4);
+      sweep_.enable_ = (data & 0x80);
+      sweep_.reload_ = true;
       break;
     case 0x02:
-      period &= 0xFF00;
-      period |= data;
+      period_ &= 0xFF00;
+      period_ |= data;
       break;
     case 0x03:
-      period &= 0x00FF;
-      period |= (data & 0x7) << 8;
-      envelope.start_ = true;
+      period_ &= 0x00FF;
+      period_ |= (data & 0x7) << 8;
+      envelope_.start_ = true;
       if (enabled_) {
         length_counter.load(data >> 3);
       }
@@ -41,7 +41,7 @@ void hw::apu::channel::Square::writeReg(uint8_t reg, uint8_t data) {
 void hw::apu::channel::Square::clockCPU() {
   // Square wave is clocked every other CPU clock
   clock_is_even_ = !clock_is_even_;
-  if (clock_is_even_ && timer.clock()) {
+  if (clock_is_even_ && timer_.clock()) {
     advanceSequencer();
   }
 }
@@ -49,18 +49,18 @@ void hw::apu::channel::Square::clockCPU() {
 void hw::apu::channel::Square::clockFrame(APUClock clock_type) {
   switch (clock_type) {
     case APUClock::QUARTER_FRAME:
-      envelope.clock();
+      envelope_.clock();
       break;
     case APUClock::HALF_FRAME:
       length_counter.clock();
-      sweep.clock();
+      sweep_.clock();
       break;
       // No default
   }
 }
 
 uint8_t hw::apu::channel::Square::getOutput() {
-  return length_counter.getOutput(getSequencerOutput() ? sweep.getOutput(envelope.getVolume()) : 0);
+  return length_counter.getOutput(getSequencerOutput() ? sweep_.getOutput(envelope_.getOutput()) : 0);
 }
 
 
@@ -163,7 +163,7 @@ void hw::apu::channel::Noise::clockFrame(APUClock clock_type) {
 }
 
 uint8_t hw::apu::channel::Noise::getOutput() {
-  return (lfsr & 0x01) == 0 ? 0 : length_counter.getOutput(envelope.getVolume());
+  return (lfsr & 0x01) == 0 ? 0 : length_counter.getOutput(envelope.getOutput());
 }
 
 
