@@ -6,25 +6,16 @@
 #include <SDL2/SDL.h>
 
 
-// Trampoline to forward to ui::Audio::audioCallback
-extern "C" void audioCallback(void* userdata, uint8_t* stream, int len);
-
 namespace ui {
 
 class Audio {
 public:
-  Audio()          = default;
-  virtual ~Audio() = default;
-
   virtual bool init();
   virtual void close();
   virtual void update(uint8_t* stream, size_t len);
   virtual void setVolume(float volume) { volume_ = std::max(std::min(volume, 1.f), 0.f); };
 
 private:
-  friend void(::audioCallback)(void* userdata, uint8_t* stream, int len);
-  void audioCallback(uint8_t* stream, int len);
-
   // We need to downsample from ~1.79MHz to a standard freq like 48kHz. Since 1.79MHz is too fast, we downsample in two
   // steps. Additionally, since the downsampler only supports integral sampling rates, we first upsample by 11 to
   // achieve an integral rate, then downsample by 500, then downsample the remainder to the output freq

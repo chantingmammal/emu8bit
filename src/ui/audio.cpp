@@ -3,13 +3,6 @@
 
 #include <cstdint>
 
-// Trampoline
-extern "C" {
-void audioCallback(void* userdata, uint8_t* stream, int len) {
-  return static_cast<ui::Audio*>(userdata)->audioCallback(stream, len);
-}
-}
-
 bool ui::Audio::init() {
 
   SDL_AudioSpec desired_spec;
@@ -18,8 +11,6 @@ bool ui::Audio::init() {
   desired_spec.channels = OUTPUT_CHANNELS;
   desired_spec.samples  = OUTPUT_SAMPLES;
   desired_spec.callback = nullptr;
-  // desired_spec.callback = &::audioCallback;
-  // desired_spec.userdata = this;
 
   // Attach audio device
   if (!(device_ = SDL_OpenAudioDevice(NULL, 0, &desired_spec, &audio_spec_, SDL_AUDIO_ALLOW_ANY_CHANGE))) {
@@ -75,17 +66,4 @@ void ui::Audio::update(uint8_t* stream, size_t len) {
       logger::log<logger::ERROR>("Failed to output audio: %s\n", SDL_GetError());
     }
   }
-}
-
-
-void ui::Audio::audioCallback(uint8_t* stream, int len) {
-  SDL_memset(stream, 0, len);
-
-  static uint8_t buffer[4096];
-  for (int i = 0; i < len; i += 128) {
-    buffer[i] = 255;
-  }
-
-  SDL_MixAudio(stream, buffer, len, SDL_MIX_MAXVOLUME);
-  logger::log<logger::ERROR>("len: %d\tstream[0]: %u\n", len, stream[0]);
 }
