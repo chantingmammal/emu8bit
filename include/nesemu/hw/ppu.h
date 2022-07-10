@@ -103,6 +103,7 @@ private:
     uint8_t poam_index_    = {0};  // Position within primary OAM (0-64)*4
     uint8_t soam_index_    = {0};  // Position within secondary OAM (0-8)*4
     uint8_t latch_         = {0};
+    bool    initialize_    = {false};
   } sprite_eval_fsm_;
 
 
@@ -168,6 +169,7 @@ private:
   } status_reg_     = {0};                        //
   uint8_t oam_addr_ = {0};                        // Object Attribute Memory Address, mapped to CPU 0x2003 (W)
 
+  uint8_t vblank_suppression_counter_ = {0};
 
   // Memory
   mapper::Mapper* mapper_         = {nullptr};

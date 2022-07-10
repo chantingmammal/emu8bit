@@ -26,7 +26,7 @@ void hw::ppu::PPU::setScreen(ui::Screen* screen) {
 // =*=*=*=*= PPU Execution =*=*=*=*=
 
 bool hw::ppu::PPU::hasNMI() {
-  return status_reg_.vblank && ctrl_reg_1_.vblank_enable;
+  return (vblank_suppression_counter_ == 0) && status_reg_.vblank && ctrl_reg_1_.vblank_enable;
 }
 
 void hw::ppu::PPU::clock() {
@@ -53,7 +53,7 @@ void hw::ppu::PPU::clock() {
 
   // =*=*=*=*=  Vertical blanking scanlines =*=*=*=*=
   else if (scanline_ < 261) {
-    if (scanline_ == 241 && cycle_ == 1) {
+    if (scanline_ == 241 && cycle_ == 1 && vblank_suppression_counter_ == 0) {
       status_reg_.vblank = true;
     }
   }
@@ -84,11 +84,22 @@ void hw::ppu::PPU::clock() {
   }
 
 
+  if (vblank_suppression_counter_ > 0) {
+    vblank_suppression_counter_--;
+    if (vblank_suppression_counter_ == 0) {
+      status_reg_.vblank = false;
+    }
+  }
+
   // Cycle & scanline increment
   cycle_++;
   if (cycle_ >= scanline_length) {
-    scanline_ = (scanline_ + 1) % 262;
-    cycle_    = 0;
+    scanline_++;
+    if (scanline_ >= 262) {
+      frame_is_odd_ = !frame_is_odd_;
+    }
+    scanline_ %= 262;
+    cycle_ = 0;
   }
 }
 
@@ -106,6 +117,7 @@ uint8_t hw::ppu::PPU::readRegister(uint16_t cpu_address) {
       io_latch_          = status_reg_.raw;
       status_reg_.vblank = false;
       write_toggle_      = false;
+      vblank_suppression_counter_ = 2;
       logger::log<logger::DEBUG_PPU>("Read $%02X from PPUSTATUS\n", io_latch_);
     } break;
 
@@ -293,7 +305,7 @@ void hw::ppu::PPU::renderPixel() {
 
     // Otherwise, determine the pixel of the sprite
     else {
-      bool pixel_found = sprite_pixel != 0;
+      const bool pixel_found = sprite_pixel != 0;
 
       if (sprite_palette_latch_[i].flip_horiz) {
 
@@ -314,10 +326,14 @@ void hw::ppu::PPU::renderPixel() {
       }
 
       // Sprite zero hit
+      // if (i == 0 && sr_has_sprite_zero_ && !did_hit_sprite_zero_) {
+      //   printf("s=%d\tc=%d\tbg_pixel=%d, sprite_pixel=%d\n", scanline_, cycle_, bg_pixel, sprite_pixel);
+      // }
       if (i == 0 && sr_has_sprite_zero_          // Sprite is #0
           && cycle_ != 255                       // Not right-most pixel
           && bg_pixel != 0 && sprite_pixel != 0  // Both BG and sprite are opaque
           && !did_hit_sprite_zero_) {            // Hasn't already hit this frame
+        // printf("Hit, S=%d\n", scanline_);
         did_hit_sprite_zero_ = true;
         status_reg_.hit      = true;
       }
@@ -364,17 +380,21 @@ void hw::ppu::PPU::renderPixel() {
 
 void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
 
+  // Sprite evaluation fsm
+  SpriteEvaluationFSM& fsm = sprite_eval_fsm_;
+
   // Cycle 0: Idle
   if (cycle_ < 1) {
 
     // Initialize Sprite Evaluation state machine
-    sprite_eval_fsm_.state_      = SpriteEvaluationFSM::State::CHECK_Y_IN_RANGE;
-    sprite_eval_fsm_.poam_index_ = 0;
-    sprite_eval_fsm_.soam_index_ = 0;
+    fsm.state_      = SpriteEvaluationFSM::State::CHECK_Y_IN_RANGE;
+    fsm.poam_index_ = 0;
+    fsm.soam_index_ = 0;
+    fsm.initialize_ = true;
 
     // Save sprite_zero status
-    sr_has_sprite_zero_          = oam_has_sprite_zero_;
-    oam_has_sprite_zero_         = false;
+    sr_has_sprite_zero_  = oam_has_sprite_zero_;
+    oam_has_sprite_zero_ = false;
   }
 
   // Cycles 1-64: Background: Fetch tiles
@@ -384,7 +404,16 @@ void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
       fetchNextBGTile();
     }
 
-    secondary_oam_.byte[cycle_ - 1] = 0xFF;  // TODO: Every other index
+    // Clear out the SOAM
+    if ((cycle_ % 2) == 1) {
+      fsm.latch_ = 0xFF;
+    } else if (fsm.initialize_) {
+      secondary_oam_.byte[fsm.soam_index_++] = fsm.latch_;
+      if (fsm.soam_index_ == 32) {
+        fsm.initialize_ = false;
+        fsm.soam_index_ = 0;
+      }
+    }
   }
 
 
@@ -396,8 +425,7 @@ void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
         fetchNextBGTile();
       }
 
-      SpriteEvaluationFSM& fsm           = sprite_eval_fsm_;
-      const uint8_t        sprite_height = ctrl_reg_1_.large_sprites ? 16 : 8;
+      const uint8_t sprite_height = ctrl_reg_1_.large_sprites ? 16 : 8;
 
       if ((cycle_ % 2) == 1) {
         fsm.latch_ = primary_oam_.byte[fsm.poam_index_];
@@ -413,6 +441,9 @@ void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
               if (fsm.poam_index_ == 0) {
                 oam_has_sprite_zero_ = true;
               }
+              // if (fsm.latch_ == 238 || fsm.latch_ == 239) {
+              //   printf("Y=%d, S=%d\n", fsm.latch_, scanline_);
+              // }
               fsm.state_         = State::COPY_SPRITE;
               fsm.state_counter_ = 3;
               fsm.soam_index_++;
