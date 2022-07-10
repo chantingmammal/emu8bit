@@ -43,7 +43,7 @@ private:
  * Contains a `Divider`, whose output clocks a decay level counter. Each clock of the decay level decreases its value
  * from 15 to 0. If `loop_` is set, the decay level counter is reset to 15 if clocked when equal to 0.
  *
- * If `use_envelope_` is set, the output of is the decay level. Otherwise, the output is the constant `volume_`.
+ * If `const_volume_` is set, the output is the constant `volume_`. Otherwise, the output is the decay level.
  *
  *
  * Should be clocked by the quarter-frame clock (240Hz)
@@ -53,12 +53,12 @@ public:
   Divider<uint8_t> divider_;  // 4-bit divider. Max = 15
 
   uint8_t volume_;           // 4-bit. The volume of the channel, if not using envelope
-  bool    use_envelope_;     // 1=Constant volume, 0=Envelope volume
+  bool    const_volume_;     // 1=Constant volume, 0=Envelope volume
   bool    loop_  = {false};  // Whether to loop when the decay level reaches 0
   bool    start_ = {false};  // Flag to indicate restart
 
   void    clock();
-  uint8_t getVolume() { return use_envelope_ ? decay_level_ : volume_; }
+  uint8_t getVolume() { return const_volume_ ? volume_ : decay_level_; }
 
 private:
   uint8_t decay_level_ = {0};  // 4-bit. 0 to 15. The current decay level
@@ -98,6 +98,9 @@ public:
   void     clock();
   uint16_t getTarget();
   uint8_t  getOutput(uint8_t input);
+
+private:
+  bool mute();
 };
 
 

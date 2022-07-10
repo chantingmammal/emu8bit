@@ -33,16 +33,18 @@ public:
     sweep.is_ch_2_        = (channel == 2);
   }
 
+  uint8_t       seq_         = 0;
   const uint8_t sequence_[4] = {0b01000000, 0b01100000, 0b01111000, 0b10011111};
 
-  uint8_t  duty_cycle;  // 2-bit. 12.5%, 25%, 50%, or -25%.
-  uint16_t timer;       // 11-bit.
+  uint8_t  duty_cycle;     // 2-bit. 12.5%, 25%, 50%, or -25%.
+  uint16_t timer;          // 11-bit.
+  uint16_t cur_time_ = 0;  // 11-bit.
 
   unit::Envelope      envelope;
   unit::Sweep         sweep;
   unit::LengthCounter length_counter;
 
-  void    clock() override {};
+  void    clock() override;
   uint8_t getOutput() override;
 };
 
@@ -66,7 +68,7 @@ public:
   unit::LengthCounter length_counter;
 
   void    clock() override {}
-  uint8_t getOutput() override {}
+  uint8_t getOutput() override { return 0; }
 };
 
 
@@ -126,7 +128,7 @@ struct DMC : public Channel {
   unit::LengthCounter length_counter;
 
   void    clock() override {};
-  uint8_t getOutput() override {};
+  uint8_t getOutput() override { return 0; };
 };
 
 }  // namespace hw::apu::channel

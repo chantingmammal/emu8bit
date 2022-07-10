@@ -27,10 +27,9 @@ void hw::apu::unit::Envelope::clock() {
 // =*=*=*=*= Sweep =*=*=*=*=
 
 void hw::apu::unit::Sweep::clock() {
-  const uint16_t target_period = getTarget();
-
-  if (divider_.clock() && enable_ && shift_count_ > 0 && target_period < 0x800 && *channel_period_ >= 8) {
-    *channel_period_ = target_period;
+  if (!divider_.clock() && enable_ && shift_count_ > 0 && !mute()) {
+    *channel_period_ = getTarget() & 0x7FF;
+    reload_          = false;
   }
 
   if (reload_) {
@@ -40,11 +39,16 @@ void hw::apu::unit::Sweep::clock() {
 }
 
 uint16_t hw::apu::unit::Sweep::getTarget() {
-  return *channel_period_ + ((*channel_period_) >> shift_count_) * (negate_ ? -1 : 1) - (is_ch_2_ ? 0 : 1);
+  // apu_ref.txt is off by one, it says to add +1
+  return *channel_period_ + (*channel_period_ >> shift_count_) * (negate_ ? -1 : 1) - (negate_ && !is_ch_2_ ? 1 : 0);
 }
 
 uint8_t hw::apu::unit::Sweep::getOutput(uint8_t input) {
-  return (*channel_period_ < 8 || getTarget() > 0x7FF) ? 0 : input;
+  return mute() ? 0 : input;
+}
+
+bool hw::apu::unit::Sweep::mute() {
+  return *channel_period_ < 8 || getTarget() > 0x7FF;
 }
 
 

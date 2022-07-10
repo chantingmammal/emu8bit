@@ -95,8 +95,23 @@ void hw::apu::APU::clock() {
       break;
   }
 
-  // TODO: Mix samples from chips and send to speaker
-  uint8_t buffer[1] = {0};
+  static bool even = false;
+  even             = !even;
+  if (even) {
+    square_1.clock();
+    square_2.clock();
+    triangle.clock();
+    noise.clock();
+    dmc.clock();
+  }
+
+  // TODO: Nicer mixer? Maybe a LUT?
+  float square_sum = square_1.getOutput() + square_2.getOutput();
+  float square_out = 95.88 / ((square_sum == 0 ? 0 : 8128 / square_sum) + 100);
+  float tnd_sum    = triangle.getOutput() / 8227 + noise.getOutput() / 12241 + dmc.getOutput() / 22638;
+  float tnd_out    = 159.79 / ((tnd_sum == 0 ? 0 : 1 / tnd_sum) + 100);
+
+  uint8_t buffer[1] = {(square_out + tnd_out) * 255};
   speaker_->update(buffer, 1);
 }
 
@@ -131,7 +146,7 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
     case 0x4000:
       square_1.envelope.divider_.setPeriod(data & 0x0F);
       square_1.envelope.volume_       = (data & 0x0F);
-      square_1.envelope.use_envelope_ = !(data & 0x10);
+      square_1.envelope.const_volume_ = (data & 0x10);
       square_1.length_counter.halt_   = (data & 0x20);
       square_1.envelope.loop_         = (data & 0x20);
       square_1.duty_cycle             = (data & 0xC0) >> 6;
@@ -140,7 +155,7 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
     case 0x4001:
       square_1.sweep.shift_count_ = (data & 0x07);
       square_1.sweep.negate_      = (data & 0x08);
-      square_1.sweep.divider_.setPeriod((data & 0x70) >> 4);
+      square_1.sweep.divider_.setPeriod(((data & 0x70) >> 4) + 1);
       square_1.sweep.enable_ = (data & 0x80);
       square_1.sweep.reload_ = true;
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 1 (0x4001)\n", data);
@@ -157,6 +172,7 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       if (sound_en_.ch_1) {
         square_1.length_counter.load(data >> 3);
       }
+      square_1.seq_ = 0;
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 1 (0x4003)\n", data);
       break;
 
@@ -164,8 +180,8 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
     case (0x4004):
       square_2.envelope.divider_.setPeriod(data & 0x0F);
       square_2.envelope.volume_       = (data & 0x0F);
-      square_2.envelope.use_envelope_ = !(data & 0x10);
-      square_2.length_counter.halt_   = (data & 0x20);
+      square_2.envelope.const_volume_ = (data & 0x10);
+      square_2.length_counter.halt_   = true;  //(data & 0x20);
       square_2.envelope.loop_         = (data & 0x20);
       square_2.duty_cycle             = (data & 0xC0) >> 6;
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4004)\n", data);
@@ -173,11 +189,10 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
     case (0x4005):
       square_2.sweep.shift_count_ = (data & 0x07);
       square_2.sweep.negate_      = (data & 0x08);
-      square_2.sweep.divider_.setPeriod((data & 0x70) >> 4);
+      square_2.sweep.divider_.setPeriod(((data & 0x70) >> 4) + 1);
       square_2.sweep.enable_ = (data & 0x80);
       square_2.sweep.reload_ = true;
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4005)\n", data);
-
       break;
     case (0x4006):
       square_2.timer &= 0xFF00;
@@ -191,6 +206,7 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       if (sound_en_.ch_2) {
         square_2.length_counter.load(data >> 3);
       }
+      square_2.seq_ = 0;
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4007)\n", data);
       break;
 
@@ -223,7 +239,7 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
     case 0x400C:
       noise.envelope.divider_.setPeriod(data & 0x0F);
       noise.envelope.volume_       = (data & 0x0F);
-      noise.envelope.use_envelope_ = !(data & 0x10);
+      noise.envelope.const_volume_ = (data & 0x10);
       noise.length_counter.halt_   = (data & 0x20);
       noise.envelope.loop_         = (data & 0x20);
       logger::log<logger::DEBUG_APU>("Write $%02X to Noise (0x400C)\n", data);

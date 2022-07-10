@@ -1,10 +1,21 @@
 #include <nesemu/hw/apu/channels.h>
 
+#include <cstdio>
 
 // =*=*=*=*= Square =*=*=*=*=
 
+void hw::apu::channel::Square::clock() {
+  if (cur_time_ == 0) {
+    cur_time_ = timer;
+    seq_      = (seq_ + 1) % 8;
+  } else {
+    cur_time_--;
+  }
+};
+
 uint8_t hw::apu::channel::Square::getOutput() {
-  return length_counter.getOutput(sweep.getOutput(envelope.getVolume()));
+  return length_counter.getOutput(sequence_[duty_cycle] & (1 << (7 - seq_)) ? sweep.getOutput(envelope.getVolume())
+                                                                            : 0);
 };
 
 
