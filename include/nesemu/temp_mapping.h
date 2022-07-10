@@ -135,7 +135,8 @@ inline uint32_t decodeColor(uint8_t color) {
       return 0x00000000;
     case 0x3F:
       return 0x00000000;
-  }
 
-  return 0;
+    default:
+      return 0;
+  }
 }

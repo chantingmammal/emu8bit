@@ -116,6 +116,8 @@ void hw::apu::channel::Noise::loadPeriod(uint8_t code) {
     case 15:
       timer.setPeriod(4068);
       break;
+    default:
+      __builtin_unreachable();
   }
 }
 

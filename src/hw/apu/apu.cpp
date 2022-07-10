@@ -288,5 +288,9 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
         frame_counter_reset_counter_ = cycle_count_ + 2;
       }
       break;
+
+    default:
+      logger::log<logger::ERROR>("Attempted to write invalid APU addr $%02X\n", address);
+      break;
   }
 }

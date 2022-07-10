@@ -170,6 +170,9 @@ public:
         logger::log<logger::DEBUG_MAPPER>("Enable IRQ\n");
         irq_enable_ = true;
         break;
+      default:
+        logger::log<logger::ERROR>("Attempted to write invalid mapper addr $%02X\n", addr);
+        break;
     }
   }
 

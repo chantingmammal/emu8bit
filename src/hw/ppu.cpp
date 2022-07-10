@@ -114,9 +114,9 @@ uint8_t hw::ppu::PPU::readRegister(uint16_t cpu_address) {
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUSTATUS)): {  // PPU Status Register
-      io_latch_          = status_reg_.raw;
-      status_reg_.vblank = false;
-      write_toggle_      = false;
+      io_latch_                   = status_reg_.raw;
+      status_reg_.vblank          = false;
+      write_toggle_               = false;
       vblank_suppression_counter_ = 2;
       logger::log<logger::DEBUG_PPU>("Read $%02X from PPUSTATUS\n", io_latch_);
     } break;
@@ -163,6 +163,10 @@ uint8_t hw::ppu::PPU::readRegister(uint16_t cpu_address) {
 
       logger::log<logger::DEBUG_PPU>("Read $%02X from PPUDATA\n", io_latch_);
     } break;
+
+    default:
+      logger::log<logger::ERROR>("Attempted to read invalid PPU addr $%02X\n", cpu_address);
+      break;
   }
 
   return io_latch_;
@@ -234,7 +238,8 @@ void hw::ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
       logger::log<logger::DEBUG_PPU>("Set PPUDATA = $%02X\n", data);
       break;
 
-    default:  // Unknown register!
+    default:
+      logger::log<logger::ERROR>("Attempted to write invalid PPU reg $%02X\n", cpu_address);
       break;
   }
 }
@@ -513,6 +518,8 @@ void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
           case State::DONE:
             fsm.poam_index_ += 4;
             break;
+
+            // No default
         }
       }
     }
@@ -627,9 +634,9 @@ void hw::ppu::PPU::fetchNextSprite() {
       y_pos      = sprite.y_position;
     }
 
-    const uint8_t y_slice = sprite.attributes.flip_vert                          // Horizontal slice of the sprite
-                                ? 7 - (scanline_ - y_pos)                        //   - Vertically flipped
-                                : scanline_ - y_pos;                             //   - Not flipped
+    const uint8_t  y_slice      = sprite.attributes.flip_vert                    // Horizontal slice of the sprite
+                                      ? 7 - (scanline_ - y_pos)                  //   - Vertically flipped
+                                      : scanline_ - y_pos;                       //   - Not flipped
     const uint16_t pattern_addr = tile_index << 4                                // Base tile address
                                   | ctrl_reg_1_.sprite_pattern_table_addr << 12  // Pattern table
                                   | y_slice;                                     // Horizontal slice

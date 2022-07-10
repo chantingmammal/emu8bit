@@ -1,6 +1,7 @@
 #pragma once
 
 #include <nesemu/hw/mapper/mapper_base.h>
+#include <nesemu/logger.h>
 
 
 namespace hw::mapper::internal {
@@ -98,6 +99,8 @@ public:
             case 0x03:
               mirroring_ = Mirroring::horizontal;
               break;
+            default:
+              __builtin_unreachable();
           }
           break;
         case 0xA000:
@@ -108,6 +111,9 @@ public:
           break;
         case 0xE000:
           prg_bank_ = shift_register_;
+          break;
+        default:
+          logger::log<logger::ERROR>("Attempted to write invalid mapper addr $%02X\n", addr);
           break;
       }
 

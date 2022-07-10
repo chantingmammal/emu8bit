@@ -64,17 +64,16 @@ inline void dump_patterns(uint8_t* data) {
             std::cout << ".";
             break;
           case 1:
-
             std::cout << "|";
             break;
           case 2:
-
             std::cout << "2";
             break;
           case 3:
-
             std::cout << "3";
             break;
+          default:
+            __builtin_unreachable();
         }
       }
       std::cout << std::endl;

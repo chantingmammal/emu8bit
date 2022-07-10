@@ -50,7 +50,7 @@ protected:
 
   // ID
   std::string title_;
-  int         id_ = {0};
+  uint32_t    id_ = {0};
 
   // Dimensions
   int width_  = {0};

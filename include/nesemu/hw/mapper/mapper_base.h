@@ -41,8 +41,7 @@ public:
           return addr & 0x03FF;
         case Mirroring::single_upper:  // Single-screen, upper tilemap
           return (addr & 0x03FF) | 0x0400;
-        default:
-          __builtin_unreachable();
+          // No default
       }
     }
 
@@ -62,6 +61,7 @@ public:
       }
       return 0x1F00 | addr;
     }
+    __builtin_unreachable();
   }
 
   virtual bool hasIRQ() const { return false; }

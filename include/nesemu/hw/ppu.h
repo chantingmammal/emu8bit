@@ -98,7 +98,7 @@ private:
 
   // Sprite evaluation state machine
   struct SpriteEvaluationFSM {
-    enum State { CHECK_Y_IN_RANGE, COPY_SPRITE, OVERFLOW, DUMMY_READ, DONE } state_;
+    enum class State { CHECK_Y_IN_RANGE, COPY_SPRITE, OVERFLOW, DUMMY_READ, DONE } state_;
     uint8_t state_counter_ = {0};  // Number of cycles until state change
     uint8_t poam_index_    = {0};  // Position within primary OAM (0-64)*4
     uint8_t soam_index_    = {0};  // Position within secondary OAM (0-8)*4
