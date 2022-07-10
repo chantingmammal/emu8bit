@@ -3,8 +3,8 @@
 #include <nesemu/hw/mapper/mappers.h>
 #include <nesemu/hw/rom.h>
 #include <nesemu/logger.h>
-#include <nesemu/ui/audio.h>
 #include <nesemu/ui/screen.h>
+#include <nesemu/ui/speaker.h>
 
 #include <cstdint>
 
@@ -28,9 +28,9 @@ void hw::console::Console::loadCart(rom::Rom* rom) {
   // Setup the mapper
   const uint16_t          mapper_num = rom->header.mapper_upper << 8 | rom->header.mapper_lower;
   const mapper::Mirroring mirror     = rom->header.ignore_mirroring
-                                       ? mapper::Mirroring::none
-                                       : (rom->header.nametable_mirror ? mapper::Mirroring::vertical
-                                                                       : mapper::Mirroring::horizontal);
+                                           ? mapper::Mirroring::none
+                                           : (rom->header.nametable_mirror ? mapper::Mirroring::vertical
+                                                                           : mapper::Mirroring::horizontal);
   mapper_ = mapper::mappers[mapper_num](rom->header.prg_rom_size, rom->header.chr_rom_size, mirror);
   logger::log<logger::DEBUG_MAPPER>("Using mapper #%d\n", mapper_num);
 
@@ -44,9 +44,9 @@ void hw::console::Console::setScreen(ui::Screen* screen) {
   ppu_.setScreen(screen_);
 }
 
-void hw::console::Console::setAudio(ui::Audio* audio) {
-  audio_ = audio;
-  apu_.setAudio(audio_);
+void hw::console::Console::setSpeaker(ui::Speaker* speaker) {
+  speaker_ = speaker;
+  apu_.setSpeaker(speaker_);
 }
 
 

@@ -21,7 +21,7 @@ class Rom;
 
 namespace ui {
 class Screen;
-class Audio;
+class Speaker;
 }  // namespace ui
 
 
@@ -35,7 +35,7 @@ public:
   // Setup
   void loadCart(rom::Rom* rom);
   void setScreen(ui::Screen* screen);
-  void setAudio(ui::Audio* audio);
+  void setSpeaker(ui::Speaker* speaker);
 
   // Execution
   void start();
@@ -47,8 +47,8 @@ public:
   const ppu::PPU* getPPU() const { return &ppu_; }
 
 private:
-  ui::Screen* screen_ = {nullptr};
-  ui::Audio*  audio_  = {nullptr};
+  ui::Screen*  screen_  = {nullptr};
+  ui::Speaker* speaker_ = {nullptr};
 
   // HW Components
   system_bus::SystemBus bus_;

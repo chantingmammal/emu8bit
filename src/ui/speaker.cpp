@@ -1,9 +1,9 @@
 #include <nesemu/logger.h>
-#include <nesemu/ui/audio.h>
+#include <nesemu/ui/speaker.h>
 
 #include <cstdint>
 
-bool ui::Audio::init() {
+bool ui::Speaker::init() {
 
   SDL_AudioSpec desired_spec;
   desired_spec.freq     = OUTPUT_C;
@@ -34,14 +34,13 @@ bool ui::Audio::init() {
   return 0;
 }
 
-void ui::Audio::close() {
+void ui::Speaker::close() {
   SDL_CloseAudioDevice(device_);
   SDL_FreeAudioStream(downsampler_a_);
   SDL_FreeAudioStream(downsampler_b_);
 }
 
-void ui::Audio::update(uint8_t* stream, size_t len) {
-
+void ui::Speaker::update(uint8_t* stream, size_t len) {
   // Upscale by 11 and feed the first downsampler
   for (size_t i = 0; i < len; i++) {
     for (size_t j = 0; j < 11; j++) {

@@ -1,13 +1,13 @@
 #include <nesemu/hw/apu/apu.h>
 
 #include <nesemu/logger.h>
-#include <nesemu/ui/audio.h>
+#include <nesemu/ui/speaker.h>
 
 
 // =*=*=*=*= PPU Setup =*=*=*=*=
 
-void hw::apu::APU::setAudio(ui::Audio* audio) {
-  audio_ = audio;
+void hw::apu::APU::setSpeaker(ui::Speaker* speaker) {
+  speaker_ = speaker;
 }
 
 
@@ -97,7 +97,7 @@ void hw::apu::APU::clock() {
 
   // TODO: Mix samples from chips and send to speaker
   uint8_t buffer[1] = {0};
-  audio_->update(buffer, 1);
+  speaker_->update(buffer, 1);
 }
 
 

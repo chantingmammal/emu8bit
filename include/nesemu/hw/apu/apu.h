@@ -8,7 +8,7 @@
 
 // Forward declarations
 namespace ui {
-class Audio;
+class Speaker;
 }
 
 
@@ -32,7 +32,7 @@ union StatusControl {
 class APU {
 public:
   // Setup
-  void setAudio(ui::Audio* audio);
+  void setSpeaker(ui::Speaker* speaker);
 
   // Execution
   void    clock();
@@ -42,7 +42,7 @@ public:
 
 private:
   // Other chips
-  ui::Audio* audio_ = {nullptr};
+  ui::Speaker* speaker_ = {nullptr};
 
   inline void clockHalfFrame();
   inline void clockQuarterFrame();

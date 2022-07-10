@@ -1,9 +1,9 @@
 #include <nesemu/hw/console.h>
 #include <nesemu/hw/rom.h>
 #include <nesemu/logger.h>
-#include <nesemu/ui/audio.h>
 #include <nesemu/ui/nametable_viewer.h>
 #include <nesemu/ui/screen.h>
+#include <nesemu/ui/speaker.h>
 #include <nesemu/ui/sprite_viewer.h>
 #include <nesemu/ui/window.h>
 #include <nesemu/utils/steady_timer.h>
@@ -17,7 +17,7 @@
 
 
 std::map<std::string, ui::Window*> windows;
-ui::Audio                          audio;
+ui::Speaker                        speaker;
 
 void printUsage() {
   printf("Usage: nesemu --file ROM.nes\n");
@@ -132,8 +132,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  // Create the audio engine
-  audio.init();
+  // Create the audio output device
+  speaker.init();
 
   // Create the emulated hardware
   hw::console::Console console(allow_unofficial);
@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
 
   // Connect the emulated HW to the UI
   console.setScreen(static_cast<ui::Screen*>(windows["screen"]));
-  console.setAudio(&audio);
+  console.setSpeaker(&speaker);
   static_cast<ui::NametableViewer*>(windows["nt"])->attachPPU(console.getPPU());
   static_cast<ui::SpriteViewer*>(windows["oam"])->attachPPU(console.getPPU());
 
@@ -242,7 +242,7 @@ void exit() {
     delete window.second;
   }
 
-  audio.close();
+  speaker.close();
 
   // Quit SDL subsystems
   SDL_Quit();

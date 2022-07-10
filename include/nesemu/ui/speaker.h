@@ -8,7 +8,7 @@
 
 namespace ui {
 
-class Audio {
+class Speaker {
 public:
   virtual bool init();
   virtual void close();
