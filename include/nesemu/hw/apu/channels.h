@@ -13,9 +13,21 @@ namespace hw::apu::channel {
 
 class Channel {
 public:
-  virtual void    clockCPU()                      = 0;
-  virtual void    clockFrame(APUClock clock_type) = 0;
-  virtual uint8_t getOutput()                     = 0;
+  virtual void enable(bool enabled) {
+    enabled_ = enabled;
+    if (!enabled_) {
+      length_counter.counter_ = 0;
+    }
+  }
+
+  virtual void    writeReg(uint8_t reg, uint8_t data) = 0;
+  virtual void    clockCPU()                          = 0;
+  virtual void    clockFrame(APUClock clock_type)     = 0;
+  virtual uint8_t getOutput()                         = 0;
+
+  // protected:
+  bool                enabled_ = {false};
+  unit::LengthCounter length_counter;
 };
 
 
@@ -56,8 +68,8 @@ public:
   unit::Divider<uint16_t> timer;   // 11-bit
   unit::Envelope          envelope;
   unit::Sweep             sweep;
-  unit::LengthCounter     length_counter;
 
+  void    writeReg(uint8_t reg, uint8_t data) override;
   void    clockCPU() override;
   void    clockFrame(APUClock clock_type) override;
   uint8_t getOutput() override;
@@ -65,7 +77,7 @@ public:
 private:
   static constexpr uint8_t SEQUENCE[4] = {0b01000000, 0b01100000, 0b01111000, 0b10011111};
 
-  bool     clock_is_even_ = {false};
+  bool clock_is_even_ = {false};
 
   uint8_t getSequencerOutput() override { return SEQUENCE[duty_cycle] * (1 << (8 - sequencer_pos_)); };
 };
@@ -86,8 +98,8 @@ public:
   uint16_t                period;  // 11-bit. Used to reload timer.
   unit::Divider<uint16_t> timer;   // 11-bit
   unit::LinearCounter     linear_counter;
-  unit::LengthCounter     length_counter;
 
+  void    writeReg(uint8_t reg, uint8_t data) override {};
   void    clockCPU() override;
   void    clockFrame(APUClock clock_type) override;
   uint8_t getOutput() override { return getSequencerOutput(); };
@@ -114,8 +126,8 @@ public:
 
   unit::Divider<uint16_t> timer;  // 11-bit
   unit::Envelope          envelope;
-  unit::LengthCounter     length_counter;
 
+  void    writeReg(uint8_t reg, uint8_t data) override {};
   void    loadPeriod(uint8_t code);
   void    clockCPU() override;
   void    clockFrame(APUClock clock_type) override;
@@ -154,8 +166,7 @@ struct DMC : public Channel {
     uint8_t sample_length;
   };
 
-  unit::LengthCounter length_counter;
-
+  void    writeReg(uint8_t reg, uint8_t data) override {};
   void    clockCPU() override {};
   void    clockFrame(APUClock clock_type) override;
   uint8_t getOutput() override { return 0; };

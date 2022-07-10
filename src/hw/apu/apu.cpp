@@ -126,70 +126,20 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
 
     // Channel 1 (Square 1)
     case 0x4000:
-      square_1.envelope.divider_.setPeriod(data & 0x0F);
-      square_1.envelope.volume_       = (data & 0x0F);
-      square_1.envelope.const_volume_ = (data & 0x10);
-      square_1.length_counter.halt_   = (data & 0x20);
-      square_1.envelope.loop_         = (data & 0x20);
-      square_1.duty_cycle             = (data & 0xC0) >> 6;
-      logger::log<logger::DEBUG_APU>("Write $%02X to Square 1 (0x4000)\n", data);
-      break;
     case 0x4001:
-      square_1.sweep.shift_count_ = (data & 0x07);
-      square_1.sweep.negate_      = (data & 0x08);
-      square_1.sweep.divider_.setPeriod((data & 0x70) >> 4);
-      square_1.sweep.enable_ = (data & 0x80);
-      square_1.sweep.reload_ = true;
-      logger::log<logger::DEBUG_APU>("Write $%02X to Square 1 (0x4001)\n", data);
-      break;
     case 0x4002:
-      square_1.period &= 0xFF00;
-      square_1.period |= data;
-      logger::log<logger::DEBUG_APU>("Write $%02X to Square 1 (0x4002)\n", data);
-      break;
     case 0x4003:
-      square_1.period &= 0x00FF;
-      square_1.period |= (data & 0x7) << 8;
-      square_1.envelope.start_ = true;
-      if (sound_en_.ch_1) {
-        square_1.length_counter.load(data >> 3);
-      }
-      square_1.resetSequencer();
-      logger::log<logger::DEBUG_APU>("Write $%02X to Square 1 (0x4003)\n", data);
+      square_1.writeReg(address & 0x03, data);
+      logger::log<logger::DEBUG_APU>("Write $%02X to Square 1 ($%04X)\n", data, address);
       break;
 
       // Channel 2 (Square 2)
     case (0x4004):
-      square_2.envelope.divider_.setPeriod(data & 0x0F);
-      square_2.envelope.volume_       = (data & 0x0F);
-      square_2.envelope.const_volume_ = (data & 0x10);
-      square_2.length_counter.halt_   = true;  //(data & 0x20);
-      square_2.envelope.loop_         = (data & 0x20);
-      square_2.duty_cycle             = (data & 0xC0) >> 6;
-      logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4004)\n", data);
-      break;
     case (0x4005):
-      square_2.sweep.shift_count_ = (data & 0x07);
-      square_2.sweep.negate_      = (data & 0x08);
-      square_2.sweep.divider_.setPeriod((data & 0x70) >> 4);
-      square_2.sweep.enable_ = (data & 0x80);
-      square_2.sweep.reload_ = true;
-      logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4005)\n", data);
-      break;
     case (0x4006):
-      square_2.period &= 0xFF00;
-      square_2.period |= data;
-      logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4006)\n", data);
-      break;
     case (0x4007):
-      square_2.period &= 0x00FF;
-      square_2.period |= (data & 0x7) << 8;
-      square_2.envelope.start_ = true;
-      if (sound_en_.ch_2) {
-        square_2.length_counter.load(data >> 3);
-      }
-      square_1.resetSequencer();
-      logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4007)\n", data);
+      square_2.writeReg(address & 0x03, data);
+      logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 ($%04X)\n", data, address);
       break;
 
     // Triangle
@@ -252,18 +202,11 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
     // Control
     case (0x4015):
       sound_en_.raw = data;
-      if (!sound_en_.ch_1) {
-        square_1.length_counter.counter_ = 0;
-      }
-      if (!sound_en_.ch_2) {
-        square_2.length_counter.counter_ = 0;
-      }
-      if (!sound_en_.ch_3) {
-        triangle.length_counter.counter_ = 0;
-      }
-      if (!sound_en_.ch_4) {
-        noise.length_counter.counter_ = 0;
-      }
+      square_1.enable(sound_en_.ch_1);
+      square_2.enable(sound_en_.ch_2);
+      triangle.enable(sound_en_.ch_3);
+      noise.enable(sound_en_.ch_4);
+      dmc.enable(sound_en_.ch_5);
       if (!sound_en_.ch_5) {
         ;  // TODO: Set bytes remaining to 0
       } else {
