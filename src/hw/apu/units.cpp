@@ -140,3 +140,7 @@ void hw::apu::unit::LinearCounter::clock() {
     reload_ = false;
   }
 }
+
+uint8_t hw::apu::unit::LinearCounter::getOutput(uint8_t input) {
+  return (counter_ == 0) ? 0 : input;
+}

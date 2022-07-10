@@ -27,6 +27,9 @@ void hw::apu::APU::clockHalfFrame() {
 
 // Clock envelope and linear counter units
 void hw::apu::APU::clockQuarterFrame() {
+  square_1.envelope.clock();
+  square_2.envelope.clock();
+  noise.envelope.clock();
   triangle.linear_counter.clock();
 }
 
@@ -95,21 +98,22 @@ void hw::apu::APU::clock() {
       break;
   }
 
+  // TODO: Move div by two into the square wave, use a Divider w/ period 1.
   static bool even = false;
   even             = !even;
   if (even) {
     square_1.clock();
     square_2.clock();
-    noise.clock();
-    dmc.clock();
   }
   triangle.clock();
+  noise.clock();
+  dmc.clock();
 
   // TODO: Nicer mixer? Maybe a LUT?
   float square_sum = square_1.getOutput() + square_2.getOutput();
-  float square_out = 95.88 / ((square_sum == 0 ? 0 : 8128 / square_sum) + 100);
-  float tnd_sum    = triangle.getOutput() / 8227 + noise.getOutput() / 12241 + dmc.getOutput() / 22638;
-  float tnd_out    = 159.79 / ((tnd_sum == 0 ? 0 : 1 / tnd_sum) + 100);
+  float square_out = square_sum == 0 ? 0 : 95.88 / (8128 / square_sum + 100);
+  float tnd_sum    = triangle.getOutput() / 8227.0 + noise.getOutput() / 12241.0 + dmc.getOutput() / 22638.0;
+  float tnd_out    = tnd_sum == 0 ? 0 : 159.79 / (1 / tnd_sum + 100);
 
   uint8_t buffer[1] = {(square_out + tnd_out) * 255};
   speaker_->update(buffer, 1);
@@ -167,7 +171,7 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       break;
     case 0x4003:
       square_1.timer &= 0x00FF;
-      square_1.timer |= data & 0x7;
+      square_1.timer |= (data & 0x7) << 8;
       square_1.envelope.start_ = true;
       if (sound_en_.ch_1) {
         square_1.length_counter.load(data >> 3);
@@ -201,7 +205,7 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       break;
     case (0x4007):
       square_2.timer &= 0x00FF;
-      square_2.timer |= data & 0x7;
+      square_2.timer |= (data & 0x7) << 8;
       square_2.envelope.start_ = true;
       if (sound_en_.ch_2) {
         square_2.length_counter.load(data >> 3);
@@ -227,11 +231,11 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       break;
     case 0x400B:
       triangle.timer &= 0x00FF;
-      triangle.timer |= data & 0x7;
+      triangle.timer |= (data & 0x7) << 8;
       if (sound_en_.ch_3) {
         triangle.length_counter.load(data >> 3);
       }
-      // TODO: Set linear counter reload
+      triangle.linear_counter.reload_ = true;
       logger::log<logger::DEBUG_APU>("Write $%02X to Triangle (0x400B)\n", data);
       break;
 

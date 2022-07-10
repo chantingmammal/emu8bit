@@ -43,7 +43,7 @@ void ui::Speaker::close() {
 void ui::Speaker::update(uint8_t* stream, size_t len) {
   // Upscale by 11 and feed the first downsampler
   for (size_t i = 0; i < len; i++) {
-    for (size_t j = 0; j < 11; j++) {
+    for (size_t j = 0; j < UPSAMPLE; j++) {
       if (0 != SDL_AudioStreamPut(downsampler_a_, stream + i, 1)) {
         logger::log<logger::ERROR>("Failed to put samples in first downsampler: %s\n", SDL_GetError());
       }

@@ -107,7 +107,7 @@ private:
 /**
  * The length counter allows for automatic duration control.
  *
- * When clocked, if the half flag is clear and the counter is non-zero, the counter is decremented. When the counter is
+ * When clocked, if the halt flag is clear and the counter is non-zero, the counter is decremented. When the counter is
  * zero, the corresponding channel is silenced.
  *
  * Should be clocked by the half-frame clock (120Hz).
@@ -124,7 +124,11 @@ public:
 
 
 /**
- * TODO
+ * The Linear Counter serves as a second more-accurate duration counter for the triangle channel.
+ *
+ * When clocked:
+ *  1) If the reload flag is set, reload the counter. Otherwise, decrement the count if non-zero
+ *  2) If control flag is clear, clear reload flag
  */
 class LinearCounter {
 public:
@@ -134,6 +138,7 @@ public:
   bool    reload_       = {false};
 
   void clock();
+  uint8_t getOutput(uint8_t input);
 };
 
 }  // namespace hw::apu::unit

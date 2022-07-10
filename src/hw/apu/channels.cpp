@@ -22,7 +22,7 @@ uint8_t hw::apu::channel::Square::getOutput() {
 void hw::apu::channel::Triangle::clock() {
   if (cur_time_ == 0) {
     cur_time_ = timer;
-    if (linear_counter.counter_ != 0 && length_counter.counter_ != 0) {
+    if (linear_counter.getOutput(true) && length_counter.getOutput(true)) {
       advanceSequencer();
     }
   } else {
