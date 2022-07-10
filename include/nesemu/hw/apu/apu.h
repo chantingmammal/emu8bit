@@ -1,8 +1,10 @@
 #pragma once
 
+#include <nesemu/hw/apu/apu_clock.h>
 #include <nesemu/hw/apu/channels.h>
 #include <nesemu/utils/reg_bit.h>
 
+#include <array>
 #include <cstdint>
 
 
@@ -44,9 +46,7 @@ private:
   // Other chips
   ui::Speaker* speaker_ = {nullptr};
 
-  inline void clockHalfFrame();
-  inline void clockQuarterFrame();
-
+  inline void clockFrame(APUClock clock_type);
 
   bool has_irq_ = {false};
 
@@ -56,6 +56,8 @@ private:
   channel::Noise           noise;            // CPU 0x400C - 0x400F
   channel::DMC             dmc;              // CPU 0x4010 - 0x4013
   registers::StatusControl sound_en_ = {0};  // CPU 0x4015
+
+  std::array<channel::Channel*, 5> channels = {&square_1, &square_2, &triangle, &noise, &dmc};
 
 
   // Frame counter: CPU 0x4017

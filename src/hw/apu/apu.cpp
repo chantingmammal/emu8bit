@@ -1,65 +1,50 @@
 #include <nesemu/hw/apu/apu.h>
 
+#include <nesemu/hw/apu/apu_clock.h>
 #include <nesemu/logger.h>
 #include <nesemu/ui/speaker.h>
 
 
-// =*=*=*=*= PPU Setup =*=*=*=*=
+// =*=*=*=*= APU Setup =*=*=*=*=
 
 void hw::apu::APU::setSpeaker(ui::Speaker* speaker) {
   speaker_ = speaker;
 }
 
 
-// =*=*=*=*= PPU Execution =*=*=*=*=
+// =*=*=*=*= APU Execution =*=*=*=*=
 
-// Clock length counter and sweep units
-void hw::apu::APU::clockHalfFrame() {
-  square_1.length_counter.clock();
-  square_2.length_counter.clock();
-  triangle.length_counter.clock();
-  noise.length_counter.clock();
-  dmc.length_counter.clock();
-
-  square_1.sweep.clock();
-  square_2.sweep.clock();
+void hw::apu::APU::clockFrame(APUClock clock_type) {
+  for (auto&& channel : channels) {
+    channel->clockFrame(clock_type);
+  }
 }
-
-// Clock envelope and linear counter units
-void hw::apu::APU::clockQuarterFrame() {
-  square_1.envelope.clock();
-  square_2.envelope.clock();
-  noise.envelope.clock();
-  triangle.linear_counter.clock();
-}
-
 
 void hw::apu::APU::clock() {
-
   if (frame_counter_reset_counter_ == cycle_count_) {
     cycle_count_                 = 0;
     frame_counter_reset_counter_ = 0xFFFF;
 
     // If 5-step mode, clock everything
     if (frame_counter_mode_) {
-      clockHalfFrame();
-      clockQuarterFrame();
+      clockFrame(APUClock::HALF_FRAME);
+      clockFrame(APUClock::QUARTER_FRAME);
     }
   }
 
 
   switch (cycle_count_++) {
     case 7457:
-      clockQuarterFrame();
+      clockFrame(APUClock::QUARTER_FRAME);
       break;
 
     case 14913:
-      clockHalfFrame();
-      clockQuarterFrame();
+      clockFrame(APUClock::HALF_FRAME);
+      clockFrame(APUClock::QUARTER_FRAME);
       break;
 
     case 22371:
-      clockQuarterFrame();
+      clockFrame(APUClock::QUARTER_FRAME);
       break;
 
     case 29828:  // (4-step only) Set frame interrupt flag if inhibit is clear
@@ -70,8 +55,8 @@ void hw::apu::APU::clock() {
 
     case 29829:  // (4-step only) Set frame interrupt flag if inhibit is clear
       if (!frame_counter_mode_) {
-        clockHalfFrame();
-        clockQuarterFrame();
+        clockFrame(APUClock::HALF_FRAME);
+        clockFrame(APUClock::QUARTER_FRAME);
         if (!irq_inhibit_) {
           has_irq_ = true;
         }
@@ -89,8 +74,8 @@ void hw::apu::APU::clock() {
       break;
 
     case 37281:  // (5-step only) Set frame interrupt flag if inhibit is clear
-      clockHalfFrame();
-      clockQuarterFrame();
+      clockFrame(APUClock::HALF_FRAME);
+      clockFrame(APUClock::QUARTER_FRAME);
       break;
 
     case 37282:  // (5-step only) Reset counter
@@ -98,16 +83,9 @@ void hw::apu::APU::clock() {
       break;
   }
 
-  // TODO: Move div by two into the square wave, use a Divider w/ period 1.
-  static bool even = false;
-  even             = !even;
-  if (even) {
-    square_1.clock();
-    square_2.clock();
+  for (auto&& channel : channels) {
+    channel->clockCPU();
   }
-  triangle.clock();
-  noise.clock();
-  dmc.clock();
 
   // TODO: Nicer mixer? Maybe a LUT?
   float square_sum = square_1.getOutput() + square_2.getOutput();

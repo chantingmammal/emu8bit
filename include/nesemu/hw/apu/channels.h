@@ -1,5 +1,6 @@
 #pragma once
 
+#include <nesemu/hw/apu/apu_clock.h>
 #include <nesemu/hw/apu/units.h>
 #include <nesemu/utils/reg_bit.h>
 
@@ -11,8 +12,9 @@ namespace hw::apu::channel {
 
 class Channel {
 public:
-  virtual void    clock()     = 0;
-  virtual uint8_t getOutput() = 0;
+  virtual void    clockCPU()                      = 0;
+  virtual void    clockFrame(APUClock clock_type) = 0;
+  virtual uint8_t getOutput()                     = 0;
 };
 
 template <typename T, size_t SEQ_LEN>
@@ -52,13 +54,15 @@ public:
   unit::Sweep         sweep;
   unit::LengthCounter length_counter;
 
-  void    clock() override;
+  void    clockCPU() override;
+  void    clockFrame(APUClock clock_type) override;
   uint8_t getOutput() override;
 
 private:
   static constexpr uint8_t SEQUENCE[4] = {0b01000000, 0b01100000, 0b01111000, 0b10011111};
 
-  uint16_t cur_time_ = 0;  // 11-bit
+  bool     clock_is_even_ = {false};
+  uint16_t cur_time_      = {0};  // 11-bit
 
   uint8_t getSequencerOutput() override { return SEQUENCE[duty_cycle] * (1 << (8 - sequencer_pos_)); };
 };
@@ -79,7 +83,8 @@ public:
   unit::LinearCounter linear_counter;
   unit::LengthCounter length_counter;
 
-  void    clock() override;
+  void    clockCPU() override;
+  void    clockFrame(APUClock clock_type) override;
   uint8_t getOutput() override { return getSequencerOutput(); };
 
 private:
@@ -109,7 +114,8 @@ public:
   unit::LengthCounter     length_counter;
 
   void    loadPeriod(uint8_t code);
-  void    clock() override;
+  void    clockCPU() override;
+  void    clockFrame(APUClock clock_type) override;
   uint8_t getOutput() override;
 
 private:
@@ -147,7 +153,8 @@ struct DMC : public Channel {
 
   unit::LengthCounter length_counter;
 
-  void    clock() override {};
+  void    clockCPU() override {};
+  void    clockFrame(APUClock clock_type) override;
   uint8_t getOutput() override { return 0; };
 };
 
