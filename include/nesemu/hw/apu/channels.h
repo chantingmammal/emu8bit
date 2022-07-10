@@ -113,7 +113,7 @@ public:
   uint8_t getOutput() override;
 
 private:
-  uint16_t lfsr = {0};  // 15-bit linear feedback shift register
+  uint16_t lfsr = {1};  // 15-bit linear feedback shift register. Initially loaded w/ 1
 };
 
 
