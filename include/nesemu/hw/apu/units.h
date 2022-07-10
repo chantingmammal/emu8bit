@@ -10,14 +10,17 @@ namespace hw::apu::unit {
  *
  * Contains a counter which is decremented on the arrival of each clock. When it reaches 0, it is reloaded
  * with the period and an output clock is generated (`clock()` returns true).
+ *
+ * If a non-null external period is specified, the internal period is not used
  */
 template <class T = uint8_t>
 class Divider {
 public:
-  void setLoop(bool loop) { loop_ = loop; }       ///< Whether to loop when the counter reaches 0
-  void setPeriod(T period) { period_ = period; }  ///< Set divider period
-  void reload() { counter_ = period_; }           ///< Reload divider with period
-  bool clock() {                                  ///< If 0, reload, and return true. Otherwise, decrement
+  void setLoop(bool loop) { loop_ = loop; }                           ///< Whether to loop when the counter reaches 0
+  void setPeriod(T period) { period_ = period; }                      ///< Set divider period
+  void setExtPeriod(T* ext_period) { ext_period_ = ext_period; }      ///< Set external divider period
+  void reload() { counter_ = ext_period_ ? *ext_period_ : period_; }  ///< Reload divider with period
+  bool clock() {  ///< If 0, reload and return true. Otherwise, decrement and return false
 
     if (counter_ == 0) {
       if (loop_) {
@@ -31,9 +34,10 @@ public:
   }
 
 private:
-  bool loop_    = {true};
-  T    period_  = {0};
-  T    counter_ = {0};
+  bool loop_       = {true};
+  T    period_     = {0};
+  T*   ext_period_ = {nullptr};
+  T    counter_    = {0};
 };
 
 
@@ -137,7 +141,7 @@ public:
   bool    control_      = {false};
   bool    reload_       = {false};
 
-  void clock();
+  void    clock();
   uint8_t getOutput(uint8_t input);
 };
 

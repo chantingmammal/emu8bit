@@ -8,17 +8,10 @@
 void hw::apu::channel::Square::clockCPU() {
   // Square wave is clocked every other CPU clock
   clock_is_even_ = !clock_is_even_;
-  if (!clock_is_even_) {
-    return;
-  }
-
-  if (cur_time_ == 0) {
-    cur_time_ = timer;
+  if (clock_is_even_ && timer.clock()) {
     advanceSequencer();
-  } else {
-    cur_time_--;
   }
-};
+}
 
 void hw::apu::channel::Square::clockFrame(APUClock clock_type) {
   switch (clock_type) {
@@ -35,21 +28,16 @@ void hw::apu::channel::Square::clockFrame(APUClock clock_type) {
 
 uint8_t hw::apu::channel::Square::getOutput() {
   return length_counter.getOutput(getSequencerOutput() ? sweep.getOutput(envelope.getVolume()) : 0);
-};
+}
 
 
 // =*=*=*=*= Triangle =*=*=*=*=
 
 void hw::apu::channel::Triangle::clockCPU() {
-  if (cur_time_ == 0) {
-    cur_time_ = timer;
-    if (linear_counter.getOutput(true) && length_counter.getOutput(true)) {
-      advanceSequencer();
-    }
-  } else {
-    cur_time_--;
+  if (timer.clock() && linear_counter.getOutput(true) && length_counter.getOutput(true)) {
+    advanceSequencer();
   }
-};
+}
 
 void hw::apu::channel::Triangle::clockFrame(APUClock clock_type) {
   switch (clock_type) {
@@ -122,15 +110,11 @@ void hw::apu::channel::Noise::loadPeriod(uint8_t code) {
 }
 
 void hw::apu::channel::Noise::clockCPU() {
-  // Clock the timer
-  if (!timer.clock()) {
-    return;
+  if (timer.clock()) {
+    const bool feedback = (lfsr & 0x01) ^ ((mode ? (lfsr >> 6) : (lfsr >> 1)) & 0x01);
+    lfsr >>= 1;
+    lfsr |= (feedback << 14);
   }
-
-  // When the timer clocks the shift register
-  const bool feedback = (lfsr & 0x01) ^ ((mode ? (lfsr >> 6) : (lfsr >> 1)) & 0x01);
-  lfsr >>= 1;
-  lfsr |= (feedback << 14);
 }
 
 void hw::apu::channel::Noise::clockFrame(APUClock clock_type) {
@@ -146,13 +130,7 @@ void hw::apu::channel::Noise::clockFrame(APUClock clock_type) {
 }
 
 uint8_t hw::apu::channel::Noise::getOutput() {
-
-  // When bit 0 is set, output 0
-  if ((lfsr & 0x01) == 0) {
-    return 0;
-  }
-
-  return length_counter.getOutput(envelope.getVolume());
+  return (lfsr & 0x01) == 0 ? 0 : length_counter.getOutput(envelope.getVolume());
 }
 
 

@@ -143,13 +143,13 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 1 (0x4001)\n", data);
       break;
     case 0x4002:
-      square_1.timer &= 0xFF00;
-      square_1.timer |= data;
+      square_1.period &= 0xFF00;
+      square_1.period |= data;
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 1 (0x4002)\n", data);
       break;
     case 0x4003:
-      square_1.timer &= 0x00FF;
-      square_1.timer |= (data & 0x7) << 8;
+      square_1.period &= 0x00FF;
+      square_1.period |= (data & 0x7) << 8;
       square_1.envelope.start_ = true;
       if (sound_en_.ch_1) {
         square_1.length_counter.load(data >> 3);
@@ -177,13 +177,13 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4005)\n", data);
       break;
     case (0x4006):
-      square_2.timer &= 0xFF00;
-      square_2.timer |= data;
+      square_2.period &= 0xFF00;
+      square_2.period |= data;
       logger::log<logger::DEBUG_APU>("Write $%02X to Square 2 (0x4006)\n", data);
       break;
     case (0x4007):
-      square_2.timer &= 0x00FF;
-      square_2.timer |= (data & 0x7) << 8;
+      square_2.period &= 0x00FF;
+      square_2.period |= (data & 0x7) << 8;
       square_2.envelope.start_ = true;
       if (sound_en_.ch_2) {
         square_2.length_counter.load(data >> 3);
@@ -203,13 +203,13 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       // Unused
       break;
     case 0x400A:
-      triangle.timer &= 0xFF00;
-      triangle.timer |= data;
+      triangle.period &= 0xFF00;
+      triangle.period |= data;
       logger::log<logger::DEBUG_APU>("Write $%02X to Triangle (0x400A)\n", data);
       break;
     case 0x400B:
-      triangle.timer &= 0x00FF;
-      triangle.timer |= (data & 0x7) << 8;
+      triangle.period &= 0x00FF;
+      triangle.period |= (data & 0x7) << 8;
       if (sound_en_.ch_3) {
         triangle.length_counter.load(data >> 3);
       }
