@@ -93,7 +93,7 @@ void hw::apu::APU::clock() {
   float tnd_sum    = triangle.getOutput() / 8227.0 + noise.getOutput() / 12241.0 + dmc.getOutput() / 22638.0;
   float tnd_out    = tnd_sum == 0 ? 0 : 159.79 / (1 / tnd_sum + 100);
 
-  uint8_t buffer[1] = {(square_out + tnd_out) * 255};
+  uint8_t buffer[1] = {static_cast<uint8_t>((square_out + tnd_out) * 255)};
   speaker_->update(buffer, 1);
 }
 
@@ -160,11 +160,13 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       logger::log<logger::DEBUG_APU>("Write $%02X to Noise ($%04X)\n", data, address);
       break;
 
-    // TODO: DMC
+    // DMC
     case 0x4010:
     case 0x4011:
     case 0x4012:
     case 0x4013:
+      dmc.writeReg(address & 0x03, data);
+      logger::log<logger::DEBUG_APU>("Write $%02X to DMC ($%04X)\n", data, address);
       break;
 
     // Control

@@ -163,7 +163,13 @@ uint8_t hw::apu::channel::Noise::getOutput() {
 }
 
 
-// =*=*=*=*= Noise =*=*=*=*=
+// =*=*=*=*= DMC =*=*=*=*=
+
+void hw::apu::channel::DMC::writeReg(uint8_t reg, uint8_t data) {
+  (void) reg;
+  (void) data;
+  // TODO
+}
 
 void hw::apu::channel::DMC::clockFrame(APUClock clock_type) {
   switch (clock_type) {

@@ -133,29 +133,30 @@ private:
  *    Reader ---> Buffer ---> Shifter ---> Output level ---> (to mixer)
  */
 struct DMC : public Channel {
-  union {
-    uint8_t             raw_0 = {0};
-    utils::RegBit<0, 4> frequency;
-    utils::RegBit<6, 1> loop;
-    utils::RegBit<7, 1> IRQ_enable;
-  };
-  union {
-    uint8_t             raw_1 = {0};
-    utils::RegBit<0, 7> load_counter_;
-  };
-  union {
-    uint8_t raw_2 = {0};
-    uint8_t sample_address;
-  };
-  union {
-    uint8_t raw_3 = {0};
-    uint8_t sample_length;
-  };
-
-  void    writeReg(uint8_t /*reg*/, uint8_t /*data*/) override {};
+  void    writeReg(uint8_t reg, uint8_t data) override;
   void    clockCPU() override {};
   void    clockFrame(APUClock clock_type) override;
   uint8_t getOutput() override { return 0; };
+
+private:
+  union {
+    uint8_t             raw_0_ = {0};
+    utils::RegBit<0, 4> frequency_;
+    utils::RegBit<6, 1> loop_;
+    utils::RegBit<7, 1> IRQ_enable_;
+  };
+  union {
+    uint8_t             raw_1_ = {0};
+    utils::RegBit<0, 7> load_counter_;
+  };
+  union {
+    uint8_t raw_2_ = {0};
+    uint8_t sample_address_;
+  };
+  union {
+    uint8_t raw_3_ = {0};
+    uint8_t sample_length_;
+  };
 };
 
 }  // namespace hw::apu::channel
