@@ -1,6 +1,7 @@
 #include <nesemu/hw/rom.h>
 
 #include <nesemu/logger.h>
+#include <nesemu/utils/crc.h>
 
 #include <fstream>
 #include <iomanip>
@@ -77,5 +78,7 @@ int hw::rom::parseFromFile(std::string filename, Rom* rom) {
     file.read(reinterpret_cast<char*>(rom->chr), rom->header.chr_rom_size * 8 * 1024);
   }
 
+  file.seekg(16, std::ios::beg);
+  rom->crc = crc32_stream(file);
   return 0;
 }
