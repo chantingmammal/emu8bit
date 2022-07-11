@@ -9,6 +9,7 @@
 #include <nesemu/utils/steady_timer.h>
 
 #include <cstdio>
+#include <fstream>
 #include <getopt.h>
 #include <map>
 #include <string>
@@ -25,13 +26,16 @@ void printUsage() {
 
 int  init();
 void exit();
+void save(std::string& filename, hw::rom::Rom& rom);
 
 int main(int argc, char* argv[]) {
   int         opt = 0;
   std::string filename;
+  std::string save_filename;
   bool        allow_unofficial = true;
 
   static struct option long_options[] = {{"file", required_argument, nullptr, 'f'},
+                                         {"save", required_argument, nullptr, 's'},
                                          {"official", no_argument, nullptr, 'o'},
                                          {"quiet", no_argument, nullptr, 'q'},
                                          {"verbose", optional_argument, nullptr, 'v'},
@@ -42,6 +46,9 @@ int main(int argc, char* argv[]) {
     switch (opt) {
       case 'f':  // -f or --file
         filename = std::string(optarg);
+        break;
+      case 's':  // -s or --save
+        save_filename = std::string(optarg);
         break;
       case 'o':  // -o or --official
         allow_unofficial = false;
@@ -109,6 +116,34 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  if (rom.header.has_battery) {
+    if (save_filename.empty()) {
+      logger::log<logger::WARNING>("No save file specified, using '%08X.sav'\n", rom.crc);
+      char dfl_filename[13];
+      sprintf(dfl_filename, "%08X.sav", rom.crc);
+      save_filename = std::string(dfl_filename);
+    }
+
+    // If savefile doesn't exist or is corrupted, overwrite it. Otherwise, load it to RAM
+    std::fstream savefile(save_filename, std::ios::in | std::ios::binary | std::ios::ate);
+    if (!savefile || savefile.tellg() != 0x2000) {
+      logger::log<logger::INFO>("Creating new save file '%s'... ", save_filename.c_str());
+      savefile.close();
+      savefile.open(save_filename, std::ios::out | std::ios::binary | std::ios::trunc);
+      savefile.write(reinterpret_cast<char*>(rom.expansion), 0x2000);
+      logger::log<logger::INFO>("Done\n");
+    } else {
+      logger::log<logger::INFO>("Loading save data from file '%s'... ", save_filename.c_str());
+      savefile.seekg(0, std::ios::beg);
+      savefile.read(reinterpret_cast<char*>(rom.expansion), 0x2000);
+      logger::log<logger::INFO>("Done\n");
+    }
+  } else if (!save_filename.empty()) {
+    logger::log<logger::WARNING>("Save file '%s' specified, but '%s' does not support battery backup\n",
+                                 save_filename.c_str(),
+                                 filename.c_str());
+  }
+
   // Initialize SDL
   if (init()) {
     exit();
@@ -147,7 +182,6 @@ int main(int argc, char* argv[]) {
 
   // Start the hardware
   console.start();
-
 
   utils::SteadyTimer<1, 30> sdl_timer;
   sdl_timer.start();
@@ -224,6 +258,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  save(save_filename, rom);
   exit();
   return 0;
 }
@@ -243,8 +278,19 @@ int init() {
   return 0;
 }
 
+/// Save to file
+void save(std::string& file, hw::rom::Rom& rom) {
+  if (rom.header.has_battery) {
+    logger::log<logger::INFO>("Saving to file '%s'... ", file.c_str());
+    std::ofstream savefile(file, std::ios::out | std::ios::binary | std::ios::trunc);
+    savefile.write(reinterpret_cast<char*>(rom.expansion), 0x2000);
+    logger::log<logger::INFO>("Done\n");
+  }
+}
+
 /// Cleanup windows and shutdown SDL subsystems
 void exit() {
+  logger::log<logger::INFO>("Shutting down... ");
 
   // Cleanup all windows
   for (auto&& window : windows) {
@@ -256,4 +302,6 @@ void exit() {
 
   // Quit SDL subsystems
   SDL_Quit();
+
+  logger::log<logger::INFO>("Done\n");
 }

@@ -26,10 +26,11 @@ inline std::string uint8_to_hex_string(const uint8_t* arr, const std::size_t siz
 int hw::rom::parseFromFile(std::string filename, Rom* rom) {
   std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
 
-  if (!file.is_open()) {
-    logger::log<logger::ERROR>("Unable to open file %s\n", filename.c_str());
+  if (!file) {
+    logger::log<logger::ERROR>("Unable to open file '%s'\n", filename.c_str());
     return 1;
   }
+  logger::log<logger::INFO>("Loading ROM from file '%s'... ", filename.c_str());
 
   std::streampos size = file.tellg();
   file.seekg(0, std::ios::beg);
@@ -57,6 +58,7 @@ int hw::rom::parseFromFile(std::string filename, Rom* rom) {
   if (rom->header.has_battery) {
     rom->expansion = new uint8_t[1][0x2000];
 
+    // TODO: Handle trainers better (https://forums.nesdev.org/viewtopic.php?t=3657)
     if (rom->header.has_trainer) {
       rom->trainer = rom->expansion[0] + 0x1000;
       file.read(reinterpret_cast<char*>(&rom->trainer), 512);
@@ -80,5 +82,7 @@ int hw::rom::parseFromFile(std::string filename, Rom* rom) {
 
   file.seekg(16, std::ios::beg);
   rom->crc = crc32_stream(file);
+
+  logger::log<logger::INFO>("Done\n");
   return 0;
 }
