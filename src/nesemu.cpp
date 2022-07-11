@@ -195,6 +195,16 @@ int main(int argc, char* argv[]) {
             case SDLK_2:
               windows["oam"]->focus();
               break;
+
+            // Volume down
+            case SDLK_LEFTBRACKET:
+              speaker.addVolume(-0.1);
+              break;
+
+            // Volume up
+            case SDLK_RIGHTBRACKET:
+              speaker.addVolume(0.1);
+              break;
           }
         } else if (event.type == SDL_KEYUP) {
           switch (event.key.keysym.sym) {
