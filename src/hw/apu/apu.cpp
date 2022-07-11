@@ -94,7 +94,9 @@ void hw::apu::APU::clock() {
   float tnd_out    = tnd_sum == 0 ? 0 : 159.79 / (1 / tnd_sum + 100);
 
   uint8_t buffer[1] = {static_cast<uint8_t>((square_out + tnd_out) * 255)};
-  speaker_->update(buffer, 1);
+  if (speaker_) {
+    speaker_->update(buffer, 1);
+  }
 }
 
 
