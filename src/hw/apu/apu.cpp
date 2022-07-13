@@ -114,10 +114,12 @@ uint8_t hw::apu::APU::readRegister(uint16_t address) {
   status.ch_2                            = square_2.status();
   status.ch_3                            = triangle.status();
   status.ch_4                            = noise.status();
-  status.ch_5                            = false;  // TODO
+  status.ch_5                            = dmc.status();
   status.frame_interrupt                 = has_irq_;
-  status.dmc_interrupt                   = false;  // TODO
+  status.dmc_interrupt                   = dmc.hasIRQ();
 
+  // TODO: If an interrupt flag was set at the same moment of the read, it will read back as 1 but it will not be
+  // cleared.
   has_irq_ = false;
   logger::log<logger::DEBUG_APU>("Read $%02X from Status (0x4015)\n", status.raw);
   return status.raw;
@@ -179,11 +181,6 @@ void hw::apu::APU::writeRegister(uint16_t address, uint8_t data) {
       triangle.enable(sound_en_.ch_3);
       noise.enable(sound_en_.ch_4);
       dmc.enable(sound_en_.ch_5);
-      if (!sound_en_.ch_5) {
-        ;  // TODO: Set bytes remaining to 0
-      } else {
-        ;  // TODO: Restart DMC sample only if bytes remaining > 0
-      }
       logger::log<logger::DEBUG_APU>("Write $%02X to Status (0x4015)\n", data);
       break;
 

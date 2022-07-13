@@ -12,13 +12,8 @@ namespace hw::apu::channel {
 
 class Channel {
 public:
-  virtual void enable(bool enabled) {
-    enabled_ = enabled;
-    if (!enabled_) {
-      length_counter_.counter_ = 0;
-    }
-  }
-  virtual bool status() { return length_counter_.counter_ > 0; }
+  virtual void enable(bool enabled) { enabled_ = enabled; }
+  virtual bool status() = 0;
 
   virtual void    writeReg(uint8_t reg, uint8_t data) = 0;
   virtual void    clockCPU()                          = 0;
@@ -26,7 +21,21 @@ public:
   virtual uint8_t getOutput()                         = 0;
 
 protected:
-  bool                enabled_ = {false};
+  bool enabled_ = {false};
+};
+
+
+class StandardChannel : public Channel {
+public:
+  virtual void enable(bool enabled) override {
+    Channel::enable(enabled);
+    if (!enabled_) {
+      length_counter_.counter_ = 0;
+    }
+  }
+  virtual bool status() override { return length_counter_.counter_ > 0; }
+
+protected:
   unit::LengthCounter length_counter_;
 };
 
@@ -42,7 +51,7 @@ protected:
  *                       v            v             v
  *    Envelope -------> Gate -----> Gate -------> Gate ---> (to mixer)
  */
-class Square : public Channel {
+class Square : public StandardChannel {
 public:
   Square(int channel) {
     sweep_.channel_period_ = &period_;
@@ -77,7 +86,7 @@ private:
  *                v                v
  *    Timer ---> Gate ----------> Gate ---> Sequencer ---> (to mixer)
  */
-class Triangle : public Channel {
+class Triangle : public StandardChannel {
 public:
   Triangle() { timer_.setExtPeriod(&period_); }
 
@@ -106,7 +115,7 @@ private:
  *                       v                v
  *    Envelope -------> Gate ----------> Gate ---> (to mixer)
  */
-class Noise : public Channel {
+class Noise : public StandardChannel {
 public:
   void    writeReg(uint8_t reg, uint8_t data) override;
   void    clockCPU() override;
@@ -133,30 +142,41 @@ private:
  *    Reader ---> Buffer ---> Shifter ---> Output level ---> (to mixer)
  */
 struct DMC : public Channel {
+
+  void    enable(bool enabled) override;
+  bool    status() override { return dma_remaining_ > 0; }
   void    writeReg(uint8_t reg, uint8_t data) override;
-  void    clockCPU() override {};
-  void    clockFrame(APUClock clock_type) override;
-  uint8_t getOutput() override { return 0; };
+  void    clockCPU() override;
+  void    clockFrame(APUClock /*clock_type*/) override {};
+  uint8_t getOutput() override { return output_ & 0x7F; };
+
+  bool hasIRQ() { return irq_; }
 
 private:
-  union {
-    uint8_t             raw_0_ = {0};
-    utils::RegBit<0, 4> frequency_;
-    utils::RegBit<6, 1> loop_;
-    utils::RegBit<7, 1> IRQ_enable_;
-  };
-  union {
-    uint8_t             raw_1_ = {0};
-    utils::RegBit<0, 7> load_counter_;
-  };
-  union {
-    uint8_t raw_2_ = {0};
-    uint8_t sample_address_;
-  };
-  union {
-    uint8_t raw_3_ = {0};
-    uint8_t sample_length_;
-  };
+  static constexpr uint16_t PERIODS[16] = {428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 84, 72, 54};
+
+  void DMAFetch();
+
+  bool     loop_;
+  bool     IRQ_enable_;
+  uint16_t sample_address_;
+  uint16_t sample_length_;
+
+  // Timer cannot be stopped
+  unit::Divider<uint16_t> timer_;
+
+  // DMA
+  uint16_t dma_address_;
+  uint16_t dma_remaining_; // In bytes
+  uint8_t  sample_buffer_;
+  bool     has_sample_;
+
+  // Output
+  uint8_t bits_remaining_;
+  uint8_t bit_buffer_;    // Right shift register
+  uint8_t output_ = {0};  // 7 bits
+  bool    silence_;
+  bool    irq_;
 };
 
 }  // namespace hw::apu::channel
