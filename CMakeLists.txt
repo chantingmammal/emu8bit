@@ -25,7 +25,10 @@ include_directories(include ${SDL2_INCLUDE_DIRS})
 
 add_executable(${PROJECT_NAME}
   src/hw/apu/apu.cpp
-  src/hw/apu/channels.cpp
+  src/hw/apu/channels/dmc.cpp
+  src/hw/apu/channels/noise.cpp
+  src/hw/apu/channels/square.cpp
+  src/hw/apu/channels/triangle.cpp
   src/hw/apu/units.cpp
   src/hw/console.cpp
   src/hw/cpu.cpp
