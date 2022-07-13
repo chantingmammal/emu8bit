@@ -17,7 +17,9 @@ void hw::apu::channel::DMC::enable(bool enabled) {
     if (dma_remaining_ == 0) {
       dma_address_   = sample_address_;
       dma_remaining_ = sample_length_;
-      DMAFetch();
+
+      // Initiate DMA fetch
+      dma_active_ = true;
     }
   }
 }
@@ -40,10 +42,10 @@ void hw::apu::channel::DMC::writeReg(uint8_t reg, uint8_t data) {
       output_ = data & 0x7F;
       break;
     case 0x02:
-      sample_address_ = 0xC000 | (data << 6);
+      sample_address_ = 0xC000 | ((uint16_t) data << 6);
       break;
     case 0x03:
-      sample_length_ = (data << 4) | 0x0001;
+      sample_length_ = ((uint16_t) data << 4) | 0x0001;
       break;
   }
 }
@@ -59,7 +61,7 @@ void hw::apu::channel::DMC::clockCPU() {
     if (bit_buffer_ & 0x01) {
       output_ += (output_ <= 125) ? 2 : 0;
     } else {
-      output_ -= (output_ >= 125) ? 2 : 0;
+      output_ -= (output_ >= 2) ? 2 : 0;
     }
   }
 
@@ -68,9 +70,14 @@ void hw::apu::channel::DMC::clockCPU() {
   if (bits_remaining_ == 0) {
     bits_remaining_ = 8;
     if (has_sample_) {
+      has_sample_ = false;
       silence_    = false;
       bit_buffer_ = sample_buffer_;
-      DMAFetch();
+
+      // Initiate DMA fetch
+      if (dma_remaining_ > 0) {
+        dma_active_ = true;
+      }
     } else {
       silence_ = true;
     }
@@ -78,19 +85,21 @@ void hw::apu::channel::DMC::clockCPU() {
 };
 
 
-void hw::apu::channel::DMC::DMAFetch() {
-  // TODO: Read sample from memory. Requires CPU stalls
-  //  sample_buffer_ = READ(dma_address_);
+void hw::apu::channel::DMC::DMAPush(uint8_t data) {
+  dma_active_    = false;
+  sample_buffer_ = data;
+  has_sample_    = true;
 
   // Increment DMA address
   dma_address_ = (dma_address_ + 1) | 0x8000;
 
   // Decrement DMA bytes remaining
-  if (dma_remaining_ > 0) {
+  if (dma_remaining_ > 0) { // Should always be true
     dma_remaining_--;
     if (dma_remaining_ == 0 && loop_) {
       dma_address_   = sample_address_;
       dma_remaining_ = sample_length_;
+      dma_active_    = true;
     } else if (dma_remaining_ == 0 && IRQ_enable_) {
       has_irq_ = true;
     }

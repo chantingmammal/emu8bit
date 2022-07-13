@@ -152,10 +152,13 @@ struct DMC : public Channel {
 
   bool hasIRQ() const { return has_irq_; }
 
+  // The CPU polls the DMA
+  bool     DMAActive() const { return dma_active_; };
+  uint16_t DMAAddr() const { return dma_address_; }
+  void     DMAPush(uint8_t data);
+
 private:
   static constexpr uint16_t PERIODS[16] = {428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 84, 72, 54};
-
-  void DMAFetch();
 
   bool     loop_;
   bool     IRQ_enable_;
@@ -166,6 +169,9 @@ private:
   unit::Divider<uint16_t> timer_;
 
   // DMA
+  // A DMA read is initiated by setting dma_active_. The CPU sees this, stalls appropriately, and returns the result
+  // when ready via DMAPush(). This means it's more CPU-driven than DMA-driven, but this is easier for inserting stalls
+  bool     dma_active_ = {false};
   uint16_t dma_address_;
   uint16_t dma_remaining_;  // In bytes
   uint8_t  sample_buffer_;

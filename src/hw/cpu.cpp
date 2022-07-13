@@ -1069,7 +1069,7 @@ uint8_t hw::cpu::CPU::readByte(uint16_t address) {
 void hw::cpu::CPU::writeByte(uint16_t address, uint8_t data) {
   tick();
 
-  // Writes are prohibitted during reset, reads performed instead
+  // Writes are prohibited during reset, reads performed instead
   if (irq_reset_) {
     bus_->read(address);
   } else {
@@ -1086,8 +1086,12 @@ uint8_t hw::cpu::CPU::pop() {
 }
 
 void hw::cpu::CPU::tick(int ticks) {
+  // TODO: DMA stalls
   for (; ticks > 0; ticks--) {
     bus_->clock();
+  }
+  if (bus_->hasDMCDMA()) {
+    bus_->doDMCDMA();
   }
   pollInterrupt();
 }

@@ -53,6 +53,9 @@ public:
   void    write(uint16_t address, uint8_t data);
   void    clock();
 
+  // DMC DMA
+  bool hasDMCDMA() const;
+  void doDMCDMA();
 
 private:
   // Memory

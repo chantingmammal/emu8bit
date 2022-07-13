@@ -173,3 +173,11 @@ void hw::system_bus::SystemBus::clock() {
 
   clock_->sleep();
 }
+
+bool hw::system_bus::SystemBus::hasDMCDMA() const {
+  return apu_->DMAActive();
+}
+
+void hw::system_bus::SystemBus::doDMCDMA() {
+  apu_->DMAPush(read(apu_->DMAAddr()));
+}

@@ -42,6 +42,12 @@ public:
   uint8_t readRegister(uint16_t address);
   void    writeRegister(uint16_t address, uint8_t data);
 
+  // DMC DMA
+  bool     DMAActive() const { return dmc.DMAActive(); };
+  uint16_t DMAAddr() const { return dmc.DMAAddr(); }
+  void     DMAPush(uint8_t data) { dmc.DMAPush(data); }
+
+
 private:
   // Other chips
   ui::Speaker* speaker_ = {nullptr};
