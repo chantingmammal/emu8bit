@@ -39,15 +39,15 @@ void hw::apu::unit::Sweep::clock() {
   }
 }
 
-uint16_t hw::apu::unit::Sweep::getTarget() {
+uint16_t hw::apu::unit::Sweep::getTarget() const {
   return *channel_period_ + (*channel_period_ >> shift_count_) * (negate_ ? -1 : 1) - (negate_ && !is_ch_2_ ? 1 : 0);
 }
 
-uint8_t hw::apu::unit::Sweep::getOutput(uint8_t input) {
+uint8_t hw::apu::unit::Sweep::getOutput(uint8_t input) const {
   return mute() ? 0 : input;
 }
 
-bool hw::apu::unit::Sweep::mute() {
+bool hw::apu::unit::Sweep::mute() const {
   return *channel_period_ < 8 || getTarget() > 0x7FF;
 }
 
@@ -122,7 +122,7 @@ void hw::apu::unit::LengthCounter::clock() {
   counter_--;
 }
 
-uint8_t hw::apu::unit::LengthCounter::getOutput(uint8_t input) {
+uint8_t hw::apu::unit::LengthCounter::getOutput(uint8_t input) const {
   return (counter_ == 0) ? 0 : input;
 }
 
@@ -141,6 +141,6 @@ void hw::apu::unit::LinearCounter::clock() {
   }
 }
 
-uint8_t hw::apu::unit::LinearCounter::getOutput(uint8_t input) {
+uint8_t hw::apu::unit::LinearCounter::getOutput(uint8_t input) const {
   return (counter_ == 0) ? 0 : input;
 }

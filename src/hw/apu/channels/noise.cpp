@@ -53,6 +53,6 @@ void hw::apu::channel::Noise::clockFrame(APUClock clock_type) {
 }
 
 
-uint8_t hw::apu::channel::Noise::getOutput() {
+uint8_t hw::apu::channel::Noise::getOutput() const {
   return (lfsr_ & 0x01) == 0 ? 0 : length_counter_.getOutput(envelope_.getOutput());
 }

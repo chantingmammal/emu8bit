@@ -3,11 +3,12 @@
 #include <nesemu/hw/apu/apu_clock.h>
 
 #include <cstdint>
+#include <cstdio>
 
 
 void hw::apu::channel::DMC::enable(bool enabled) {
   Channel::enable(enabled);
-  irq_ = false;
+  has_irq_ = false;
   if (!enabled) {
     dma_remaining_ = 0;
     // TODO: Clear loop flag?
@@ -29,7 +30,7 @@ void hw::apu::channel::DMC::writeReg(uint8_t reg, uint8_t data) {
       loop_       = data & 0x40;
       IRQ_enable_ = data & 0x80;
       if (!IRQ_enable_) {
-        irq_ = false;
+        has_irq_ = false;
       }
       break;
     case 0x01:
@@ -91,7 +92,7 @@ void hw::apu::channel::DMC::DMAFetch() {
       dma_address_   = sample_address_;
       dma_remaining_ = sample_length_;
     } else if (dma_remaining_ == 0 && IRQ_enable_) {
-      irq_ = true;
+      has_irq_ = true;
     }
   }
 }

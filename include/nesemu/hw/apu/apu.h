@@ -38,7 +38,7 @@ public:
 
   // Execution
   void    clock();
-  bool    hasIRQ() const { return has_irq_; }
+  bool    hasIRQ() const { return has_irq_ || dmc.hasIRQ(); }
   uint8_t readRegister(uint16_t address);
   void    writeRegister(uint16_t address, uint8_t data);
 
@@ -48,7 +48,7 @@ private:
 
   inline void clockFrame(APUClock clock_type);
 
-  bool has_irq_ = {false};
+  bool has_irq_ = {false};  // "Frame Counter"
 
   channel::Square          square_1 = {1};   // CPU 0x4000 - 0x4003
   channel::Square          square_2 = {2};   // CPU 0x4004 - 0x4007

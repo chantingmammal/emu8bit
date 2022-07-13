@@ -62,7 +62,7 @@ void hw::apu::channel::Square::clockFrame(APUClock clock_type) {
 }
 
 
-uint8_t hw::apu::channel::Square::getOutput() {
+uint8_t hw::apu::channel::Square::getOutput() const {
   bool sequencer = SEQUENCE[duty_cycle_] & (1 << (8 - sequencer_.get()));
   return length_counter_.getOutput(sequencer ? sweep_.getOutput(envelope_.getOutput()) : 0);
 }

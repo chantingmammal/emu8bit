@@ -63,7 +63,7 @@ public:
   bool    start_ = {false};  // Flag to indicate restart
 
   void    clock();
-  uint8_t getOutput() { return const_volume_ ? volume_ : decay_level_; }
+  uint8_t getOutput() const { return const_volume_ ? volume_ : decay_level_; }
 
 private:
   uint8_t decay_level_ = {0};  // 4-bit. 0 to 15. The current decay level
@@ -101,11 +101,11 @@ public:
   bool             reload_      = {false};  // Flag to force a reload
 
   void     clock();
-  uint16_t getTarget();
-  uint8_t  getOutput(uint8_t input);
+  uint16_t getTarget() const;
+  uint8_t  getOutput(uint8_t input) const;
 
 private:
-  bool mute();
+  bool mute() const;
 };
 
 
@@ -124,7 +124,7 @@ public:
 
   void    load(uint8_t code);
   void    clock();
-  uint8_t getOutput(uint8_t input);
+  uint8_t getOutput(uint8_t input) const;
 };
 
 
@@ -143,7 +143,7 @@ public:
   bool    reload_       = {false};
 
   void    clock();
-  uint8_t getOutput(uint8_t input);
+  uint8_t getOutput(uint8_t input) const;
 };
 
 
@@ -159,7 +159,7 @@ class Sequencer {
 public:
   void      reset() { pos_ = 0; };
   void      clock() { pos_ = (pos_ + 1) % SEQ_LEN; };
-  virtual T get() { return pos_; };
+  virtual T get() const { return pos_; };
 
 private:
   T pos_ = 0;
