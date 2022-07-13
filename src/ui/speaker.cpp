@@ -17,9 +17,21 @@ size_t inserted_samples = {0};
 
 extern "C" void audio_callback(void* userdata, uint8_t* stream, int len) {
   (void) userdata;
+
+  static bool startup_complete = false;
+  if (!startup_complete) {
+    if (audio_buffer_size < len * 1.5) {
+      memset(stream, 0, len);
+      return;
+    } else {
+      startup_complete = true;
+    }
+  }
+
   if (audio_buffer_size == 0) {
     // No salvaging this, nothing to stretch :/
     inserted_samples += len;
+    memset(stream, 0, len);
     return;
   }
 
