@@ -23,7 +23,7 @@ private:
   static constexpr int             UPSAMPLE        = 11;
   static constexpr int             FREQ_A          = 500;
   static constexpr int             FREQ_B          = (39375000 * UPSAMPLE) / (22 * FREQ_A);
-  static constexpr int             OUTPUT_C        = 48000;      // Output freq
+  static constexpr int             OUTPUT_C        = 44100;      // Output freq
   static constexpr SDL_AudioFormat OUTPUT_FORMAT   = AUDIO_U8;   // Unsigned 8-bit samples
   static constexpr uint8_t         OUTPUT_CHANNELS = 1;          // Mono
   static constexpr uint16_t        OUTPUT_SAMPLES  = (1 << 12);  // Buffer size, in samples

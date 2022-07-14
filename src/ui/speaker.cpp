@@ -102,7 +102,12 @@ bool ui::Speaker::init() {
     logger::log<logger::ERROR>("Couldn't open create audio stream: %s\n", SDL_GetError());
     return 1;
   }
-  if (!(downsampler_b_ = SDL_NewAudioStream(AUDIO_U8, 1, FREQ_B, AUDIO_U8, 1, audio_spec_.freq))) {
+  if (!(downsampler_b_ = SDL_NewAudioStream(AUDIO_U8,
+                                            1,
+                                            FREQ_B,
+                                            audio_spec_.format,
+                                            audio_spec_.channels,
+                                            audio_spec_.freq))) {
     logger::log<logger::ERROR>("Couldn't open create audio stream: %s\n", SDL_GetError());
     return 1;
   }
