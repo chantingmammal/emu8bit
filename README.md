@@ -19,7 +19,27 @@ make
 
 ## Usage
 
-`nesemu --file file.rom`
+```
+Usage: nesemu [options]... file.nes
+  -h --help               print this usage and exit
+  -s --save=file.sav      specify the savefile to use. Default {ROMCRC32}.sav
+  -o --official           allow unofficial opcodes
+  -q --quiet              disable all logging
+  -v --verbose[=abceimpw] specify the log levels. If no argument is specified,
+                          all messages are displayed. Every level implies all
+                          log levels (eg. INFO implies WARNING and ERROR)
+                            a = APU DEBUG messages
+                            b = bus DEBUG messages
+                            c = CPU DEBUG messages
+                            e = ERROR messages
+                            i = INFO messages
+                            m = mapper DEBUG messages
+                            p = PPU DEBUG messages
+                            w = WARNING messages
+
+  If neither -q nor -v are specified, the default log level of
+   INFO|WARNING|ERROR is used.
+```
 
 ## Controls
 

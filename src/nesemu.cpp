@@ -21,7 +21,25 @@ std::map<std::string, ui::Window*> windows;
 ui::Speaker                        speaker;
 
 void printUsage() {
-  printf("Usage: nesemu --file ROM.nes\n");
+  printf("Usage: nesemu [options]... file.nes\n");
+  printf("  -h --help               print this usage and exit\n");
+  printf("  -s --save=file.sav      specify the savefile to use. Default {ROMCRC32}.sav\n");
+  printf("  -o --official           allow unofficial opcodes\n");
+  printf("  -q --quiet              disable all logging\n");
+  printf("  -v --verbose[=abceimpw] specify the log levels. If no argument is specified,\n");
+  printf("                          all messages are displayed. Every level implies all\n");
+  printf("                          log levels (eg. INFO implies WARNING and ERROR)\n");
+  printf("                            a = APU DEBUG messages\n");
+  printf("                            b = bus DEBUG messages\n");
+  printf("                            c = CPU DEBUG messages\n");
+  printf("                            e = ERROR messages\n");
+  printf("                            i = INFO messages\n");
+  printf("                            m = mapper DEBUG messages\n");
+  printf("                            p = PPU DEBUG messages\n");
+  printf("                            w = WARNING messages\n");
+  printf("  \n");
+  printf("  If neither -q nor -v are specified, the default log level of\n");
+  printf("   INFO|WARNING|ERROR is used.\n");
 }
 
 int  init();
@@ -34,8 +52,7 @@ int main(int argc, char* argv[]) {
   std::string save_filename;
   bool        allow_unofficial = true;
 
-  static struct option long_options[] = {{"file", required_argument, nullptr, 'f'},
-                                         {"save", required_argument, nullptr, 's'},
+  static struct option long_options[] = {{"save", required_argument, nullptr, 's'},
                                          {"official", no_argument, nullptr, 'o'},
                                          {"quiet", no_argument, nullptr, 'q'},
                                          {"verbose", optional_argument, nullptr, 'v'},
@@ -44,9 +61,6 @@ int main(int argc, char* argv[]) {
 
   while ((opt = getopt_long(argc, argv, "f:s:oqv::h", long_options, nullptr)) != -1) {
     switch (opt) {
-      case 'f':  // -f or --file
-        filename = std::string(optarg);
-        break;
       case 's':  // -s or --save
         save_filename = std::string(optarg);
         break;
@@ -106,10 +120,12 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (filename.empty()) {
+  // Parse rom filename
+  if (optind >= argc) {
     printUsage();
     return 1;
   }
+  filename = std::string(argv[optind]);
 
   hw::rom::Rom rom;
   if (hw::rom::parseFromFile(filename, &rom)) {
