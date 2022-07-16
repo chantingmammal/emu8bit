@@ -14,11 +14,11 @@ void ui::Screen::update(const uint32_t* pixels) {
 
   frame_++;
   if ((frame_ % 10) == 0) {
-    size_t size   = snprintf(nullptr, 0, "%s | %.2f FPS", title_.c_str(), 1.0 / fps_buffer_.avg()) + 1;
-    char*  buffer = new char[size];
-    snprintf(buffer, size, "%s | %.2f FPS", title_.c_str(), 1.0 / fps_buffer_.avg());
-    SDL_SetWindowTitle(window_, buffer);
-    delete buffer;
+    static const size_t MAX_SIZE = snprintf(nullptr, 0, "%s | 1000.00 FPS", title_.c_str()) + 1;
+    static char*        BUFFER   = new char[MAX_SIZE];
+
+    snprintf(BUFFER, MAX_SIZE, "%s | %.1f FPS", title_.c_str(), 1.0 / fps_buffer_.avg());
+    SDL_SetWindowTitle(window_, BUFFER);
   }
 
   SDL_UpdateTexture(texture_, nullptr, pixels, TEXTURE_WIDTH * sizeof(uint32_t));

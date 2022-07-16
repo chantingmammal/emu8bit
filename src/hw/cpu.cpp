@@ -11,11 +11,11 @@
 
 template <typename... T>
 inline void log(uint16_t addr, uint8_t opcode, const char* format, T... args) {
-  size_t size   = snprintf(nullptr, 0, "$%04X> $%02X %s", addr, opcode, format) + 1;
-  char*  buffer = new char[size];
-  snprintf(buffer, size, "$%04X> $%02X %s", addr, opcode, format);
-  logger::log<logger::DEBUG_CPU>(buffer, args...);
-  delete buffer;
+  static constexpr size_t MAX_SIZE = 256;
+  static char             BUFFER[MAX_SIZE];
+
+  snprintf(BUFFER, MAX_SIZE, "$%04X> $%02X %s", addr, opcode, format);
+  logger::log<logger::DEBUG_CPU>(BUFFER, args...);
 }
 
 
