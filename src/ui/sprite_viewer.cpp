@@ -17,8 +17,8 @@ void ui::SpriteViewer::update() {
   for (uint8_t row = 0; row < 8; row++) {
     for (uint8_t col = 0; col < 8; col++) {
 
-      const uint8_t sprite_id = row*8 + col;
-      const hw::ppu::PPU::Sprite& sprite = ppu_->primary_oam_.sprite[sprite_id];
+      const uint8_t               sprite_id = row * 8 + col;
+      const hw::ppu::PPU::Sprite& sprite    = ppu_->primary_oam_.sprite[sprite_id];
 
       const uint16_t pattern_addr = sprite.small_tile_index << 4                          // Base tile address
                                     | ppu_->ctrl_reg_1_.sprite_pattern_table_addr << 12;  // Pattern table
@@ -45,10 +45,10 @@ void ui::SpriteViewer::update() {
   SDL_Rect dest;
   if (width_ * TEXTURE_HEIGHT < height_ * TEXTURE_WIDTH) {
     const int h = (width_ * TEXTURE_HEIGHT) / TEXTURE_WIDTH;
-    dest  = SDL_Rect{0, (height_ - h) / 2, width_, h};
+    dest        = SDL_Rect {0, (height_ - h) / 2, width_, h};
   } else {
     const int w = (height_ * TEXTURE_WIDTH) / TEXTURE_HEIGHT;
-    dest  = SDL_Rect{(width_ - w) / 2, 0, w, height_};
+    dest        = SDL_Rect {(width_ - w) / 2, 0, w, height_};
   }
   SDL_RenderCopy(renderer_, texture_, NULL, &dest);
   SDL_RenderPresent(renderer_);

@@ -1,6 +1,6 @@
 #include <nesemu/ui/screen.h>
 
-#include <cstdio>     // snprintf
+#include <cstdio>  // snprintf
 
 
 void ui::Screen::update(const uint32_t* pixels) {

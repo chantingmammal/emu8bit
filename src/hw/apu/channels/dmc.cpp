@@ -94,7 +94,7 @@ void hw::apu::channel::DMC::DMAPush(uint8_t data) {
   dma_address_ = (dma_address_ + 1) | 0x8000;
 
   // Decrement DMA bytes remaining
-  if (dma_remaining_ > 0) { // Should always be true
+  if (dma_remaining_ > 0) {  // Should always be true
     dma_remaining_--;
     if (dma_remaining_ == 0 && loop_) {
       dma_address_   = sample_address_;

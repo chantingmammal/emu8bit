@@ -83,10 +83,10 @@ void ui::NametableViewer::update() {
   SDL_Rect dest;
   if (width_ * TEXTURE_HEIGHT < height_ * TEXTURE_WIDTH) {
     const int h = (width_ * TEXTURE_HEIGHT) / TEXTURE_WIDTH;
-    dest  = SDL_Rect{0, (height_ - h) / 2, width_, h};
+    dest        = SDL_Rect {0, (height_ - h) / 2, width_, h};
   } else {
     const int w = (height_ * TEXTURE_WIDTH) / TEXTURE_HEIGHT;
-    dest  = SDL_Rect{(width_ - w) / 2, 0, w, height_};
+    dest        = SDL_Rect {(width_ - w) / 2, 0, w, height_};
   }
   SDL_RenderCopy(renderer_, texture_, NULL, &dest);
   SDL_RenderPresent(renderer_);

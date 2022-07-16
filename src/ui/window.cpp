@@ -14,8 +14,8 @@ bool ui::Window::init(const std::string&& title, bool shown) {
   if (!(window_ = SDL_CreateWindow(title_.c_str(),           // Window title
                                    SDL_WINDOWPOS_UNDEFINED,  // Initial x position
                                    SDL_WINDOWPOS_UNDEFINED,  // Initial y position
-                                   TEXTURE_WIDTH,             // Width, in pixels
-                                   TEXTURE_HEIGHT,            // Height, in pixels
+                                   TEXTURE_WIDTH,            // Width, in pixels
+                                   TEXTURE_HEIGHT,           // Height, in pixels
                                    window_flags))) {         // Flags
     logger::log<logger::ERROR>("Window initialization failed: %s\n", SDL_GetError());
     return 1;
