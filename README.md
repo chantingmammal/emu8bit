@@ -2,7 +2,7 @@
 
 A (hopefully) cycle-accurate NES emulator.
 
-This personal project is more of a learning experience than an optimized emulator. Includes cycle-accurate emulation of the NES's CPU (a MOS6502 derivative), as well as the NES's PPU (Picture Processing Unit). The APU DMC is not yet implemented, but the other four channels are functional.
+This personal project is more of a learning experience than an optimized emulator. Targets cycle-accurate emulation of the NES's CPU (a MOS6502 derivative), APU, and PPU.
 
 ## Building
 
