@@ -61,9 +61,14 @@ void hw::console::Console::start() {
 
 void hw::console::Console::update() {
   cpu_.reset(reset_);
+  // TODO: Reset APU & PPU regs
   cpu_.executeInstruction();
 }
 
 void hw::console::Console::reset(bool reset) {
   reset_ = reset;
+  // speaker_->pause(reset_);
+  if (!reset_) {
+    clock_.start();
+  }
 }

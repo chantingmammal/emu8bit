@@ -1116,7 +1116,6 @@ void hw::cpu::CPU::interrupt() {
 
   // While reset is held, only handle the IRQ once
   if (irq_reset_ && reset_ready_) {
-    tick();
     return;
   }
 

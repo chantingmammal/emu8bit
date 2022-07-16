@@ -10,11 +10,12 @@ namespace ui {
 
 class Speaker {
 public:
-  virtual bool init();
-  virtual void close();
-  virtual void update(uint8_t* stream, size_t len);
-  virtual void setVolume(float volume) { volume_ = std::max(std::min(volume, 1.f), 0.f); };
-  virtual void addVolume(float delta) { volume_ = std::max(std::min(volume_ + delta, 1.f), 0.f); };
+  bool init();
+  void close();
+  void update(uint8_t* stream, size_t len);
+  void setVolume(float volume) { volume_ = std::max(std::min(volume, 1.f), 0.f); };
+  void addVolume(float delta) { volume_ = std::max(std::min(volume_ + delta, 1.f), 0.f); };
+  void pause(bool pause);
 
 private:
   // We need to downsample from ~1.79MHz to a standard freq like 48kHz. Since 1.79MHz is too fast, we downsample in two

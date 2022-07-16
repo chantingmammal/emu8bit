@@ -168,3 +168,7 @@ void ui::Speaker::update(uint8_t* stream, size_t len) {
   // TODO: 440Hz first-order high-pass
   // TODO: 14kHz first-order low-pass
 }
+
+void ui::Speaker::pause(bool pause) {
+  SDL_PauseAudioDevice(device_, pause);
+}
