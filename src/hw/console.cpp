@@ -60,12 +60,10 @@ void hw::console::Console::start() {
 }
 
 void hw::console::Console::update() {
+  cpu_.reset(reset_);
   cpu_.executeInstruction();
 }
 
-void hw::console::Console::handleEvent(const SDL_Event& event) {
-  if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_r)
-    cpu_.reset(true);
-  if (event.type == SDL_KEYUP && event.key.keysym.sym == SDLK_r)
-    cpu_.reset(false);
+void hw::console::Console::reset(bool reset) {
+  reset_ = reset;
 }

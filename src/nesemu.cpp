@@ -208,12 +208,14 @@ int main(int argc, char* argv[]) {
           window.second->handleEvent(event);
         }
 
-        // Handle console events (Controller input)
-        console.handleEvent(event);
-
         // Emulator controls
         if (event.type == SDL_KEYDOWN) {
           switch (event.key.keysym.sym) {
+
+            // Reset
+            case SDLK_r:
+              console.reset(true);
+              break;
 
             // Unlock speed limit
             case SDLK_TAB:
@@ -242,6 +244,12 @@ int main(int argc, char* argv[]) {
           }
         } else if (event.type == SDL_KEYUP) {
           switch (event.key.keysym.sym) {
+
+            // Release reset
+            case SDLK_r:
+              console.reset(false);
+              break;
+
 
             // Relock speed limit
             case SDLK_TAB:

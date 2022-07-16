@@ -7,8 +7,6 @@
 #include <nesemu/hw/ppu.h>
 #include <nesemu/hw/system_bus.h>
 
-#include <SDL2/SDL_events.h>
-
 
 // Forward declarations
 namespace hw::mapper {
@@ -40,7 +38,7 @@ public:
   // Execution
   void start();
   void update();
-  void handleEvent(const SDL_Event& event);
+  void reset(bool reset);
   void limitSpeed(bool limit) { clock_.skip(!limit); };
 
   // Misc
@@ -61,6 +59,8 @@ private:
 
   // System clock
   clock::CPUClock clock_;
+
+  bool reset_ = {false};
 };
 
 }  // namespace hw::console
