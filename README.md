@@ -6,7 +6,16 @@ This personal project is more of a learning experience than an optimized emulato
 
 ## Building
 
-Builds with CMake. Requires OpenGL and SDL.
+Builds with CMake. Requires SDL.
+
+```
+sudo apt install libsdl2-dev
+git clone https://github.com/matthew-reynolds/nesemu.git
+mkdir nesemu/build
+cd nesemu/build
+cmake ..
+make
+```
 
 ## Usage
 
