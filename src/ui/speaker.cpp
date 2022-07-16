@@ -97,17 +97,13 @@ bool ui::Speaker::init() {
     return 1;
   }
 
-  // Create downsamplers
-  if (!(downsampler_a_ = SDL_NewAudioStream(AUDIO_U8, 1, FREQ_A, AUDIO_U8, 1, 1))) {
-    logger::log<logger::ERROR>("Couldn't open create audio stream: %s\n", SDL_GetError());
-    return 1;
-  }
-  if (!(downsampler_b_ = SDL_NewAudioStream(AUDIO_U8,
-                                            1,
-                                            FREQ_B,
-                                            audio_spec_.format,
-                                            audio_spec_.channels,
-                                            audio_spec_.freq))) {
+  // Create downsampler
+  if (!(downsampler_ = SDL_NewAudioStream(AUDIO_U8,
+                                          1,
+                                          FREQ_A,
+                                          audio_spec_.format,
+                                          audio_spec_.channels,
+                                          audio_spec_.freq / MULTIPLIER))) {
     logger::log<logger::ERROR>("Couldn't open create audio stream: %s\n", SDL_GetError());
     return 1;
   }
@@ -120,36 +116,27 @@ bool ui::Speaker::init() {
 
 void ui::Speaker::close() {
   SDL_CloseAudioDevice(device_);
-  SDL_FreeAudioStream(downsampler_a_);
-  SDL_FreeAudioStream(downsampler_b_);
+  SDL_FreeAudioStream(downsampler_);
 }
 
 void ui::Speaker::update(uint8_t* stream, size_t len) {
-  // Upscale by 11 and feed the first downsampler
+  // Upscale by 11 and feed the downsampler
   // Note that feeding the downsampler is slow, so feed it 11 at a time
   // We could consider further slowing this down
   for (size_t i = 0; i < len; i++) {
     static uint8_t upsample_buffer[UPSAMPLE];
     SDL_memset(upsample_buffer, stream[i] * volume_, UPSAMPLE);
-    if (0 != SDL_AudioStreamPut(downsampler_a_, upsample_buffer, UPSAMPLE)) {
+    if (0 != SDL_AudioStreamPut(downsampler_, upsample_buffer, UPSAMPLE)) {
       logger::log<logger::ERROR>("Failed to put samples in first downsampler: %s\n", SDL_GetError());
     }
   }
 
-  // When the first downsampler has output, feed the second downsampler
+  // When the downsampler has output, feed the output buffer
   constexpr size_t BUFFER_LEN = 1024;
-  uint8_t          buffer[BUFFER_LEN];
+  static uint8_t   buffer[BUFFER_LEN];
   size_t           available = 0;
-  while ((available = std::min<size_t>(SDL_AudioStreamAvailable(downsampler_a_), BUFFER_LEN))
-         && SDL_AudioStreamGet(downsampler_a_, buffer, available)) {
-    if (0 != SDL_AudioStreamPut(downsampler_b_, buffer, available)) {
-      logger::log<logger::ERROR>("Failed to put samples in second downsampler: %s\n", SDL_GetError());
-    }
-  }
-
-  // When the second downsampler has output, feed the output device
-  while ((available = std::min<size_t>(SDL_AudioStreamAvailable(downsampler_b_), BUFFER_LEN))
-         && SDL_AudioStreamGet(downsampler_b_, buffer, available)) {
+  while ((available = std::min<size_t>(SDL_AudioStreamAvailable(downsampler_), BUFFER_LEN))
+         && SDL_AudioStreamGet(downsampler_, buffer, available)) {
     SDL_LockAudioDevice(device_);
     // Overwrite oldest samples if needed
     if (audio_buffer_size + available > AUDIO_BUFFER_LEN) {
