@@ -1,5 +1,7 @@
 # nesemu
 
+[![Build Status](https://github.com/matthew-reynols/nesemu/actions/workflows/cmake.yml/badge.svg?branch=master)](https://github.com/matthew-reynolds/nesemu/actions/workflows/cmake.yml?branch=master)
+
 A simple, (hopefully) cycle-accurate NES emulator.
 
 ## Building
