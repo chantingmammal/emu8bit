@@ -1,6 +1,7 @@
 #include <nesemu/logger.h>
 #include <nesemu/ui/speaker.h>
 
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 
@@ -68,7 +69,12 @@ bool ui::Speaker::init() {
   desired_spec.userdata = this;
 
   // Attach audio device
-  if (!(device_ = SDL_OpenAudioDevice(NULL, 0, &desired_spec, &audio_spec_, SDL_AUDIO_ALLOW_ANY_CHANGE))) {
+  // Do not allow format or channels to change
+  if (!(device_ = SDL_OpenAudioDevice(NULL,
+                                      0,
+                                      &desired_spec,
+                                      &audio_spec_,
+                                      SDL_AUDIO_ALLOW_FREQUENCY_CHANGE | SDL_AUDIO_ALLOW_SAMPLES_CHANGE))) {
     logger::log<logger::ERROR>("Couldn't open audio device: %s\n", SDL_GetError());
     return 1;
   }
