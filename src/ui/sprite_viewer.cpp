@@ -11,7 +11,7 @@ void ui::SpriteViewer::update() {
   }
 
   // Screen buffer
-  uint32_t pixels[TEXTURE_WIDTH * TEXTURE_HEIGHT] = {0};
+  uint32_t* pixels = new uint32_t[TEXTURE_WIDTH * TEXTURE_HEIGHT];
 
   // Iterate over every sprite in the OAM
   for (uint8_t row = 0; row < 8; row++) {

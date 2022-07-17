@@ -11,7 +11,7 @@ void ui::NametableViewer::update() {
   }
 
   // Screen buffer
-  uint32_t pixels[TEXTURE_WIDTH * TEXTURE_HEIGHT] = {0};
+  uint32_t* pixels = new uint32_t[TEXTURE_WIDTH * TEXTURE_HEIGHT];
 
   // Iterate over every 8x8 tile in the 2x2 nametable array
   for (uint8_t row = 0; row < 60; row++) {
