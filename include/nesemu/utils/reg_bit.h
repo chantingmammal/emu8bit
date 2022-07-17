@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nesemu/utils/compat.h>
+
 #include <cstdint>
 
 
@@ -7,7 +9,7 @@ namespace utils {
 
 // Bitfield utilities
 template <unsigned bit_pos, unsigned n_bits = 1, typename T = uint8_t>
-struct RegBit {
+PACKED(struct RegBit {
   T                  data;
   static constexpr T mask = ((1 << n_bits) - 1) << bit_pos;
 
@@ -37,6 +39,6 @@ struct RegBit {
     data &= ((val << bit_pos) & mask);
     return *this;
   }
-} __attribute__((__packed__));
+});
 
 }  // namespace utils

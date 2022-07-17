@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nesemu/utils/compat.h>
+
 #include <cstdint>
 
 
@@ -61,7 +63,7 @@ public:
       }
       return 0x1F00 | addr;
     }
-    __builtin_unreachable();
+    utils::unreachable();
   }
 
   virtual bool hasIRQ() const { return false; }

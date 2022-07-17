@@ -2,6 +2,7 @@
 
 #include <nesemu/hw/mapper/mapper_base.h>
 #include <nesemu/logger.h>
+#include <nesemu/utils/compat.h>
 
 
 namespace hw::mapper::internal {
@@ -53,7 +54,7 @@ public:
         }
 
       default:
-        __builtin_unreachable();
+        utils::unreachable();
     }
   };
 
@@ -100,7 +101,7 @@ public:
               mirroring_ = Mirroring::horizontal;
               break;
             default:
-              __builtin_unreachable();
+              utils::unreachable();
           }
           break;
         case 0xA000:

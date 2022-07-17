@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nesemu/utils/compat.h>
+
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
@@ -73,7 +75,7 @@ inline void dump_patterns(uint8_t* data) {
             std::cout << "3";
             break;
           default:
-            __builtin_unreachable();
+            utils::unreachable();
         }
       }
       std::cout << std::endl;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <nesemu/utils/compat.h>
 #include <nesemu/utils/reg_bit.h>
 
 #include <cstdint>
@@ -67,16 +68,15 @@ private:
     utils::RegBit<12, 3, uint16_t> fine_y_scroll;     // Y offset of the scanline within a tile
   };
 
-  union SpriteAttributes {
+  PACKED(union SpriteAttributes {
     uint8_t             raw;
     utils::RegBit<0, 2> palette;     // Palette (4 to 7) of sprite
     utils::RegBit<5, 1> priority;    // 0=In front of background, 1=Behind background
     utils::RegBit<6, 1> flip_horiz;  // Flip sprite horizontally
     utils::RegBit<7, 1> flip_vert;   // Flip sprite vertically TODO: Unsupported
-  } __attribute__((__packed__));
+  });
 
-  struct Sprite {
-
+  PACKED(struct Sprite {
     Sprite& operator=(const Sprite& val) {
       // Cast used to suppress -Wclass-memaccess
       memcpy((uint8_t*) this, (uint8_t*) &val, sizeof(Sprite));
@@ -84,16 +84,16 @@ private:
     }
 
     uint8_t y_position = {0};                   // Measured from top left
-    union {                                     // 8x8 sprites use 8 bit index & pattern table select from ctrl_reg_1_
+    PACKED(union {                              // 8x8 sprites use 8 bit index & pattern table select from ctrl_reg_1_
                                                 // 8x16 sprites use 7 bit index & specify pattern table
       uint8_t             small_tile_index;     // Tile number within pattern table
       utils::RegBit<0, 1> large_pattern_table;  // Pattern table ($0000 or $1000)
       utils::RegBit<1, 7> large_tile_index;     // Tile number for top half of sprite within pattern table
                                                 //   (Bottom half uses next tile)
-    } __attribute__((__packed__));
+    });
     SpriteAttributes attributes = {0};
     uint8_t          x_position = {0};  // Measured from top left
-  } __attribute__((__packed__));
+  });
 
 
   // Sprite evaluation state machine
