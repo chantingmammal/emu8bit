@@ -213,7 +213,7 @@ private:
   inline void     pollInterrupt();
   inline void     interrupt();             // 5 cycles
   inline void     branch(bool condition);  // 1 cycle
-  inline uint16_t getArgAddr(std::underlying_type<AddressingMode>::type mode, bool check_page_boundary = false);
+  inline uint16_t getArgAddr(std::underlying_type_t<AddressingMode> mode, bool check_page_boundary = false);
   inline uint16_t getArgAddr(AddressingMode mode, bool check_page_boundary = false);
 };
 

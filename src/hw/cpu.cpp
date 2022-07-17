@@ -1175,7 +1175,7 @@ void hw::cpu::CPU::branch(bool condition) {
   }
 }
 
-uint16_t hw::cpu::CPU::getArgAddr(std::underlying_type<AddressingMode>::type mode, bool dummy_read_optional) {
+uint16_t hw::cpu::CPU::getArgAddr(std::underlying_type_t<AddressingMode> mode, bool dummy_read_optional) {
   return getArgAddr(utils::asEnum<AddressingMode>(mode), dummy_read_optional);
 }
 
