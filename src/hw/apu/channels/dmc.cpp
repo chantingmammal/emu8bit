@@ -82,7 +82,7 @@ void hw::apu::channel::DMC::clockCPU() {
       silence_ = true;
     }
   }
-};
+}
 
 
 void hw::apu::channel::DMC::DMAPush(uint8_t data) {

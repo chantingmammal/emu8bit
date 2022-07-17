@@ -383,7 +383,8 @@ void hw::ppu::PPU::renderPixel() {
   palette_sr_b_ |= static_cast<uint8_t>(palette_latch_b_);
 }
 
-void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
+void hw::ppu::PPU::fetchTilesAndSprites(bool /*fetch_sprites*/) {
+  // TODO: Should fetch_sprites be unused?
 
   // Sprite evaluation fsm
   SpriteEvaluationFSM& fsm = sprite_eval_fsm_;

@@ -45,7 +45,7 @@ add_executable(${PROJECT_NAME}
   src/nesemu.cpp
 )
 target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARIES})
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror=switch)
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror=switch)
 target_compile_options(${PROJECT_NAME} PRIVATE "$<$<CONFIG:DEBUG>:-g>")
 target_compile_options(${PROJECT_NAME} PRIVATE "$<$<CONFIG:RELEASE>:-O3>")
 
