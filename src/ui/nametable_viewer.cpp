@@ -33,8 +33,8 @@ void ui::NametableViewer::update() {
 
       // Get palette from attribute table
       const uint8_t full_palette = ppu_->readByte(0x23C0 | at_entry);
-      const bool    palette_a    = (full_palette >> at_subentry) & 0x01;
-      const bool    palette_b    = (full_palette >> (at_subentry | 1)) & 0x01;
+      const uint8_t palette_a    = (full_palette >> at_subentry) & 0x01;
+      const uint8_t palette_b    = (full_palette >> (at_subentry | 1)) & 0x01;
       const uint8_t sub_palette  = palette_a | (palette_b << 1);
 
       // Tile row

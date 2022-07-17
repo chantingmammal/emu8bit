@@ -379,8 +379,8 @@ void hw::ppu::PPU::renderPixel() {
   palette_sr_b_ <<= 1;
 
   // Load palette SRs from latch
-  palette_sr_a_ |= palette_latch_a_;
-  palette_sr_b_ |= palette_latch_b_;
+  palette_sr_a_ |= static_cast<uint8_t>(palette_latch_a_);
+  palette_sr_b_ |= static_cast<uint8_t>(palette_latch_b_);
 }
 
 void hw::ppu::PPU::fetchTilesAndSprites(bool fetch_sprites) {
@@ -622,7 +622,7 @@ void hw::ppu::PPU::fetchNextSprite() {
     // Large (8x16) sprites
     if (ctrl_reg_1_.large_sprites) {
       const bool top_tile   = scanline_ - sprite.y_position < 8;
-      const bool first_tile = top_tile != sprite.attributes.flip_vert;
+      const bool first_tile = top_tile != static_cast<bool>(sprite.attributes.flip_vert);
 
       tile_index = sprite.large_tile_index * 2 + (first_tile ? 0 : 1);
       y_pos      = sprite.y_position + (top_tile ? 0 : 8);
