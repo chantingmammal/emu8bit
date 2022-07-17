@@ -1,8 +1,6 @@
 # nesemu
 
-A (hopefully) cycle-accurate NES emulator.
-
-This personal project is more of a learning experience than an optimized emulator. Targets cycle-accurate emulation of the NES's CPU (a MOS6502 derivative), APU, and PPU.
+A simple, (hopefully) cycle-accurate NES emulator.
 
 ## Building
 
