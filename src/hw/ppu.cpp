@@ -301,7 +301,7 @@ void hw::ppu::PPU::renderPixel() {
   uint8_t sprite_pixel    = 0;
   uint8_t sprite_palette  = 0;
   uint8_t sprite_priority = 0;
-  for (unsigned i = 0; i < 8; i++) {
+  for (unsigned i = 0; i < num_sprites_fetched_; i++) {
 
     // Decrement x position until cur dot intersects sprite
     if (sprite_x_position_[i] != 0) {
@@ -615,7 +615,6 @@ void hw::ppu::PPU::fetchNextBGTile() {
 
 void hw::ppu::PPU::fetchNextSprite() {
   if (num_sprites_fetched_ < (sprite_eval_fsm_.soam_index_ / 4)) {
-
     const Sprite& sprite = secondary_oam_.sprite[num_sprites_fetched_];
     uint8_t       tile_index;
     uint8_t       y_pos;
@@ -648,15 +647,15 @@ void hw::ppu::PPU::fetchNextSprite() {
     sprite_pattern_sr_b_[num_sprites_fetched_]  = readByte(pattern_addr | 8);
     sprite_palette_latch_[num_sprites_fetched_] = sprite.attributes;
     sprite_x_position_[num_sprites_fetched_]    = sprite.x_position;
+    num_sprites_fetched_++;
   } else {
     const uint16_t pattern_addr = 0xFF << 4                                       // Base tile address
                                   | ctrl_reg_1_.sprite_pattern_table_addr << 12;  // Pattern table
     readByte(0x2000 | (v_.raw & 0x0FFF));                                         // Garbage NT fetch
     readByte(0x2000 | (v_.raw & 0x0FFF));                                         // Garbage NT fetch
-    readByte(pattern_addr);
-    readByte(pattern_addr | 8);
+    readByte(pattern_addr);                                                       // Garbage PT fetch
+    readByte(pattern_addr | 8);                                                   // Garbage PT fetch
   }
-  num_sprites_fetched_++;
 }
 
 void hw::ppu::PPU::incrementCoarseX() {
