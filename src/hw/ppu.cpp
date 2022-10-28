@@ -114,7 +114,7 @@ uint8_t hw::ppu::PPU::readRegister(uint16_t cpu_address) {
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUSTATUS)): {  // PPU Status Register
-      io_latch_                   = status_reg_.raw;
+      io_latch_                   = status_reg_;
       status_reg_.vblank          = false;
       write_toggle_               = false;
       vblank_suppression_counter_ = 2;
@@ -177,13 +177,13 @@ void hw::ppu::PPU::writeRegister(uint16_t cpu_address, uint8_t data) {
 
   switch (cpu_address) {
     case (utils::asInt(MemoryMappedIO::PPUCTRL)):  // PPU Control Register 1
-      ctrl_reg_1_.raw     = data;
+      ctrl_reg_1_         = data;
       t_.nametable_select = data & 0x03;
       logger::log<logger::DEBUG_PPU>("Set PPUCTRL = $%02X\n", data);
       break;
 
     case (utils::asInt(MemoryMappedIO::PPUMASK)):  // PPU Control Register 2
-      ctrl_reg_2_.raw = data;
+      ctrl_reg_2_ = data;
       logger::log<logger::DEBUG_PPU>("Set PPUMASK = $%02X\n", data);
       break;
 
@@ -537,10 +537,10 @@ void hw::ppu::PPU::fetchTilesAndSprites(bool /*fetch_sprites*/) {
 
       // Clear old sprites
       for (unsigned i = 0; i < 8; i++) {
-        sprite_pattern_sr_a_[i]      = 0;
-        sprite_pattern_sr_b_[i]      = 0;
-        sprite_palette_latch_[i].raw = 0;
-        sprite_x_position_[i]        = 0;
+        sprite_pattern_sr_a_[i]  = 0;
+        sprite_pattern_sr_b_[i]  = 0;
+        sprite_palette_latch_[i] = {};
+        sprite_x_position_[i]    = 0;
       }
     }
 
@@ -644,10 +644,10 @@ void hw::ppu::PPU::fetchNextSprite() {
 
     readByte(0x2000 | (v_.raw & 0x0FFF));  // Garbage NT fetch
     readByte(0x2000 | (v_.raw & 0x0FFF));  // Garbage NT fetch
-    sprite_pattern_sr_a_[num_sprites_fetched_]      = readByte(pattern_addr);
-    sprite_pattern_sr_b_[num_sprites_fetched_]      = readByte(pattern_addr | 8);
-    sprite_palette_latch_[num_sprites_fetched_].raw = sprite.attributes.raw;
-    sprite_x_position_[num_sprites_fetched_]        = sprite.x_position;
+    sprite_pattern_sr_a_[num_sprites_fetched_]  = readByte(pattern_addr);
+    sprite_pattern_sr_b_[num_sprites_fetched_]  = readByte(pattern_addr | 8);
+    sprite_palette_latch_[num_sprites_fetched_] = sprite.attributes;
+    sprite_x_position_[num_sprites_fetched_]    = sprite.x_position;
   } else {
     const uint16_t pattern_addr = 0xFF << 4                                       // Base tile address
                                   | ctrl_reg_1_.sprite_pattern_table_addr << 12;  // Pattern table
