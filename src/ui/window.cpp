@@ -39,7 +39,7 @@ bool ui::Window::init(const std::string&& title, bool shown) {
   id_             = SDL_GetWindowID(window_);
   mouse_focus_    = true;
   keyboard_focus_ = true;
-  shown_          = shown;
+  visible_        = shown;
   width_          = TEXTURE_WIDTH;
   height_         = TEXTURE_HEIGHT;
 
@@ -56,13 +56,13 @@ void ui::Window::close() {
   window_         = nullptr;
   mouse_focus_    = false;
   keyboard_focus_ = false;
-  shown_          = false;
+  visible_        = false;
   width_          = 0;
   height_         = 0;
 }
 
 void ui::Window::update() {
-  if (!minimized_) {
+  if (visible_) {
 
     static bool warned = false;
     if (!warned) {
@@ -82,12 +82,12 @@ void ui::Window::handleEvent(SDL_Event& event) {
     switch (event.window.event) {
       // Window appeared
       case SDL_WINDOWEVENT_SHOWN:
-        shown_ = true;
+        visible_ = true;
         break;
 
       // Window disappeared
       case SDL_WINDOWEVENT_HIDDEN:
-        shown_ = false;
+        visible_ = false;
         break;
 
       // Get new dimensions and repaint on window size change
@@ -122,24 +122,9 @@ void ui::Window::handleEvent(SDL_Event& event) {
         keyboard_focus_ = false;
         break;
 
-      // Window minimized
-      case SDL_WINDOWEVENT_MINIMIZED:
-        minimized_ = true;
-        break;
-
-      // Window maxized
-      case SDL_WINDOWEVENT_MAXIMIZED:
-        minimized_ = false;
-        break;
-
-      // Window restored
-      case SDL_WINDOWEVENT_RESTORED:
-        minimized_ = false;
-        break;
-
       // Hide on close
       case SDL_WINDOWEVENT_CLOSE:
-        SDL_HideWindow(window_);
+        hide();
         if (on_close_) {
           on_close_();
         }
@@ -150,14 +135,14 @@ void ui::Window::handleEvent(SDL_Event& event) {
 
 
 void ui::Window::hide() {
-  if (shown_) {
+  if (visible_) {
     SDL_HideWindow(window_);
   }
 }
 
 void ui::Window::focus() {
   // Restore window if needed
-  if (!shown_) {
+  if (!visible_) {
     SDL_ShowWindow(window_);
   }
 

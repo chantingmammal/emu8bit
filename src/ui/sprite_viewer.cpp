@@ -6,7 +6,7 @@
 
 
 void ui::SpriteViewer::update() {
-  if (minimized_) {
+  if (!visible_) {
     return;
   }
 

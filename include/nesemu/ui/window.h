@@ -28,7 +28,7 @@ public:
 
   void hide();
   void focus();
-  bool isHidden() const { return !shown_; };
+  bool isHidden() const { return !visible_; };
 
   // Window dimensions
   // int getWidth();
@@ -60,8 +60,7 @@ protected:
   bool mouse_focus_    = {false};
   bool keyboard_focus_ = {false};
   bool full_screen_    = {false};
-  bool minimized_      = {false};
-  bool shown_          = {false};
+  bool visible_        = {false};
 
   std::function<void(void)> on_close_;
 };

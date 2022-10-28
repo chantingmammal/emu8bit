@@ -6,7 +6,7 @@
 
 
 void ui::NametableViewer::update() {
-  if (minimized_) {
+  if (!visible_) {
     return;
   }
 

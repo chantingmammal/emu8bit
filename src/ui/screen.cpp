@@ -4,7 +4,7 @@
 
 
 void ui::Screen::update(const uint32_t* pixels) {
-  if (minimized_) {
+  if (!visible_) {
     return;
   }
 
