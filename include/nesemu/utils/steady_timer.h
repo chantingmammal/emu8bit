@@ -19,7 +19,7 @@ public:
       ready();
     } else {
       std::this_thread::sleep_until(next_);
-      next_ += Period(1);
+      next_ = std::max<TimePoint>(next_ + Period(1), Clock::now() - std::chrono::duration<Clock::rep, std::milli>(8));
     }
   }
 
