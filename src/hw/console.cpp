@@ -26,7 +26,7 @@ hw::console::Console::~Console() {
 
 void hw::console::Console::loadCart(rom::Rom* rom) {
   // Setup the mapper
-  const uint16_t          mapper_num = rom->header.mapper_upper << 8 | rom->header.mapper_lower;
+  const uint8_t           mapper_num = rom->header.mapper_upper << 4 | rom->header.mapper_lower;
   const mapper::Mirroring mirror     = rom->header.ignore_mirroring
                                            ? mapper::Mirroring::none
                                            : (rom->header.nametable_mirror ? mapper::Mirroring::vertical
