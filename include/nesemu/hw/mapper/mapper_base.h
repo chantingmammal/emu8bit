@@ -67,6 +67,7 @@ public:
   }
 
   virtual bool hasIRQ() const { return false; }
+  virtual void read(uint16_t /*addr*/, uint8_t& /*data*/) {};
   virtual void write(uint16_t /*addr*/, uint8_t /*data*/) {};
   virtual void clock() {};
 

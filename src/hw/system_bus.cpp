@@ -74,8 +74,9 @@ uint8_t hw::system_bus::SystemBus::read(uint16_t address) const {
     // Open bus
   }
 
-  else if (address < 0x6000) {  // Expansion Modules, ie. Famicom Disk System
-    // Open bus
+  else if (address < 0x6000) {  // Mapper or Expansion Modules, ie. Famicom Disk System
+    // Open bus if no mapper
+    mapper_->read(address, data);
   }
 
   else if (address < 0x8000) {  // Cartridge RAM
@@ -146,8 +147,8 @@ void hw::system_bus::SystemBus::write(uint16_t address, uint8_t data) {
     ;
   }
 
-  else if (address < 0x6000) {  // Expansion Modules, ie. Famicom Disk System
-    ;
+  else if (address < 0x6000) {  // Mapper or Expansion Modules, ie. Famicom Disk System
+    mapper_->write(address, data);
   }
 
   else if (address < 0x8000) {  // Cartridge RAM
