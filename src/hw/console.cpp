@@ -31,8 +31,8 @@ void hw::console::Console::loadCart(rom::Rom* rom) {
                                            ? mapper::Mirroring::none
                                            : (rom->header.nametable_mirror ? mapper::Mirroring::vertical
                                                                            : mapper::Mirroring::horizontal);
-  mapper_ = mapper::mappers[mapper_num](rom->header.prg_rom_size, rom->header.chr_rom_size, mirror);
   logger::log<logger::DEBUG_MAPPER>("Using mapper #%d\n", mapper_num);
+  mapper_ = mapper::getMapper(mapper_num)(rom->header.prg_rom_size, rom->header.chr_rom_size, mirror);
 
   // Load the rom and mapper onto the busses
   bus_.loadCart(mapper_, rom->prg[0], (rom->header.has_battery ? rom->expansion[0] : nullptr));
