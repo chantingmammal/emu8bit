@@ -38,8 +38,9 @@ void ui::audio_callback(ui::Speaker* speaker, uint8_t* stream, size_t len) {
   // This compensates for extra frames added when the buffer runs dry or the system runs over 100% speed (uncapped)
   if (available > ui::Speaker::TARGET_AUDIO_BUFFER_LEN) {
     const size_t to_drop     = available - ui::Speaker::TARGET_AUDIO_BUFFER_LEN;
-    const size_t drop_period = std::floor(static_cast<double>(to_drop) / len);
+    const size_t drop_period = std::max<size_t>(std::floor(static_cast<double>(len) / to_drop), 1);
 
+    // TODO: Support drop period less than 1 (ie drop multiple samples per iteration)
     for (size_t i = 1; i <= to_drop && i * drop_period < len; i++) {
       SDL_memmove(stream + (i * drop_period), stream + (i * drop_period) + 1, len - (i * drop_period + 1));
       SDL_AudioStreamGet(speaker->downsampler_, &stream[len - 1], 1);
