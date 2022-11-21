@@ -51,6 +51,8 @@ B      | X
 Start  | Enter
 Select | Space
 Reset  | R
+Volume down | Left bracket [
+Volume up | Right bracket ]
 Unlimit speed | Tab
 Debug: PPU nametable viewer | 1
 Debug: PPU sprite viewer | 2
