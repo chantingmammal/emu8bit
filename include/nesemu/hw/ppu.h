@@ -101,20 +101,25 @@ private:
       sprite_mask.from(val);
       bg_enable.from(val);
       sprite_enable.from(val);
-      background_color.from(val);
+      tint_red.from(val);
+      tint_green.from(val);
+      tint_blue.from(val);
       render_enable = bg_enable | sprite_enable;
     }
     operator uint8_t() const {
-      return greyscale.to() | bg_mask.to() | sprite_mask.to() | bg_enable.to() | sprite_enable.to()
-             | background_color.to();
+      return greyscale.to() | bg_mask.to() | sprite_mask.to() | bg_enable.to() | sprite_enable.to() | tint_red.to()
+             | tint_green.to() | tint_blue.to();
     }
-    bool                     render_enable;     // Read only, shortcut for checking if rendering is enabled
-    utils::StructField<0>    greyscale;         // Produce greyscale display
-    utils::StructField<1>    bg_mask;           // Show left 8 columns of the background
-    utils::StructField<2>    sprite_mask;       // Show sprites in left 8 columns
-    utils::StructField<3>    bg_enable;         // 0=Blank screen, 1=Show background
-    utils::StructField<4>    sprite_enable;     // 0=Hide sprites, 1=Show sprites
-    utils::StructField<5, 3> background_color;  // 0=Black, 1=Blue, 2=Green, 4=Red. Do not use other numbers (TODO)
+
+    bool                  render_enable;  // Read only, shortcut for checking if rendering is enabled
+    utils::StructField<0> greyscale;      // Produce greyscale display
+    utils::StructField<1> bg_mask;        // Show left 8 columns of the background
+    utils::StructField<2> sprite_mask;    // Show sprites in left 8 columns
+    utils::StructField<3> bg_enable;      // 0=Blank screen, 1=Show background
+    utils::StructField<4> sprite_enable;  // 0=Hide sprites, 1=Show sprites
+    utils::StructField<5> tint_red;       // Attenuate non-red channels (Non-green on PAL/Dendy)
+    utils::StructField<6> tint_green;     // Attenuate non-green channels (Non-red on PAL/Dendy)
+    utils::StructField<7> tint_blue;      // Attenuate non-blue channels
   };
 
   struct StatusReg {

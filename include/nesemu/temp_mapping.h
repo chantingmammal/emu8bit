@@ -140,3 +140,16 @@ inline uint32_t decodeColor(uint8_t color) {
       return 0;
   }
 }
+
+template <uint8_t CHANNEL_POS>
+uint32_t attenuate_channel(uint32_t color, float attenuation) {
+  constexpr uint32_t MASK = 0xFF << CHANNEL_POS;
+
+  uint8_t channel = (color & MASK) >> CHANNEL_POS;
+  channel *= attenuation;
+  return (color & ~MASK) | (channel << CHANNEL_POS);
+}
+
+constexpr auto attenuate_red   = attenuate_channel<16>;
+constexpr auto attenuate_green = attenuate_channel<8>;
+constexpr auto attenuate_blue  = attenuate_channel<0>;

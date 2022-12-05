@@ -369,9 +369,25 @@ void hw::ppu::PPU::renderPixel() {
 
 
   // Write the pixel to the screen buffer
-  const uint8_t color                 = readByte(0x3F00 | palette_addr) & (ctrl_reg_2_.greyscale ? 0x30 : 0xFF);
-  pixels_[(scanline_ * 256) + cycle_] = decodeColor(color);
+  const uint8_t color = readByte(0x3F00 | palette_addr) & (ctrl_reg_2_.greyscale ? 0x30 : 0xFF);
+  uint32_t      rgb   = decodeColor(color);
 
+  // TODO: Better tint/emphasis. Either more hw-accurate or just tune the numbers to look nice.
+  constexpr float ATTENUATION = 0.746;
+  if (ctrl_reg_2_.tint_red) {
+    rgb = attenuate_green(rgb, ATTENUATION);
+    rgb = attenuate_blue(rgb, ATTENUATION);
+  }
+  if (ctrl_reg_2_.tint_green) {
+    rgb = attenuate_red(rgb, ATTENUATION);
+    rgb = attenuate_blue(rgb, ATTENUATION);
+  }
+  if (ctrl_reg_2_.tint_blue) {
+    rgb = attenuate_red(rgb, ATTENUATION);
+    rgb = attenuate_green(rgb, ATTENUATION);
+  }
+
+  pixels_[(scanline_ * 256) + cycle_] = rgb;
   // Shift SRs left
   pattern_sr_a_ <<= 1;
   pattern_sr_b_ <<= 1;
