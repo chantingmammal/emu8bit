@@ -117,7 +117,7 @@ uint8_t hw::ppu::PPU::readRegister(uint16_t cpu_address) {
       io_latch_                   = status_reg_;
       status_reg_.vblank          = false;
       write_toggle_               = false;
-      vblank_suppression_counter_ = 2;
+      vblank_suppression_counter_ = 1;
       logger::log<logger::DEBUG_PPU>("Read $%02X from PPUSTATUS\n", io_latch_);
     } break;
 
