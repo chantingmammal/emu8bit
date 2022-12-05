@@ -458,6 +458,7 @@ void hw::ppu::PPU::fetchTilesAndSprites(bool /*fetch_sprites*/) {
 
           // If Y val in range, copy over rest of sprite data into secondary OAM
           case State::CHECK_Y_IN_RANGE:
+            // TODO: Why does Y-3 fix ppu_sprite_hit/rom_singles/07-screen_bottom.nes?
             secondary_oam_.byte[fsm.soam_index_] = fsm.latch_;
             if (fsm.latch_ <= scanline_ && uint8_t(fsm.latch_ + sprite_height) > scanline_) {
               if (fsm.poam_index_ == 0) {
