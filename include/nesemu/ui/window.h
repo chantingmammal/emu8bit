@@ -27,7 +27,7 @@ public:
   virtual void onClose(const std::function<void(void)>& f) { on_close_ = f; };
 
   void hide();
-  void focus();
+  virtual void focus();
   bool isHidden() const { return !visible_; };
 
   // Window dimensions

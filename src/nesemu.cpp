@@ -2,6 +2,7 @@
 #include <nesemu/hw/rom.h>
 #include <nesemu/logger.h>
 #include <nesemu/ui/nametable_viewer.h>
+#include <nesemu/ui/pattern_table_viewer.h>
 #include <nesemu/ui/screen.h>
 #include <nesemu/ui/speaker.h>
 #include <nesemu/ui/sprite_viewer.h>
@@ -177,6 +178,11 @@ int main(int argc, char* argv[]) {
     exit();
     return 1;
   }
+  windows["pt"] = new ui::PatternTableViewer();
+  if (windows["pt"]->init("Pattern Table Viewer", false)) {
+    exit();
+    return 1;
+  }
   windows["oam"] = new ui::SpriteViewer();
   if (windows["oam"]->init("Sprite Viewer", false)) {
     exit();
@@ -194,6 +200,7 @@ int main(int argc, char* argv[]) {
   console.setScreen(static_cast<ui::Screen*>(windows["screen"]));
   console.setSpeaker(&speaker);
   static_cast<ui::NametableViewer*>(windows["nt"])->attachPPU(console.getPPU());
+  static_cast<ui::PatternTableViewer*>(windows["pt"])->attachPPU(console.getPPU());
   static_cast<ui::SpriteViewer*>(windows["oam"])->attachPPU(console.getPPU());
 
   // Start the hardware
@@ -246,6 +253,11 @@ int main(int argc, char* argv[]) {
             // Show sprite viewer
             case SDLK_2:
               windows["oam"]->focus();
+              break;
+
+            // Show pattern table viewer
+            case SDLK_3:
+              windows["pt"]->focus();
               break;
 
             // Volume down

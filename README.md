@@ -56,3 +56,4 @@ Volume up | Right bracket ]
 Unlimit speed | Tab
 Debug: PPU nametable viewer | 1
 Debug: PPU sprite viewer | 2
+Debug: PPU pattern table viewer and palette cycle | 3

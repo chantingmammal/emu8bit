@@ -38,6 +38,7 @@ add_executable(${PROJECT_NAME}
   src/hw/system_bus.cpp
   src/logger.cpp
   src/ui/nametable_viewer.cpp
+  src/ui/pattern_table_viewer.cpp
   src/ui/screen.cpp
   src/ui/speaker.cpp
   src/ui/sprite_viewer.cpp
