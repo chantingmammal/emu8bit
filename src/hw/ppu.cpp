@@ -360,10 +360,9 @@ void hw::ppu::PPU::renderPixel() {
   // Determine address to read color for current pixel
   if (bg_pixel == 0 && sprite_pixel == 0) {
     if ((v_.raw & 0x3F00) == 0x3F00) {
-    // TODO: Allow displaying $3F04/$3F08/$3F0C
       palette_addr = v_.raw & 0x1F;
     } else {
-    palette_addr = 0;
+      palette_addr = 0;
     }
   } else if (sprite_pixel == 0 || (bg_pixel != 0 && sprite_priority == 1)) {
     palette_addr = bg_pixel | (bg_palette << 2);

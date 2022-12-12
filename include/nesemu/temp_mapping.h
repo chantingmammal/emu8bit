@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+// TODO: Load from .pal file
 inline uint32_t decodeColor(uint8_t color) {
   switch (color) {
     case 0x00:
@@ -97,7 +98,7 @@ inline uint32_t decodeColor(uint8_t color) {
     case 0x2C:
       return 0x0000EBDB;
     case 0x2D:
-      return 0x00000000;
+      return 0x003C3C3C;
     case 0x2E:
       return 0x00000000;
     case 0x2F:
@@ -130,7 +131,7 @@ inline uint32_t decodeColor(uint8_t color) {
     case 0x3C:
       return 0x009FFFF3;
     case 0x3D:
-      return 0x00000000;
+      return 0x00A0A2A0;
     case 0x3E:
       return 0x00000000;
     case 0x3F:
